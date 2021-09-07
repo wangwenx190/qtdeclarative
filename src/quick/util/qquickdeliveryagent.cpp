@@ -1542,6 +1542,7 @@ bool QQuickDeliveryAgentPrivate::isTouchEvent(const QPointerEvent *ev)
 
 bool QQuickDeliveryAgentPrivate::isTabletEvent(const QPointerEvent *ev)
 {
+#if QT_CONFIG(tabletevent)
     switch (ev->type()) {
     case QEvent::TabletPress:
     case QEvent::TabletMove:
@@ -1550,8 +1551,10 @@ bool QQuickDeliveryAgentPrivate::isTabletEvent(const QPointerEvent *ev)
     case QEvent::TabletLeaveProximity:
         return true;
     default:
-        return false;
+        break;
     }
+#endif // tabletevent
+    return false;
 }
 
 bool QQuickDeliveryAgentPrivate::isEventFromMouseOrTouchpad(const QPointerEvent *ev)
