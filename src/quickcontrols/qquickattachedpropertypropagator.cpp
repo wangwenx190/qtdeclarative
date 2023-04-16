@@ -245,7 +245,8 @@ static QQuickItem *findAttachedItem(QObject *parent)
     return item;
 }
 
-class QQuickAttachedPropertyPropagatorPrivate : public QObjectPrivate, public QQuickItemChangeListener
+class QQuickAttachedPropertyPropagatorPrivate : public QObjectPrivate,
+                                                public QSafeQuickItemChangeListener<QQuickAttachedPropertyPropagatorPrivate>
 {
 public:
     Q_DECLARE_PUBLIC(QQuickAttachedPropertyPropagator)

@@ -93,7 +93,7 @@ static const QQuickItemPrivate::ChangeTypes ItemChanges = QQuickItemPrivate::Vis
 
 class Q_QUICKTEMPLATES2_EXPORT QQuickApplicationWindowPrivate
     : public QQuickWindowQmlImplPrivate
-    , public QQuickItemChangeListener
+    , public QSafeQuickItemChangeListener<QQuickApplicationWindowPrivate>
 {
     Q_DECLARE_PUBLIC(QQuickApplicationWindow)
 

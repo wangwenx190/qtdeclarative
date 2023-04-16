@@ -55,7 +55,7 @@ private:
 
 class Q_QUICKTEMPLATES2_EXPORT QQuickPopupPrivate
     : public QObjectPrivate
-    , public QQuickItemChangeListener
+    , public QSafeQuickItemChangeListener<QQuickPopupPrivate>
     , public QQuickPaletteProviderPrivateBase<QQuickPopup, QQuickPopupPrivate>
 {
 public:

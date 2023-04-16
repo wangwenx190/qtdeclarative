@@ -40,7 +40,7 @@ class QQuickRenderControl;
 
 class QQuickWidgetPrivate
         : public QWidgetPrivate,
-          public QQuickItemChangeListener
+          public QSafeQuickItemChangeListener<QQuickWidgetPrivate>
 {
     Q_DECLARE_PUBLIC(QQuickWidget)
 public:

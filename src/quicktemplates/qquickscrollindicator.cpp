@@ -396,7 +396,8 @@ qreal QQuickScrollIndicator::visualPosition() const
     return d->visualArea().position;
 }
 
-class QQuickScrollIndicatorAttachedPrivate : public QObjectPrivate, public QQuickItemChangeListener
+class QQuickScrollIndicatorAttachedPrivate : public QObjectPrivate,
+                                             public QSafeQuickItemChangeListener<QQuickScrollIndicatorAttachedPrivate>
 {
 public:
     void activateHorizontal();

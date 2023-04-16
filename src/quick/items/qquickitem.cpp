@@ -155,6 +155,7 @@ QQuickContents::QQuickContents(QQuickItem *item)
 
 QQuickContents::~QQuickContents()
 {
+    inDestructor = true;
     QList<QQuickItem *> children = m_item->childItems();
     for (int i = 0; i < children.size(); ++i) {
         QQuickItem *child = children.at(i);
@@ -4035,7 +4036,9 @@ while (false)
 
 void QQuickItemPrivate::addItemChangeListener(QQuickItemChangeListener *listener, ChangeTypes types)
 {
+    Q_Q(QQuickItem);
     changeListeners.append(ChangeListener(listener, types));
+    listener->addSourceItem(q);
 
     if (lcChangeListeners().isDebugEnabled())
         PRINT_LISTENERS();
@@ -4043,12 +4046,16 @@ void QQuickItemPrivate::addItemChangeListener(QQuickItemChangeListener *listener
 
 void QQuickItemPrivate::updateOrAddItemChangeListener(QQuickItemChangeListener *listener, ChangeTypes types)
 {
+    Q_Q(QQuickItem);
+
     const ChangeListener changeListener(listener, types);
     const int index = changeListeners.indexOf(changeListener);
-    if (index > -1)
+    if (index > -1) {
         changeListeners[index].types = changeListener.types;
-    else
+    } else {
         changeListeners.append(changeListener);
+        listener->addSourceItem(q);
+    }
 
     if (lcChangeListeners().isDebugEnabled())
         PRINT_LISTENERS();
@@ -4056,8 +4063,11 @@ void QQuickItemPrivate::updateOrAddItemChangeListener(QQuickItemChangeListener *
 
 void QQuickItemPrivate::removeItemChangeListener(QQuickItemChangeListener *listener, ChangeTypes types)
 {
+    Q_Q(QQuickItem);
+
     ChangeListener change(listener, types);
     changeListeners.removeOne(change);
+    listener->removeSourceItem(q);
 
     if (lcChangeListeners().isDebugEnabled())
         PRINT_LISTENERS();
@@ -4066,12 +4076,16 @@ void QQuickItemPrivate::removeItemChangeListener(QQuickItemChangeListener *liste
 void QQuickItemPrivate::updateOrAddGeometryChangeListener(QQuickItemChangeListener *listener,
                                                           QQuickGeometryChange types)
 {
+    Q_Q(QQuickItem);
+
     ChangeListener change(listener, types);
     int index = changeListeners.indexOf(change);
-    if (index > -1)
+    if (index > -1) {
         changeListeners[index].gTypes = change.gTypes;  //we may have different GeometryChangeTypes
-    else
+    } else {
         changeListeners.append(change);
+        listener->addSourceItem(q);
+    }
 
     if (lcChangeListeners().isDebugEnabled())
         PRINT_LISTENERS();
@@ -4080,9 +4094,12 @@ void QQuickItemPrivate::updateOrAddGeometryChangeListener(QQuickItemChangeListen
 void QQuickItemPrivate::updateOrRemoveGeometryChangeListener(QQuickItemChangeListener *listener,
                                                              QQuickGeometryChange types)
 {
+    Q_Q(QQuickItem);
+
     ChangeListener change(listener, types);
     if (types.noChange()) {
         changeListeners.removeOne(change);
+        listener->removeSourceItem(q);
     } else {
         int index = changeListeners.indexOf(change);
         if (index > -1)
