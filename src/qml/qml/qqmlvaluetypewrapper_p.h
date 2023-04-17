@@ -113,8 +113,8 @@ public:
 
     QVariant toVariant() const;
 
-    template<typename ValueType>
-    ValueType *cast()
+    template <typename ValueType>
+    ValueType *cast() const
     {
         if (QMetaType::fromType<ValueType>() != d()->metaType())
             return nullptr;

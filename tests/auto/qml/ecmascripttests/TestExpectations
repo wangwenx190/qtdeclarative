@@ -246,8 +246,8 @@ built-ins/String/prototype/slice/this-value-not-obj-coercible.js fails
 built-ins/String/prototype/split/cstm-split-get-err.js fails
 built-ins/String/prototype/split/cstm-split-invocation.js fails
 built-ins/String/prototype/startsWith/return-abrupt-from-searchstring-regexp-test.js fails
-built-ins/String/prototype/toLocaleLowerCase/Final_Sigma_U180E.js fails
-built-ins/String/prototype/toLocaleLowerCase/special_casing_conditional.js fails
+built-ins/String/prototype/toLocaleLowerCase/Final_Sigma_U180E.js nonICUFails
+built-ins/String/prototype/toLocaleLowerCase/special_casing_conditional.js nonICUFails
 built-ins/String/prototype/toLowerCase/Final_Sigma_U180E.js fails
 built-ins/String/prototype/toLowerCase/special_casing_conditional.js fails
 built-ins/TypedArray/prototype/constructor.js fails

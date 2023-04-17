@@ -558,7 +558,13 @@ TestExpectationLine::TestExpectationLine(const QByteArray &line)
         state = SloppyFails;
     else if (qualifier == "fails")
         state = Fails;
-    else
+    else if (qualifier == "nonICUFails") {
+#if QT_CONFIG(icu)
+        state = Passes;
+#else
+        state = Fails;
+#endif
+    } else
         qWarning() << "illegal format in TestExpectations, line" << line;
 }
 
@@ -682,7 +688,8 @@ void Test262Runner::loadTestExpectations()
             s.skipTestCase = true;
             break;
         case TestExpectationLine::Passes:
-            Q_UNREACHABLE();
+            s.strictExpectation.state = TestCase::Passes;
+            s.sloppyExpectation.state = TestCase::Passes;
         }
     }
 }
