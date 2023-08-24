@@ -31,6 +31,8 @@
 #include <QtQuickTestUtils/private/platformquirks_p.h>
 #include <QtQuickTestUtils/private/platforminputcontext_p.h>
 
+using namespace Qt::StringLiterals;
+
 Q_DECLARE_METATYPE(QQuickTextInput::SelectionMode)
 Q_DECLARE_METATYPE(QQuickTextInput::EchoMode)
 Q_DECLARE_METATYPE(Qt::Key)
@@ -216,7 +218,13 @@ private:
 #endif
 
     QQmlEngine engine;
-    QStringList standard;
+    const QStringList standard = {
+        u"the quick brown fox jumped over the lazy dog"_s,
+        u"It's supercalifragisiticexpialidocious!"_s,
+        u"Hello, world!"_s,
+        u"!dlrow ,olleH"_s,
+        u" spacey   text "_s,
+    };
     QStringList colorStrings;
     QScopedPointer<QPointingDevice> touchscreen = QScopedPointer<QPointingDevice>(QTest::createTouchDevice());
 };
@@ -273,12 +281,6 @@ void tst_qquicktextinput::cleanup()
 tst_qquicktextinput::tst_qquicktextinput()
     : QQmlDataTest(QT_QMLTEST_DATADIR)
 {
-    standard << "the quick brown fox jumped over the lazy dog"
-        << "It's supercalifragisiticexpialidocious!"
-        << "Hello, world!"
-        << "!dlrow ,olleH"
-        << " spacey   text ";
-
     colorStrings << "aliceblue"
                  << "antiquewhite"
                  << "aqua"
@@ -1873,7 +1875,7 @@ void tst_qquicktextinput::maxLength()
     QVERIFY(textinputObject != nullptr);
     QVERIFY(textinputObject->text().isEmpty());
     QCOMPARE(textinputObject->maxLength(), 10);
-    for (const QString &str : std::as_const(standard)) {
+    for (const QString &str : standard) {
         QVERIFY(textinputObject->text().size() <= 10);
         textinputObject->setText(str);
         QVERIFY(textinputObject->text().size() <= 10);

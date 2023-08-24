@@ -3476,118 +3476,118 @@ void tst_QQuickItem::changeListener()
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), 0);
 
     // QTBUG-54732: all listeners should get invoked even if they remove themselves while iterating the listeners
-    QList<TestListener *> listeners;
+    std::array<TestListener *, 5> listeners;
     for (int i = 0; i < 5; ++i)
-        listeners << new TestListener(true);
+        listeners[i] = new TestListener(true);
 
     // itemVisibilityChanged x 5
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QQuickItemPrivate::get(parent)->addItemChangeListener(listener, QQuickItemPrivate::Visibility);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), listeners.size());
     parent->setVisible(false);
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QCOMPARE(listener->count(QQuickItemPrivate::Visibility), 1);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), 0);
 
     // itemRotationChanged x 5
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QQuickItemPrivate::get(parent)->addItemChangeListener(listener, QQuickItemPrivate::Rotation);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), listeners.size());
     parent->setRotation(90);
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QCOMPARE(listener->count(QQuickItemPrivate::Rotation), 1);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), 0);
 
     // itemScaleChanged x 5
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QQuickItemPrivate::get(parent)->addItemChangeListener(listener, QQuickItemPrivate::Scale);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), listeners.size());
     parent->setScale(0.5);
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QCOMPARE(listener->count(QQuickItemPrivate::Scale), 1);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), 0);
 
     // itemTransformChanged x 5
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QQuickItemPrivate::get(parent)->addItemChangeListener(listener, QQuickItemPrivate::Matrix);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), listeners.size());
     parent->setX(parent->x() + 1);
-    for (TestListener *listener : std::as_const(listeners)) {
+    for (TestListener *listener : listeners) {
         QCOMPARE(listener->count(QQuickItemPrivate::Matrix), 1);
         QCOMPARE(listener->value(QQuickItemPrivate::Matrix), QVariant::fromValue(parent));
     }
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), 0);
 
     // itemOpacityChanged x 5
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QQuickItemPrivate::get(parent)->addItemChangeListener(listener, QQuickItemPrivate::Opacity);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), listeners.size());
     parent->setOpacity(0.5);
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QCOMPARE(listener->count(QQuickItemPrivate::Opacity), 1);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), 0);
 
     // itemChildAdded() x 5
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QQuickItemPrivate::get(parent)->addItemChangeListener(listener, QQuickItemPrivate::Children);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), listeners.size());
     child1 = new QQuickItem(parent);
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QCOMPARE(listener->count(QQuickItemPrivate::Children), 1);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), 0);
 
     // itemParentChanged() x 5
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QQuickItemPrivate::get(child1)->addItemChangeListener(listener, QQuickItemPrivate::Parent);
     QCOMPARE(QQuickItemPrivate::get(child1)->changeListeners.size(), listeners.size());
     child1->setParentItem(nullptr);
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QCOMPARE(listener->count(QQuickItemPrivate::Parent), 1);
     QCOMPARE(QQuickItemPrivate::get(child1)->changeListeners.size(), 0);
 
     // itemImplicitWidthChanged() x 5
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QQuickItemPrivate::get(parent)->addItemChangeListener(listener, QQuickItemPrivate::ImplicitWidth);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), listeners.size());
     parent->setImplicitWidth(parent->implicitWidth() + 1);
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QCOMPARE(listener->count(QQuickItemPrivate::ImplicitWidth), 1);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), 0);
 
     // itemImplicitHeightChanged() x 5
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QQuickItemPrivate::get(parent)->addItemChangeListener(listener, QQuickItemPrivate::ImplicitHeight);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), listeners.size());
     parent->setImplicitHeight(parent->implicitHeight() + 1);
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QCOMPARE(listener->count(QQuickItemPrivate::ImplicitHeight), 1);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), 0);
 
     // itemGeometryChanged() x 5
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QQuickItemPrivate::get(parent)->addItemChangeListener(listener, QQuickItemPrivate::Geometry);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), listeners.size());
     parent->setWidth(parent->width() + 1);
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QCOMPARE(listener->count(QQuickItemPrivate::Geometry), 1);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), 0);
 
     // itemChildRemoved() x 5
     child1->setParentItem(parent);
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QQuickItemPrivate::get(parent)->addItemChangeListener(listener, QQuickItemPrivate::Children);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), listeners.size());
     delete child1;
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QCOMPARE(listener->count(QQuickItemPrivate::Children), 2);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), 0);
 
     // itemDestroyed() x 5
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QQuickItemPrivate::get(parent)->addItemChangeListener(listener, QQuickItemPrivate::Destroyed);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), listeners.size());
     delete parent;
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : listeners)
         QCOMPARE(listener->count(QQuickItemPrivate::Destroyed), 1);
 }
 

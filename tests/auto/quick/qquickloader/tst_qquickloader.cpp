@@ -730,13 +730,13 @@ void tst_QQuickLoader::initialPropertyValues_data()
 void tst_QQuickLoader::initialPropertyValues()
 {
     QFETCH(QUrl, qmlFile);
-    QFETCH(QStringList, expectedWarnings);
+    QFETCH(const QStringList, expectedWarnings);
     QFETCH(QStringList, propertyNames);
     QFETCH(QVariantList, propertyValues);
 
     ThreadedTestHTTPServer server(dataDirectory());
 
-    for (const QString &warning : std::as_const(expectedWarnings))
+    for (const QString &warning : expectedWarnings)
         QTest::ignoreMessage(QtWarningMsg, QRegularExpression(warning.toLatin1().constData()));
 
     QQmlEngine engine;
@@ -795,9 +795,9 @@ void tst_QQuickLoader::initialPropertyValuesError_data()
 void tst_QQuickLoader::initialPropertyValuesError()
 {
     QFETCH(QUrl, qmlFile);
-    QFETCH(QStringList, expectedWarnings);
+    QFETCH(const QStringList, expectedWarnings);
 
-    for (const QString &warning : std::as_const(expectedWarnings))
+    for (const QString &warning : expectedWarnings)
         QTest::ignoreMessage(QtWarningMsg, warning.toUtf8().constData());
 
     QQmlEngine engine;
@@ -939,7 +939,7 @@ void tst_QQuickLoader::asynchronous_data()
 void tst_QQuickLoader::asynchronous()
 {
     QFETCH(QUrl, qmlFile);
-    QFETCH(QStringList, expectedWarnings);
+    QFETCH(const QStringList, expectedWarnings);
 
     QQmlEngine engine;
     QScopedPointer<PeriodicIncubationController> controller(new PeriodicIncubationController);
@@ -954,7 +954,7 @@ void tst_QQuickLoader::asynchronous()
     QQuickLoader *loader = root->findChild<QQuickLoader*>("loader");
     QVERIFY(loader);
 
-    for (const QString &warning : std::as_const(expectedWarnings))
+    for (const QString &warning : expectedWarnings)
         QTest::ignoreMessage(QtWarningMsg, warning.toUtf8().constData());
 
     QVERIFY(!loader->item());

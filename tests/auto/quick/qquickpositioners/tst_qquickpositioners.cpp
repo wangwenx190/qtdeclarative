@@ -3751,14 +3751,24 @@ void tst_qquickpositioners::test_conflictinganchors()
 
 void tst_qquickpositioners::test_mirroring()
 {
-    QList<QString> qmlFiles;
-    qmlFiles << "horizontal.qml" << "horizontal-padding.qml"
-             << "gridtest.qml" << "gridtest-padding.qml"
-             << "flowtest.qml" << "flowtest-padding.qml";
-    QList<QString> objectNames;
-    objectNames << "one" << "two" << "three" << "four" << "five";
+    const QString qmlFiles[] = {
+        "horizontal.qml",
+        "horizontal-padding.qml",
+        "gridtest.qml",
+        "gridtest-padding.qml",
+        "flowtest.qml",
+        "flowtest-padding.qml"
+    };
 
-    for (const QString &qmlFile : std::as_const(qmlFiles)) {
+    const QString objectNames[] = {
+        "one",
+        "two",
+        "three",
+        "four",
+        "five",
+    };
+
+    for (const QString &qmlFile : qmlFiles) {
         QScopedPointer<QQuickView> windowA(createView(testFile(qmlFile)));
         QQuickItem *rootA = qobject_cast<QQuickItem*>(windowA->rootObject());
 
@@ -3771,7 +3781,7 @@ void tst_qquickpositioners::test_mirroring()
         rootA->setProperty("testRightToLeft", true); // layoutDirection: Qt.RightToLeft
 
         // LTR != RTL
-        for (const QString &objectName : std::as_const(objectNames)) {
+        for (const QString &objectName : objectNames) {
             // horizontal.qml and horizontal-padding.qml only have three items
             if (qmlFile.startsWith(QString("horizontal")) && objectName == QString("four"))
                 break;
@@ -3786,7 +3796,7 @@ void tst_qquickpositioners::test_mirroring()
         inheritProp.write(true);
 
         // RTL == mirror
-        for (const QString &objectName : std::as_const(objectNames)) {
+        for (const QString &objectName : objectNames) {
             // horizontal.qml and horizontal-padding.qml only have three items
             if (qmlFile.startsWith(QString("horizontal")) && objectName == QString("four"))
                 break;
@@ -3807,7 +3817,7 @@ void tst_qquickpositioners::test_mirroring()
         rootB->setProperty("testRightToLeft", true); // layoutDirection: Qt.RightToLeft
 
         // LTR == RTL + mirror
-        for (const QString &objectName : std::as_const(objectNames)) {
+        for (const QString &objectName : objectNames) {
             // horizontal.qml and horizontal-padding.qml only have three items
             if (qmlFile.startsWith(QString("horizontal")) && objectName == QString("four"))
                 break;

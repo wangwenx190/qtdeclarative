@@ -27,6 +27,7 @@
 #include <QtGui/private/qguiapplication_p.h>
 #include <QtGui/qpa/qplatformintegration.h>
 
+using namespace Qt::StringLiterals;
 using namespace QQuickVisualTestUtils;
 
 class PerPixelRect : public QQuickItem
@@ -357,25 +358,26 @@ void tst_SceneGraph::render_data()
     QTest::addColumn<QList<Sample> >("baseStage");
     QTest::addColumn<QList<Sample> >("finalStage");
 
-    QList<QString> files;
-    files << "render_DrawSets.qml"
-          << "render_Overlap.qml"
-          << "render_MovingOverlap.qml"
-          << "render_BreakOpacityBatch.qml"
-          << "render_OutOfFloatRange.qml"
-          << "render_StackingOrder.qml"
-          << "render_ImageFiltering.qml"
-          << "render_bug37422.qml"
-          << "render_OpacityThroughBatchRoot.qml"
-          << "render_Mipmap.qml"
-          << "render_AlphaOverlapRebuild.qml";
+    const QString files[] = {
+        u"render_DrawSets.qml"_s,
+        u"render_Overlap.qml"_s,
+        u"render_MovingOverlap.qml"_s,
+        u"render_BreakOpacityBatch.qml"_s,
+        u"render_OutOfFloatRange.qml"_s,
+        u"render_StackingOrder.qml"_s,
+        u"render_ImageFiltering.qml"_s,
+        u"render_bug37422.qml"_s,
+        u"render_OpacityThroughBatchRoot.qml"_s,
+        u"render_Mipmap.qml"_s,
+        u"render_AlphaOverlapRebuild.qml"_s,
+    };
 
     QRegularExpression sampleCount("#samples: *(\\d+)");
     //                          X:int   Y:int   R:float       G:float       B:float       Error:float
     QRegularExpression baseSamples("#base: *(\\d+) *(\\d+) *(\\d\\.\\d+) *(\\d\\.\\d+) *(\\d\\.\\d+) *(\\d\\.\\d+)");
     QRegularExpression finalSamples("#final: *(\\d+) *(\\d+) *(\\d\\.\\d+) *(\\d\\.\\d+) *(\\d\\.\\d+) *(\\d\\.\\d+)");
 
-    for (QString fileName : std::as_const(files)) {
+    for (const QString &fileName : files) {
         QFile file(testFile(fileName));
         if (!file.open(QFile::ReadOnly)) {
             qFatal("render_data: QFile::open failed! file=%s, error=%s",

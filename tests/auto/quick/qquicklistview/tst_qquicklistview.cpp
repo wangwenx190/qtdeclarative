@@ -41,6 +41,7 @@ Q_DECLARE_METATYPE(Qt::Key)
 
 Q_LOGGING_CATEGORY(lcTests, "qt.quick.tests")
 
+using namespace Qt::StringLiterals;
 using namespace QQuickViewTestUtils;
 using namespace QQuickVisualTestUtils;
 
@@ -5063,22 +5064,25 @@ void tst_QQuickListView::test_mirroring()
     QTRY_VERIFY(listviewA != nullptr);
     qApp->processEvents();
 
-    QList<QString> objectNames;
-    objectNames << "item1" << "item2"; // << "item3"
+    const QString objectNames[] = {
+        u"item1"_s,
+        u"item2"_s,
+        // "item3"
+    };
 
     listviewA->setProperty("layoutDirection", Qt::LeftToRight);
     listviewB->setProperty("layoutDirection", Qt::RightToLeft);
     QCOMPARE(listviewA->layoutDirection(), listviewA->effectiveLayoutDirection());
 
     // LTR != RTL
-    for (const QString &objectName : std::as_const(objectNames))
+    for (const QString &objectName : objectNames)
         QVERIFY(findItem<QQuickItem>(listviewA, objectName)->x() != findItem<QQuickItem>(listviewB, objectName)->x());
 
     listviewA->setProperty("layoutDirection", Qt::LeftToRight);
     listviewB->setProperty("layoutDirection", Qt::LeftToRight);
 
     // LTR == LTR
-    for (const QString &objectName : std::as_const(objectNames))
+    for (const QString &objectName : objectNames)
         QCOMPARE(findItem<QQuickItem>(listviewA, objectName)->x(), findItem<QQuickItem>(listviewB, objectName)->x());
 
     QCOMPARE(listviewB->layoutDirection(), listviewB->effectiveLayoutDirection());
@@ -5086,25 +5090,25 @@ void tst_QQuickListView::test_mirroring()
     QVERIFY(listviewB->layoutDirection() != listviewB->effectiveLayoutDirection());
 
     // LTR != LTR+mirror
-    for (const QString &objectName : std::as_const(objectNames))
+    for (const QString &objectName : objectNames)
         QVERIFY(findItem<QQuickItem>(listviewA, objectName)->x() != findItem<QQuickItem>(listviewB, objectName)->x());
 
     listviewA->setProperty("layoutDirection", Qt::RightToLeft);
 
     // RTL == LTR+mirror
-    for (const QString &objectName : std::as_const(objectNames))
+    for (const QString &objectName : objectNames)
         QCOMPARE(findItem<QQuickItem>(listviewA, objectName)->x(), findItem<QQuickItem>(listviewB, objectName)->x());
 
     listviewB->setProperty("layoutDirection", Qt::RightToLeft);
 
     // RTL != RTL+mirror
-    for (const QString &objectName : std::as_const(objectNames))
+    for (const QString &objectName : objectNames)
         QVERIFY(findItem<QQuickItem>(listviewA, objectName)->x() != findItem<QQuickItem>(listviewB, objectName)->x());
 
     listviewA->setProperty("layoutDirection", Qt::LeftToRight);
 
     // LTR == RTL+mirror
-    for (const QString &objectName : std::as_const(objectNames))
+    for (const QString &objectName : objectNames)
         QCOMPARE(findItem<QQuickItem>(listviewA, objectName)->x(), findItem<QQuickItem>(listviewB, objectName)->x());
 }
 
@@ -8454,7 +8458,7 @@ void tst_QQuickListView::stickyPositioning()
 
     QFETCH(int, positionIndex);
     QFETCH(QQuickItemView::PositionMode, positionMode);
-    QFETCH(QList<QPointF>, movement);
+    QFETCH(const QList<QPointF>, movement);
 
     QFETCH(QPointF, headerPos);
     QFETCH(QPointF, footerPos);
@@ -8483,7 +8487,7 @@ void tst_QQuickListView::stickyPositioning()
 
     listview->positionViewAtIndex(positionIndex, positionMode);
 
-    for (const QPointF &offset : std::as_const(movement)) {
+    for (QPointF offset : movement) {
         listview->setContentX(listview->contentX() + offset.x());
         listview->setContentY(listview->contentY() + offset.y());
     }
