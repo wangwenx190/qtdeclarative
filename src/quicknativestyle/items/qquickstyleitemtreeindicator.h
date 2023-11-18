@@ -4,6 +4,10 @@
 #ifndef QQUICKSTYLEITEMTREEINDICATOR_H
 #define QQUICKSTYLEITEMTREEINDICATOR_H
 
+#if 0
+#pragma qt_sync_skip_header_check
+#endif
+
 #include "qquickstyleitem.h"
 #include <QtQuickTemplates2/private/qquicktreeviewdelegate_p.h>
 

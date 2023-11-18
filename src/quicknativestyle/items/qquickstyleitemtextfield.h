@@ -4,6 +4,10 @@
 #ifndef QQUICKSTYLEITEMTEXTFIELD_H
 #define QQUICKSTYLEITEMTEXTFIELD_H
 
+#if 0
+#pragma qt_sync_skip_header_check
+#endif
+
 #include "qquickstyleitem.h"
 #include <QtQuickTemplates2/private/qquicktextfield_p.h>
 

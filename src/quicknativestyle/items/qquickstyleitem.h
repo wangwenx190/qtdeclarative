@@ -4,6 +4,10 @@
 #ifndef QQUICKSTYLEITEM_H
 #define QQUICKSTYLEITEM_H
 
+#if 0
+#pragma qt_sync_skip_header_check
+#endif
+
 #include <QtCore/qdebug.h>
 #include <QtQml/qqml.h>
 #include <QtQml/qqmlinfo.h>

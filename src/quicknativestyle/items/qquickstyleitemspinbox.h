@@ -4,6 +4,10 @@
 #ifndef QQUICKSTYLEITEMSPINBOX_H
 #define QQUICKSTYLEITEMSPINBOX_H
 
+#if 0
+#pragma qt_sync_skip_header_check
+#endif
+
 #include "qquickstyleitem.h"
 #include <QtQuickTemplates2/private/qquickspinbox_p.h>
 

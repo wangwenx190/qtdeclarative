@@ -99,7 +99,7 @@ Q_SIGNALS:
 protected:
     QQmlComponent(QQmlComponentPrivate &dd, QObject* parent);
 
-#if QT_DEPRECATED_SINCE(6, 3)
+#if QT_DEPRECATED_SINCE(6, 3) && 0
     QT_DEPRECATED_X("Use the overload with proper arguments")
     Q_INVOKABLE void createObject(QQmlV4FunctionPtr);
 #endif

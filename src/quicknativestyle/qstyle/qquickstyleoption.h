@@ -4,6 +4,10 @@
 #ifndef QSTYLEOPTION_H
 #define QSTYLEOPTION_H
 
+#if 0
+#pragma qt_sync_skip_header_check
+#endif
+
 #include "qquickstyle.h"
 
 #include <QtCore/qlocale.h>

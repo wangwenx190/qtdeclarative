@@ -41,7 +41,7 @@ qt_internal_extend_target(LabsPlatform
         qquicklabsplatformsystemtrayicon.cpp qquicklabsplatformsystemtrayicon_p.h
 )
 
-if(TARGET Qt::Widgets)
+if(FALSE)
 
     qt_internal_extend_target(LabsPlatform
         SOURCES
