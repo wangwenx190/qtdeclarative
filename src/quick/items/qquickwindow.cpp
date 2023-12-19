@@ -1184,6 +1184,11 @@ QQuickWindow::~QQuickWindow()
         d->windowManager->windowDestroyed(this);
     }
 
+    disconnect(this, &QQuickWindow::focusObjectChanged, this, &QQuickWindow::activeFocusItemChanged);
+    disconnect(this, &QQuickWindow::screenChanged, this, &QQuickWindow::handleScreenChanged);
+    disconnect(qApp, &QGuiApplication::applicationStateChanged, this, &QQuickWindow::handleApplicationStateChanged);
+    disconnect(this, &QQuickWindow::frameSwapped, this, &QQuickWindow::runJobsAfterSwap);
+
     delete d->incubationController; d->incubationController = nullptr;
     QQuickRootItem *root = d->contentItem;
     d->contentItem = nullptr;
