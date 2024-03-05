@@ -1425,7 +1425,7 @@ bool QQuickWindow::event(QEvent *event)
             return false;
         {
             const bool wasAccepted = event->isAccepted();
-            QBoolBlocker windowEventDispatchGuard(d->windowEventDispatch, true);
+            QScopedValueRollback windowEventDispatchGuard(d->windowEventDispatch, true);
             qCDebug(lcPtr) << "dispatching to window functions in case of override" << event;
             QWindow::event(event);
             if (event->isAccepted() && !wasAccepted)

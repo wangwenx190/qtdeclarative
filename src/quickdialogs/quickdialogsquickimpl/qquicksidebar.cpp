@@ -231,7 +231,7 @@ void QQuickSideBarPrivate::repopulate()
     if (repopulating || !buttonDelegate || !separatorDelegate || !addFavoriteDelegate || !q->contentItem())
         return;
 
-    QBoolBlocker repopulateGuard(repopulating);
+    QScopedValueRollback repopulateGuard(repopulating, true);
 
     auto createButtonDelegate = [this, q](int index, const QString &folderPath, const QQuickIcon& icon) {
         const QString displayName = displayNameFromFolderPath(folderPath);
