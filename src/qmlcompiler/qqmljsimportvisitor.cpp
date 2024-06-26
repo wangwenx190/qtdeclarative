@@ -186,6 +186,7 @@ void QQmlJSImportVisitor::enterRootScope(QQmlJSScope::ScopeType type, const QStr
 {
     QQmlJSScope::reparent(m_currentScope, m_exportedRootScope);
     m_currentScope = m_exportedRootScope;
+    m_currentScope->setIsRootFileComponentFlag(true);
     populateCurrentScope(type, name, location);
 }
 
@@ -858,7 +859,8 @@ void QQmlJSImportVisitor::checkRequiredProperties()
     }
 
     for (const auto &defScope : m_objectDefinitionScopes) {
-        if (defScope->parentScope() == m_globalScope || defScope->isInlineComponent() || defScope->isComponentRootElement())
+        if (defScope->isFileRootComponent() || defScope->isInlineComponent()
+            || defScope->isComponentRootElement())
             continue;
 
         QVector<QQmlJSScope::ConstPtr> scopesToSearch;

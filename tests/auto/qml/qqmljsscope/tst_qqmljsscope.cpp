@@ -119,6 +119,7 @@ private Q_SLOTS:
     void methodAndSignalSourceLocation();
     void modulePrefixes();
     void javaScriptBuiltinFlag();
+    void isRoot();
 
 public:
     tst_qqmljsscope()
@@ -1043,6 +1044,21 @@ void tst_qqmljsscope::javaScriptBuiltinFlag()
     QVERIFY(typeResolver.mathObject()->isJavaScriptBuiltin()); // JS
     QVERIFY(!typeResolver.typeForName("ComponentType")->isJavaScriptBuiltin()); // QML
     QVERIFY(!typeResolver.varType()->isJavaScriptBuiltin()); // C++
+}
+
+void tst_qqmljsscope::isRoot()
+{
+    auto jsscope = run(u"isRoot.qml"_s, false);
+
+    QVERIFY(jsscope->isFileRootComponent());
+    QVERIFY(jsscope->property(u"isRoot"_s).isValid());
+
+    const auto children = jsscope->childScopes();
+    QCOMPARE(children.size(), 2);
+    for (const auto &child : children) {
+        QVERIFY(!child->isFileRootComponent());
+        QVERIFY(child->property(u"isNotRoot"_s).isValid());
+    }
 }
 
 QTEST_MAIN(tst_qqmljsscope)

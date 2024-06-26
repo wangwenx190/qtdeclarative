@@ -617,6 +617,14 @@ bool Element::inherits(const Element &element) const
     return QQmlJSScope::scope(*this)->inherits(QQmlJSScope::scope(element));
 }
 
+/*!
+    Returns whether this Element is the root component of its QML file.
+ */
+bool Element::isFileRootComponent() const
+{
+    return QQmlJSScope::scope(*this)->isFileRootComponent();
+}
+
 bool Element::isNull() const
 {
     return QQmlJSScope::scope(*this).isNull();

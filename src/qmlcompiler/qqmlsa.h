@@ -210,6 +210,7 @@ public:
     QString baseTypeName() const;
     Element parentScope() const;
     bool inherits(const Element &) const;
+    bool isFileRootComponent() const;
 
     bool isNull() const;
     QString internalId() const;

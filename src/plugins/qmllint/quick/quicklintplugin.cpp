@@ -117,9 +117,7 @@ void AttachedPropertyTypeValidatorPass::checkWarnings(const QQmlSA::Element &ele
 
         // If the scope is at the root level, we cannot know whether it will be used
         // as a delegate or not.
-        // ### TODO: add a method to check whether a scope is the global scope
-        // so that we do not need to use internalId
-        if (!scopeUsedIn.parentScope() || scopeUsedIn.parentScope().internalId() == u"global"_s)
+        if (scopeUsedIn.isFileRootComponent())
             return;
 
         for (const QQmlSA::Binding &binding :
