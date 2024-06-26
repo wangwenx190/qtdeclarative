@@ -1,0 +1,14 @@
+{
+    "name": "QtDesignStudio",
+    "author": "Qt",
+    "description": "Warns about restrictions for QDS support",
+    "version": "1.0",
+    "isInternal": true,
+    "loggingCategories": [
+        {
+            "name": "FunctionsNotSupportedInQmlUi",
+            "settingsName": "FunctionsNotSupportedInQmlUi",
+            "description": "Warn about unsupported function calls in ui.qml files"
+        }
+    ]
+}

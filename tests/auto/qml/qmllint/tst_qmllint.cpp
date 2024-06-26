@@ -126,6 +126,9 @@ private Q_SLOTS:
     void testPluginHelpCommandLine();
     void testPluginCommandLine();
     void quickPlugin();
+    void hasQdsPlugin();
+    void qdsPlugin_data();
+    void qdsPlugin();
 #endif
 
 #if QT_CONFIG(process)
@@ -2474,6 +2477,49 @@ void TestQmllint::quickPlugin()
                 }
             } });
     runTest("pluginQuick_propertyChangesInvalidTarget.qml", Result {}); // we don't care about the specific warnings
+}
+
+void TestQmllint::hasQdsPlugin()
+{
+    const auto &plugins = m_linter.plugins();
+
+    const bool pluginFound =
+            std::find_if(plugins.cbegin(), plugins.cend(),
+                         [](const auto &plugin) { return plugin.name() == "QtDesignStudio"; })
+            != plugins.cend();
+    QVERIFY(pluginFound);
+}
+
+void TestQmllint::qdsPlugin_data()
+{
+    QTest::addColumn<QString>("fileName");
+    QTest::addColumn<Result>("expectedResult");
+
+    QTest::addRow("WhiteListedFunctions")
+            << u"qdsPlugin/WhiteListedFunctions.ui.qml"_s << Result::clean();
+    QTest::addRow("WhiteListedFunctionsDate")
+            << u"qdsPlugin/WhiteListedFunctionsDate.ui.qml"_s << Result::clean();
+    {
+        const QString warning =
+                u"Arbitrary functions and function calls outside of a Connections object are not "
+                u"supported in a UI file (.ui.qml)"_s;
+
+        QTest::addRow("BlackListedFunctions") << u"qdsPlugin/BlackListedFunctions.ui.qml"_s
+                                              << Result{ {
+                                                         Message{ warning, 7, 9 },
+                                                         Message{ warning, 8, 14 },
+                                                         Message{ warning, 12, 38 },
+                                                         Message{ warning, 13, 35 },
+                                                 } };
+    }
+}
+
+void TestQmllint::qdsPlugin()
+{
+    QFETCH(QString, fileName);
+    QFETCH(Result, expectedResult);
+
+    runTest(fileName, expectedResult);
 }
 
 void TestQmllint::environment_data()
