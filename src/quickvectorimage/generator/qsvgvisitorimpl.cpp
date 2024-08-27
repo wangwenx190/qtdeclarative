@@ -1041,6 +1041,37 @@ void QSvgVisitorImpl::fillCommonNodeInfo(const QSvgNode *node, NodeInfo &info)
     info.opacity = !info.isDefaultOpacity ? node->style().opacity->opacity() : 1.0;
     info.isVisible = node->isVisible();
     info.isDisplayed = node->displayMode() != QSvgNode::DisplayMode::NoneMode;
+
+    const QList<QSvgAbstractAnimation *> animations = node->document()->animator()->animationsForNode(node);
+    for (const QSvgAbstractAnimation *animation : animations) {
+        const QList<QSvgAbstractAnimatedProperty *> properties = animation->properties();
+        for (const QSvgAbstractAnimatedProperty *property : properties) {
+            if (property->type() == QSvgAbstractAnimatedProperty::Color) {
+                const QSvgAnimatedPropertyColor *colorProperty = static_cast<const QSvgAnimatedPropertyColor *>(property);
+                const QList<qreal> keyFrames = colorProperty->keyFrames();
+
+                NodeInfo::AnimateColor animateColor;
+                animateColor.start = animation->start();
+                animateColor.fill = colorProperty->propertyName() == QStringLiteral("fill");
+                animateColor.repeatCount = animation->iterationCount();
+                animateColor.freeze = animation->animationType() == QSvgAbstractAnimation::SMIL
+                    ? static_cast<const QSvgAnimateNode *>(animation)->fill() == QSvgAnimateNode::Freeze
+                    : true;
+
+                const QList<QColor> colors = colorProperty->colors();
+                Q_ASSERT(colors.size() == keyFrames.size());
+
+                for (int i = 0; i < keyFrames.size(); ++i) {
+                    qreal timeCode = keyFrames.at(i) * animation->duration();
+                    QColor color = colors.at(i);
+                    animateColor.keyFrames.append(qMakePair(timeCode, color));
+                }
+
+                if (!animateColor.keyFrames.isEmpty())
+                    info.animateColors.append(animateColor);
+            }
+        }
+    }
 }
 
 void QSvgVisitorImpl::handleBaseNodeSetup(const QSvgNode *node)

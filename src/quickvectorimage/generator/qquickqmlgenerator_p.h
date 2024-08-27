@@ -16,6 +16,7 @@
 //
 
 #include "qquickgenerator_p.h"
+#include "qquicknodeinfo_p.h"
 
 #include <QtCore/qtextstream.h>
 #include <QtCore/qbuffer.h>
@@ -80,6 +81,7 @@ private:
     void generateGradient(const QGradient *grad);
     void generateTransform(const QTransform &xf);
     void generatePathContainer(const StructureNodeInfo &info);
+    void generateAnimateColor(const QString &targetName, const QString &propertyName, const NodeInfo::AnimateColor &animateColor, const QColor &resetColor);
 
     QStringView indent();
     enum StreamFlags { NoFlags = 0x0, SameLine = 0x1 };

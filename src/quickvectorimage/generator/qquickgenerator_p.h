@@ -39,6 +39,7 @@ struct PathNodeInfo;
 struct TextNodeInfo;
 struct UseNodeInfo;
 struct StructureNodeInfo;
+struct AnimateColorNodeInfo;
 
 class Q_QUICKVECTORIMAGEGENERATOR_EXPORT QQuickGenerator
 {

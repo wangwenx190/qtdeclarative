@@ -16,6 +16,8 @@
 //
 
 #include "qquickgenerator_p.h"
+#include "qquicknodeinfo_p.h"
+
 #include <QStack>
 
 QT_BEGIN_NAMESPACE
@@ -41,6 +43,7 @@ protected:
 private:
     void generateGradient(const QGradient *grad, QQuickShapePath *shapePath);
     void generatePathContainer(const StructureNodeInfo &info);
+    void generateAnimateColor(QObject *target, const QString &propertyName, const NodeInfo::AnimateColor &animateColor, const QColor &resetColor);
     QQuickItem *currentItem();
     void addCurrentItem(QQuickItem *item, const NodeInfo &info);
 

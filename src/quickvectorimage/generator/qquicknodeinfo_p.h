@@ -20,9 +20,6 @@
 #include <QPainterPath>
 #include <QMatrix4x4>
 #include <QQuickItem>
-#include <private/qquicktext_p.h>
-#include <private/qquicktranslate_p.h>
-#include <private/qquickimage_p.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -36,6 +33,15 @@ struct NodeInfo
     bool isDefaultOpacity;
     bool isVisible;
     bool isDisplayed; // TODO: Map to display enum in QtSvg
+
+    struct AnimateColor {
+        int start = 0;
+        int repeatCount = 0;
+        bool fill = false;
+        bool freeze = false;
+        QList<QPair<qreal, QColor> > keyFrames;
+    };
+    QList<AnimateColor> animateColors;
 };
 
 struct ImageNodeInfo : NodeInfo
@@ -90,6 +96,10 @@ struct TextNodeInfo : NodeInfo
     Qt::Alignment alignment;
     QColor fillColor;
     QColor strokeColor;
+};
+
+struct AnimateColorNodeInfo : NodeInfo
+{
 };
 
 enum class StructureNodeStage
