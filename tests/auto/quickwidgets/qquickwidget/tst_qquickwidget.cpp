@@ -32,6 +32,8 @@
 
 #include <QtQuickWidgets/QQuickWidget>
 
+using namespace Qt::StringLiterals;
+
 #if QT_CONFIG(graphicsview)
 # include <QtWidgets/QGraphicsView>
 # include <QtWidgets/QGraphicsProxyWidget>
@@ -152,6 +154,9 @@ private slots:
     void cleanupRhi();
     void dontRecreateRootElementOnWindowChange();
     void setInitialProperties();
+    void fromModuleCtor();
+    void loadFromModule_data();
+    void loadFromModule();
 
 private:
     QPointingDevice *device = QTest::createTouchDevice();
@@ -957,7 +962,7 @@ void tst_qquickwidget::resizeOverlay()
     auto contentVerticalLayout = new QVBoxLayout(&widget);
     contentVerticalLayout->setContentsMargins(0, 0, 0, 0);
 
-    qmlRegisterType<Overlay>("Test", 1, 0, "Overlay");
+    qmlRegisterType<Overlay>("TestModule", 1, 0, "Overlay");
 
     auto quickWidget = new QQuickWidget(testFileUrl("resizeOverlay.qml"), &widget);
     QCOMPARE(quickWidget->status(), QQuickWidget::Ready);
@@ -1293,6 +1298,50 @@ void tst_qquickwidget::setInitialProperties()
     QVERIFY(rootObject);
     QCOMPARE(rootObject->property("z").toInt(), 4);
     QCOMPARE(rootObject->property("width").toInt(), 100);
+}
+
+void tst_qquickwidget::fromModuleCtor()
+{
+    QQuickWidget widget("QtQuick", "Rectangle");
+    // creation is always synchronous for C++ defined types, so we don't need _TRY
+    QObject *rootObject = widget.rootObject();
+    QVERIFY(rootObject);
+    QCOMPARE(rootObject->metaObject()->className(), "QQuickRectangle");
+}
+
+void tst_qquickwidget::loadFromModule_data()
+{
+    QTest::addColumn<QString>("module");
+    QTest::addColumn<QString>("typeName");
+    QTest::addColumn<QUrl>("url");
+    QTest::addColumn<QQuickWidget::Status>("status");
+
+    QTest::addRow("Item") << u"QtQuick"_s << u"Item"_s << QUrl() << QQuickWidget::Ready;
+    QTest::addRow("composite") << u"test"_s << u"TestQml"_s << QUrl("qrc:/qt/qml/test/data/TestQml.qml") << QQuickWidget::Ready;
+    QTest::addRow("nonexistent") << u"missing"_s << u"Type"_s << QUrl() << QQuickWidget::Error;
+}
+
+void tst_qquickwidget::loadFromModule()
+{
+    QFETCH(QString, module);
+    QFETCH(QString, typeName);
+    QFETCH(QUrl, url);
+    QFETCH(QQuickWidget::Status, status);
+
+    QQuickWidget widget;
+    widget.loadFromModule(module, typeName);
+    QTRY_COMPARE(widget.status(), status);
+    QCOMPARE(widget.source(), url);
+    if (status == QQuickWidget::Ready) {
+        QPointer<QObject> rootObject = widget.rootObject();
+        QVERIFY(rootObject);
+        // loadFromModule sets the source and deletes
+        // any object that was previously created
+        widget.loadFromModule("QtTest", "SignalSpy");
+        QVERIFY(rootObject.isNull());
+        QCOMPARE(widget.status(), QQuickWidget::Ready);
+        QVERIFY(widget.source().toString().endsWith("SignalSpy.qml"));
+    }
 }
 
 QTEST_MAIN(tst_qquickwidget)

@@ -304,6 +304,20 @@ QQuickWidgetPrivate::QQuickWidgetPrivate()
 {
 }
 
+void QQuickWidgetPrivate::executeHelper()
+{
+    ensureEngine();
+
+    if (root) {
+        delete root;
+        root = nullptr;
+    }
+    if (component) {
+        delete component;
+        component = nullptr;
+    }
+}
+
 void QQuickWidgetPrivate::destroy()
 {
     Q_Q(QQuickWidget);
@@ -317,16 +331,8 @@ void QQuickWidgetPrivate::destroy()
 void QQuickWidgetPrivate::execute()
 {
     Q_Q(QQuickWidget);
-    ensureEngine();
+    executeHelper();
 
-    if (root) {
-        delete root;
-        root = nullptr;
-    }
-    if (component) {
-        delete component;
-        component = nullptr;
-    }
     if (!source.isEmpty()) {
         component = new QQmlComponent(engine.data(), source, q);
         if (!component->isLoading()) {
@@ -335,6 +341,20 @@ void QQuickWidgetPrivate::execute()
             QObject::connect(component, SIGNAL(statusChanged(QQmlComponent::Status)),
                              q, SLOT(continueExecute()));
         }
+    }
+}
+
+void QQuickWidgetPrivate::execute(QAnyStringView uri, QAnyStringView typeName)
+{
+    Q_Q(QQuickWidget);
+    executeHelper();
+
+    component = new QQmlComponent(engine.data(), uri, typeName, q);
+    if (!component->isLoading()) {
+        q->continueExecute();
+    } else {
+        QObject::connect(component, SIGNAL(statusChanged(QQmlComponent::Status)),
+                         q, SLOT(continueExecute()));
     }
 }
 
@@ -650,6 +670,19 @@ QQuickWidget::QQuickWidget(const QUrl &source, QWidget *parent)
 }
 
 /*!
+  \since 6.9
+  Constructs a QQuickWidget with the element specified by \a uri and \a typeName
+  and parent \a parent.
+  The default value of \a parent is \c{nullptr}.
+  \sa loadFromModule
+ */
+QQuickWidget::QQuickWidget(QAnyStringView uri, QAnyStringView typeName, QWidget *parent)
+    : QQuickWidget(parent)
+{
+    loadFromModule(uri, typeName);
+}
+
+/*!
   Constructs a QQuickWidget with the given QML \a engine as a child of \a parent.
 
   \note The QQuickWidget does not take ownership of the given \a engine object;
@@ -750,6 +783,26 @@ void QQuickWidget::setInitialProperties(const QVariantMap &initialProperties)
 {
     Q_D(QQuickWidget);
     d->initialProperties = initialProperties;
+}
+
+/*!
+    \since 6.9
+    Loads the QML component identified by \a uri and \a typeName. If the component
+    is backed by a QML file, \l{source} will be set accordingly. For types defined
+    in \c{C++}, \c{source} will be empty.
+
+    If any \l{source} was set before this method was called, it will be cleared.
+
+    Calling this method multiple times with the same \a uri and \a typeName will result
+    in the QML component being reinstantiated.
+
+    \sa setSource, QQmlComponent::loadFromModule, QQmlApplicationEngine::loadFromModule
+ */
+void QQuickWidget::loadFromModule(QAnyStringView uri, QAnyStringView typeName)
+{
+    Q_D(QQuickWidget);
+    d->source = {}; // clear URL
+    d->execute(uri, typeName);
 }
 
 /*!
@@ -1280,6 +1333,11 @@ void QQuickWidget::continueExecute()
         emit statusChanged(status());
         return;
     }
+
+    // If we used loadFromModule, we might not have a URL so far.
+    // Thus, query the component to retrieve the associated URL, if any
+    if (d->source.isEmpty())
+        d->source = d->component->url();
 
     if (d->setRootObject(obj.get()))
         Q_UNUSED(obj.release());

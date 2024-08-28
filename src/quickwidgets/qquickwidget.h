@@ -30,6 +30,7 @@ public:
     explicit QQuickWidget(QWidget *parent = nullptr);
     QQuickWidget(QQmlEngine* engine, QWidget *parent);
     explicit QQuickWidget(const QUrl &source, QWidget *parent = nullptr);
+    explicit QQuickWidget(QAnyStringView uri, QAnyStringView typeName, QWidget *parent = nullptr);
     ~QQuickWidget() override;
 
     QUrl source() const;
@@ -66,6 +67,7 @@ public Q_SLOTS:
     void setSource(const QUrl&);
     void setContent(const QUrl& url, QQmlComponent *component, QObject *item);
     void setInitialProperties(const QVariantMap &initialProperties);
+    void loadFromModule(QAnyStringView uri, QAnyStringView typeName);
 
 Q_SIGNALS:
     void statusChanged(QQuickWidget::Status);

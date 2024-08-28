@@ -49,8 +49,10 @@ public:
 
     QQuickWidgetPrivate();
 
+    void executeHelper();
     void destroy();
     void execute();
+    void execute(QAnyStringView uri, QAnyStringView typeName);
     void itemGeometryChanged(QQuickItem *item, QQuickGeometryChange change, const QRectF &oldGeometry) override;
     void initResize();
     void updateSize();
