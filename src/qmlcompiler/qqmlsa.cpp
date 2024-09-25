@@ -1224,23 +1224,23 @@ void PassManagerPrivate::analyze(const Element &root)
     }
 }
 
-void PassManagerPrivate::analyzeWrite(const Element &element, QString propertyName,
+void PassManagerPrivate::analyzeWrite(const Element &element, const QString &propertyName,
                                       const Element &value, const Element &writeScope,
-                                      QQmlSA::SourceLocation location)
+                                      const QQmlSA::SourceLocation &location)
 {
     for (PropertyPass *pass : findPropertyUsePasses(element, propertyName))
         pass->onWrite(element, propertyName, value, writeScope, location);
 }
 
-void PassManagerPrivate::analyzeRead(const Element &element, QString propertyName,
-                                     const Element &readScope, QQmlSA::SourceLocation location)
+void PassManagerPrivate::analyzeRead(const Element &element, const QString &propertyName,
+                                     const Element &readScope, const QQmlSA::SourceLocation &location)
 {
     for (PropertyPass *pass : findPropertyUsePasses(element, propertyName))
         pass->onRead(element, propertyName, readScope, location);
 }
 
 void PassManagerPrivate::analyzeBinding(const Element &element, const QQmlSA::Element &value,
-                                        QQmlSA::SourceLocation location)
+                                        const QQmlSA::SourceLocation &location)
 {
     const auto info = m_bindingsByLocation.find(location.offset());
 

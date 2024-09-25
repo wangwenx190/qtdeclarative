@@ -261,8 +261,9 @@ private:
     void generate_LoadQmlContextPropertyLookup_SAcheck(const QString &name);
     void generate_StoreNameCommon_SAcheck(const QQmlJSRegisterContent &in, const QString &name);
     void propagatePropertyLookup_SAcheck(const QString &propertyName);
-    void generate_StoreProperty_SAcheck(const QString propertyName, const QQmlJSRegisterContent &callBase);
-    void generate_callProperty_SAcheck(const QString propertyName, const QQmlJSScope::ConstPtr &baseType);
+    void generate_StoreProperty_SAcheck(const QString &propertyName, const QQmlJSRegisterContent &callBase);
+    void generate_callProperty_SAcheck(const QString &propertyName,
+                                       const QQmlJSScope::ConstPtr &callBase);
 
     void addError(const QString &message)
     {

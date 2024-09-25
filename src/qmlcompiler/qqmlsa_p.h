@@ -216,13 +216,13 @@ public:
     QSet<PropertyPass *> findPropertyUsePasses(const QQmlSA::Element &element,
                                                const QString &propertyName);
 
-    void analyzeWrite(const QQmlSA::Element &element, QString propertyName,
+    void analyzeWrite(const QQmlSA::Element &element, const QString &propertyName,
                       const QQmlSA::Element &value, const QQmlSA::Element &writeScope,
-                      QQmlSA::SourceLocation location);
-    void analyzeRead(const QQmlSA::Element &element, QString propertyName,
-                     const QQmlSA::Element &readScope, QQmlSA::SourceLocation location);
+                      const QQmlSA::SourceLocation &location);
+    void analyzeRead(const QQmlSA::Element &element, const QString &propertyName,
+                     const QQmlSA::Element &readScope, const QQmlSA::SourceLocation &location);
     void analyzeBinding(const QQmlSA::Element &element, const QQmlSA::Element &value,
-                        QQmlSA::SourceLocation location);
+                        const QQmlSA::SourceLocation &location);
 
     void addBindingSourceLocations(const QQmlSA::Element &element,
                                    const QQmlSA::Element &scope = QQmlSA::Element(),

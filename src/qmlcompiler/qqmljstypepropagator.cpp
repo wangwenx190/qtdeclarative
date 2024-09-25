@@ -1049,7 +1049,8 @@ void QQmlJSTypePropagator::generate_GetOptionalLookup(int index, int offset)
     propagatePropertyLookup(m_jsUnitGenerator->lookupName(index), index);
 }
 
-void QQmlJSTypePropagator::generate_StoreProperty_SAcheck(const QString propertyName, const QQmlJSRegisterContent &callBase)
+void QQmlJSTypePropagator::generate_StoreProperty_SAcheck(const QString &propertyName,
+                                                          const QQmlJSRegisterContent &callBase)
 {
     const bool isAttached = callBase.variant() == QQmlJSRegisterContent::Attachment;
 
@@ -1247,7 +1248,8 @@ void QQmlJSTypePropagator::generate_CallProperty_SCconsole(
     setAccumulator(m_typeResolver->returnType(methods[0], m_typeResolver->voidType(), console));
 }
 
-void QQmlJSTypePropagator::generate_callProperty_SAcheck(const QString propertyName, const QQmlJSScope::ConstPtr &baseType)
+void QQmlJSTypePropagator::generate_callProperty_SAcheck(const QString &propertyName,
+                                                         const QQmlJSScope::ConstPtr &baseType)
 {
     // TODO: Should there be an analyzeCall() in the future? (w. corresponding onCall in Pass)
     QQmlSA::PassManagerPrivate::get(m_passManager)
