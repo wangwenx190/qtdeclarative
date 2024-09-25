@@ -1239,6 +1239,13 @@ void PassManagerPrivate::analyzeRead(const Element &element, const QString &prop
         pass->onRead(element, propertyName, readScope, location);
 }
 
+void PassManagerPrivate::analyzeCall(const Element &element, const QString &propertyName,
+                                     const Element &readScope, const QQmlSA::SourceLocation &location)
+{
+    for (PropertyPass *pass : findPropertyUsePasses(element, propertyName))
+        pass->onCall(element, propertyName, readScope, location);
+}
+
 void PassManagerPrivate::analyzeBinding(const Element &element, const QQmlSA::Element &value,
                                         const QQmlSA::SourceLocation &location)
 {
@@ -1463,8 +1470,30 @@ void PropertyPass::onBinding(const Element &element, const QString &propertyName
 
     The property \a propertyName of \a element is read by an instruction within
     \a readScope defined at \a location.
+
+    This is also executed if the property \a propertyName is called as a function as that requires
+    the property to be read first.
  */
 void PropertyPass::onRead(const Element &element, const QString &propertyName,
+                          const Element &readScope, QQmlSA::SourceLocation location)
+{
+    Q_UNUSED(element);
+    Q_UNUSED(propertyName);
+    Q_UNUSED(readScope);
+    Q_UNUSED(location);
+}
+
+/*!
+    Executes whenever a property or method is called.
+
+    The property or method \a propertyName of \a element is called as a function by an instruction
+    within \a readScope defined at \a location.
+
+    \note Currently only direct calls of methods or properties are supported, indirect calls, for
+    example by storing a method into a JavaScript variable and then calling the variable, are not
+    recognized.
+ */
+void PropertyPass::onCall(const Element &element, const QString &propertyName,
                           const Element &readScope, QQmlSA::SourceLocation location)
 {
     Q_UNUSED(element);

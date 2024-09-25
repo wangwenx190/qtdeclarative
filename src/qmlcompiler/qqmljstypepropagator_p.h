@@ -264,6 +264,8 @@ private:
     void generate_StoreProperty_SAcheck(const QString &propertyName, const QQmlJSRegisterContent &callBase);
     void generate_callProperty_SAcheck(const QString &propertyName,
                                        const QQmlJSScope::ConstPtr &callBase);
+    void propagateCall_SAcheck(const QQmlJSMetaMethod &method,
+                               const QQmlJSScope::ConstPtr &baseType);
 
     void addError(const QString &message)
     {

@@ -349,6 +349,8 @@ public:
                            const QQmlSA::Element &value);
     virtual void onRead(const QQmlSA::Element &element, const QString &propertyName,
                         const QQmlSA::Element &readScope, QQmlSA::SourceLocation location);
+    virtual void onCall(const QQmlSA::Element &element, const QString &propertyName,
+                        const QQmlSA::Element &readScope, QQmlSA::SourceLocation location);
     virtual void onWrite(const QQmlSA::Element &element, const QString &propertyName,
                          const QQmlSA::Element &value, const QQmlSA::Element &writeScope,
                          QQmlSA::SourceLocation location);

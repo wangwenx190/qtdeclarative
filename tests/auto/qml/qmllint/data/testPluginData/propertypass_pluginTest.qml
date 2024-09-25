@@ -22,4 +22,20 @@ Item {
         Math.log(30);
         foo.x = 30; // Writing property from another component
     }
+
+    onXChanged: Math.abs(42)
+
+    function abs() {
+        return 6;
+    }
+    function abc() {
+        return abs();
+    }
+    function test() {
+       let now = abs
+       now();
+    }
+    function usingDates() {
+        let x = Date.now();
+    }
 }

@@ -1248,15 +1248,38 @@ void QQmlJSTypePropagator::generate_CallProperty_SCconsole(
     setAccumulator(m_typeResolver->returnType(methods[0], m_typeResolver->voidType(), console));
 }
 
+void QQmlJSTypePropagator::propagateCall_SAcheck(const QQmlJSMetaMethod &method,
+                                                 const QQmlJSScope::ConstPtr &baseType)
+{
+    Q_ASSERT(m_function);
+
+    const QQmlSA::Element saBaseType = QQmlJSScope::createQQmlSAElement(baseType);
+    const QQmlSA::SourceLocation saLocation{
+        QQmlSA::SourceLocationPrivate::createQQmlSASourceLocation(getCurrentSourceLocation())
+    };
+    const QQmlSA::Element saContainedType{ QQmlJSScope::createQQmlSAElement(
+            m_function->qmlScope.containedType()) };
+
+    QQmlSA::PassManagerPrivate::get(m_passManager)
+            ->analyzeCall(saBaseType, method.methodName(), saContainedType, saLocation);
+}
+
 void QQmlJSTypePropagator::generate_callProperty_SAcheck(const QString &propertyName,
                                                          const QQmlJSScope::ConstPtr &baseType)
 {
-    // TODO: Should there be an analyzeCall() in the future? (w. corresponding onCall in Pass)
+    Q_ASSERT(m_function);
+
+    const QQmlSA::Element saBaseType{ QQmlJSScope::createQQmlSAElement(baseType) };
+    const QQmlSA::Element saContainedType{ QQmlJSScope::createQQmlSAElement(
+            m_function->qmlScope.containedType()) };
+    const QQmlSA::SourceLocation saLocation{
+        QQmlSA::SourceLocationPrivate::createQQmlSASourceLocation(getCurrentSourceLocation())
+    };
+
     QQmlSA::PassManagerPrivate::get(m_passManager)
-            ->analyzeRead(QQmlJSScope::createQQmlSAElement(baseType), propertyName,
-                          QQmlJSScope::createQQmlSAElement(m_function->qmlScope.containedType()),
-                          QQmlSA::SourceLocationPrivate::createQQmlSASourceLocation(
-                                  getCurrentSourceLocation()));
+            ->analyzeRead(saBaseType, propertyName, saContainedType, saLocation);
+    QQmlSA::PassManagerPrivate::get(m_passManager)
+            ->analyzeCall(saBaseType, propertyName, saContainedType, saLocation);
 }
 
 void QQmlJSTypePropagator::generate_CallProperty(int nameIndex, int base, int argc, int argv)
@@ -1298,6 +1321,9 @@ void QQmlJSTypePropagator::generate_CallProperty(int nameIndex, int base, int ar
 
             setAccumulator(m_typeResolver->returnType(
                     method, m_typeResolver->jsValueType(), callBase));
+
+            if (m_passManager != nullptr)
+                generate_callProperty_SAcheck(propertyName, callBase.containedType());
             return;
         }
 
@@ -1326,9 +1352,6 @@ void QQmlJSTypePropagator::generate_CallProperty(int nameIndex, int base, int ar
     }
 
     checkDeprecated(baseType, propertyName, true);
-
-    if (m_passManager != nullptr)
-        generate_callProperty_SAcheck(propertyName, baseType);
 
     addReadRegister(base, callBase);
 
@@ -1520,6 +1543,9 @@ void QQmlJSTypePropagator::propagateCall(
         }
         return;
     }
+
+    if (m_passManager)
+        propagateCall_SAcheck(match, scope.containedType());
 
     const QQmlJSScope::ConstPtr returnType = match.isJavaScriptFunction()
             ? m_typeResolver->jsValueType()

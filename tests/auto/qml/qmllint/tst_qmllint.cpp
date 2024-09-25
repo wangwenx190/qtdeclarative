@@ -2286,6 +2286,17 @@ void TestQmllint::testPlugin_data()
                      Message{ u"Saw read on Item property x in scope Item"_s, 35, 46 },
                    },
                };
+    QTest::addRow("propertypass_pluginTest_call")
+            << testFile(u"testPluginData/propertypass_pluginTest.qml"_s)
+            << Result{
+                   {
+                        Message{ u"Saw call on ObjectPrototype property log in scope Item"_s, 21, 17 },
+                        Message{ u"Saw call on ObjectPrototype property log in scope Item"_s, 22, 14 },
+                        Message{ u"Saw call on ObjectPrototype property abs in scope Item"_s, 26, 22 },
+                        Message{ u"Saw call on Item property abs in scope Item"_s, 32, 16 },
+                        Message{ u"Saw call on  property now in scope Item"_s, 39, 22 }, // happening for Date.now()
+                   },
+               };
     QTest::addRow("controlsWithQuick_pluginTest")
             << testFile(u"testPluginData/controlsWithQuick_pluginTest.qml"_s)
             << Result{ { Message{ u"QtQuick.Controls, QtQuick and QtQuick.Window present"_s } } };
