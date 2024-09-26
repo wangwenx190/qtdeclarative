@@ -28,11 +28,11 @@ struct NodeInfo
     QString nodeId;
     QString typeName;
     QTransform transform;
-    qreal opacity;
-    bool isDefaultTransform;
-    bool isDefaultOpacity;
-    bool isVisible;
-    bool isDisplayed; // TODO: Map to display enum in QtSvg
+    qreal opacity = 1.0;
+    bool isDefaultTransform = true;
+    bool isDefaultOpacity = true;
+    bool isVisible = true;
+    bool isDisplayed = true; // TODO: Map to display enum in QtSvg
 
     struct AnimateColor {
         int start = 0;
@@ -116,11 +116,11 @@ struct UseNodeInfo : NodeInfo
 
 struct StructureNodeInfo : NodeInfo
 {
-    StructureNodeStage stage;
-    bool forceSeparatePaths;
+    StructureNodeStage stage = StructureNodeStage::Start;
+    bool forceSeparatePaths = false;
     QRectF viewBox;
     QSize size;
-    bool isPathContainer;
+    bool isPathContainer = false;
 };
 
 

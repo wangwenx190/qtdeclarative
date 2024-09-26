@@ -28,22 +28,34 @@ QQuickQmlGenerator::QQuickQmlGenerator(const QString fileName, QQuickVectorImage
 
 QQuickQmlGenerator::~QQuickQmlGenerator()
 {
-    if (m_generationSucceeded && !outputFileName.isEmpty()) {
+}
+
+bool QQuickQmlGenerator::save()
+{
+    bool res = true;
+    if (!outputFileName.isEmpty()) {
         QFileInfo fileInfo(outputFileName);
         QDir dir(fileInfo.absolutePath());
         if (!dir.exists() && !dir.mkpath(QStringLiteral("."))) {
             qCWarning(lcQuickVectorImage) << "Failed to create path" << dir.absolutePath();
+            res = false;
         } else {
             stream().flush(); // Add a final newline and flush the stream to m_result
             QFile outFile(outputFileName);
-            outFile.open(QIODevice::WriteOnly);
-            outFile.write(m_result.data());
-            outFile.close();
+            if (outFile.open(QIODevice::WriteOnly)) {
+                outFile.write(m_result.data());
+                outFile.close();
+            } else {
+                qCWarning(lcQuickVectorImage) << "Failed to write to file" << outFile.fileName();
+                res = false;
+            }
         }
     }
 
     if (lcQuickVectorImage().isDebugEnabled())
         qCDebug(lcQuickVectorImage).noquote() << m_result.data().left(300);
+
+    return res;
 }
 
 void QQuickQmlGenerator::setShapeTypeName(const QString &name)

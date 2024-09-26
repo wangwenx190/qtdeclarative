@@ -29,6 +29,8 @@ public:
     QQuickQmlGenerator(const QString fileName, QQuickVectorImageGenerator::GeneratorFlags flags, const QString &outFileName);
     ~QQuickQmlGenerator();
 
+    bool save();
+
     void setShapeTypeName(const QString &name);
     QString shapeTypeName() const;
 
