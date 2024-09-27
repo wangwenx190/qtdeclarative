@@ -27,15 +27,15 @@ public abstract class QtQuickViewContent
     /**
      * Implement this to return the library name that this component belongs to.
      **/
-    protected abstract String getLibraryName();
+    public abstract String getLibraryName();
     /**
      * Implement this to return the module name that this component belongs to.
      **/
-    protected abstract String getModuleName();
+    public abstract String getModuleName();
     /**
      * Implement this to return the qrc (Qt Resource) path of this QML component.
      **/
-    protected abstract String getFilePath();
+    public abstract String getFilePath();
 
     /**
      * Sets a StatusChangeListener to listen to status changes.

@@ -277,10 +277,9 @@ public class QtQuickView extends QtView {
     {
         m_statusChangeListener = listener;
 
-        if (m_hasQueuedStatus) {
-            QtNative.runAction(() -> { m_statusChangeListener.onStatusChanged(m_lastStatus); });
+        if (m_hasQueuedStatus)
+            sendStatusChanged(m_lastStatus);
             m_hasQueuedStatus = false;
-        }
     }
 
     private void handleStatusChange(int status)
@@ -292,11 +291,23 @@ public class QtQuickView extends QtView {
             e.printStackTrace();
         }
 
-        if (m_statusChangeListener != null)
-            QtNative.runAction(() -> {
-                m_statusChangeListener.onStatusChanged(QtQmlStatus.fromInt(status));
-            });
-        else
+        if (m_statusChangeListener == null)
             m_hasQueuedStatus = true;
+        else
+            sendStatusChanged(m_lastStatus);
+    }
+
+    private void sendStatusChanged(QtQmlStatus status)
+    {
+        QtNative.runAction(() -> {
+            if (m_statusChangeListener != null) {
+                QtQuickViewContent content = m_loadedComponent != null ?
+                    m_loadedComponent.get() : null;
+                if (content == null)
+                    m_statusChangeListener.onStatusChanged(status);
+                else
+                    m_statusChangeListener.onStatusChanged(status, content);
+            }
+        });
     }
 }
