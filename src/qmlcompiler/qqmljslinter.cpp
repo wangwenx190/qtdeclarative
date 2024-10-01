@@ -60,18 +60,13 @@ private:
     QQmlJSLogger *m_logger;
 };
 
-QString QQmlJSLinter::defaultPluginPath()
-{
-    return QLibraryInfo::path(QLibraryInfo::PluginsPath) + QDir::separator() + u"qmllint";
-}
-
-QQmlJSLinter::QQmlJSLinter(const QStringList &importPaths, const QStringList &pluginPaths,
+QQmlJSLinter::QQmlJSLinter(const QStringList &importPaths, const QStringList &extraPluginPaths,
                            bool useAbsolutePath)
     : m_useAbsolutePath(useAbsolutePath),
       m_enablePlugins(true),
       m_importer(importPaths, nullptr, UseOptionalImports)
 {
-    m_plugins = loadPlugins(pluginPaths);
+    m_plugins = loadPlugins(extraPluginPaths);
 }
 
 QQmlJSLinter::Plugin::Plugin(QQmlJSLinter::Plugin &&plugin) noexcept
@@ -208,7 +203,7 @@ bool QQmlJSLinter::Plugin::parseMetaData(const QJsonObject &metaData, QString pl
     return true;
 }
 
-std::vector<QQmlJSLinter::Plugin> QQmlJSLinter::loadPlugins(QStringList paths)
+std::vector<QQmlJSLinter::Plugin> QQmlJSLinter::loadPlugins(QStringList extraPluginPaths)
 {
     std::vector<Plugin> plugins;
 
@@ -230,6 +225,14 @@ std::vector<QQmlJSLinter::Plugin> QQmlJSLinter::loadPlugins(QStringList paths)
     }
 
 #if QT_CONFIG(library)
+    const QStringList paths = [&extraPluginPaths]() {
+        QStringList result{ extraPluginPaths };
+        const QStringList libraryPaths = QCoreApplication::libraryPaths();
+        for (const auto &path : libraryPaths) {
+            result.append(path + u"/qmllint"_s);
+        }
+        return result;
+    }();
     for (const QString &pluginDir : paths) {
         QDirIterator it{ pluginDir, QDir::Files };
 
@@ -255,7 +258,7 @@ std::vector<QQmlJSLinter::Plugin> QQmlJSLinter::loadPlugins(QStringList paths)
         }
     }
 #endif
-    Q_UNUSED(paths)
+    Q_UNUSED(extraPluginPaths)
     return plugins;
 }
 

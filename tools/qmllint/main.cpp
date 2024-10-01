@@ -284,7 +284,7 @@ All warnings can be set to three levels:
 
     bool success = true;
 
-    QStringList pluginPaths = { QQmlJSLinter::defaultPluginPath() };
+    QStringList pluginPaths;
 
     if (parser.isSet(pluginPathsOption))
         pluginPaths << parser.values(pluginPathsOption);
