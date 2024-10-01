@@ -98,4 +98,22 @@ void QQmlPrivate::AOTCompiledContext::initCallQmlContextPropertyLookup(uint inde
     engine->handle()->amendException();
 }
 
+bool QQmlPrivate::AOTCompiledContext::loadGlobalLookup(uint index, void *target, QMetaType type) const
+{
+    QV4::Lookup *lookup = compilationUnit->runtimeLookups + index;
+    if (!QV4::ExecutionEngine::metaTypeFromJS(
+                lookup->globalGetter(engine->handle()), type, target)) {
+        engine->handle()->throwTypeError();
+        return false;
+    }
+    return true;
+}
+
+void QQmlPrivate::AOTCompiledContext::initLoadGlobalLookup(uint index) const
+{
+    Q_UNUSED(index);
+    Q_ASSERT(engine->hasError());
+    engine->handle()->amendException();
+}
+
 #endif

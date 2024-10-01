@@ -712,8 +712,13 @@ namespace QQmlPrivate
         bool callGlobalLookup(uint index, void **args, const QMetaType *types, int argc) const;
         void initCallGlobalLookup(uint index) const;
 
+#if QT_QML_REMOVED_SINCE(6, 9)
         bool loadGlobalLookup(uint index, void *target, QMetaType type) const;
         void initLoadGlobalLookup(uint index) const;
+#endif
+
+        bool loadGlobalLookup(uint index, void *target) const;
+        void initLoadGlobalLookup(uint index, QMetaType type) const;
 
         bool loadScopeObjectPropertyLookup(uint index, void *target) const;
         bool writeBackScopeObjectPropertyLookup(uint index, void *source) const;

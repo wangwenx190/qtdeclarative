@@ -2246,21 +2246,29 @@ void AOTCompiledContext::initCallGlobalLookup(uint index) const
     engine->handle()->amendException();
 }
 
-bool AOTCompiledContext::loadGlobalLookup(uint index, void *target, QMetaType type) const
+bool AOTCompiledContext::loadGlobalLookup(uint index, void *target) const
 {
     QV4::Lookup *lookup = compilationUnit->runtimeLookups + index;
-    if (!QV4::ExecutionEngine::metaTypeFromJS(lookup->globalGetter(engine->handle()), type, target)) {
+    if (!lookup->protoLookup.metaType)
+        return false;
+    if (!QV4::ExecutionEngine::metaTypeFromJS(
+                lookup->globalGetter(engine->handle()),
+                QMetaType(lookup->protoLookup.metaType), target)) {
         engine->handle()->throwTypeError();
         return false;
     }
     return true;
 }
 
-void AOTCompiledContext::initLoadGlobalLookup(uint index) const
+void AOTCompiledContext::initLoadGlobalLookup(uint index, QMetaType type) const
 {
-    Q_UNUSED(index);
-    Q_ASSERT(engine->hasError());
-    engine->handle()->amendException();
+    if (engine->hasError()) {
+        engine->handle()->amendException();
+        return;
+    }
+
+    QV4::Lookup *lookup = compilationUnit->runtimeLookups + index;
+    lookup->protoLookup.metaType = type.iface();
 }
 
 bool AOTCompiledContext::loadScopeObjectPropertyLookup(uint index, void *target) const

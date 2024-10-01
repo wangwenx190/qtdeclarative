@@ -112,6 +112,7 @@ struct Q_QML_EXPORT Lookup {
             quintptr protoId;
             quintptr _unused;
             const Value *data;
+            const QtPrivate::QMetaTypeInterface *metaType;
         } protoLookup;
         struct {
             HeapObjectWrapper<Heap::InternalClass, 1> ic;

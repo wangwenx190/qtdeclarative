@@ -678,12 +678,14 @@ void QQmlJSCodeGenerator::generate_LoadGlobalLookup(int index)
 
     AccumulatorConverter registers(this);
 
-    const QString lookup = u"aotContext->loadGlobalLookup("_s + QString::number(index)
-            + u", &"_s + m_state.accumulatorVariableOut + u", "_s
-            + metaTypeFromType(m_state.accumulatorOut().storedType()) + u')';
+    const QString lookup = u"aotContext->loadGlobalLookup("_s + QString::number(index) + u", "_s
+            + contentPointer(m_state.accumulatorOut(), m_state.accumulatorVariableOut) + u')';
     const QString initialization = u"aotContext->initLoadGlobalLookup("_s
-            + QString::number(index) + u')';
-    generateLookup(lookup, initialization);
+            + QString::number(index) + u", "_s
+            + contentType(m_state.accumulatorOut(), m_state.accumulatorVariableOut) + u')';
+    const QString preparation = getLookupPreparation(
+            m_state.accumulatorOut(), m_state.accumulatorVariableOut, index);
+    generateLookup(lookup, initialization, preparation);
 }
 
 void QQmlJSCodeGenerator::generate_LoadQmlContextPropertyLookup(int index)
