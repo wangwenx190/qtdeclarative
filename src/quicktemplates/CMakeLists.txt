@@ -170,6 +170,7 @@ qt_internal_extend_target(QuickTemplates2 CONDITION QT_FEATURE_quick_tableview
         qquickheaderview_p_p.h
         qquickselectionrectangle.cpp qquickselectionrectangle_p.h
         qquickselectionrectangle_p_p.h
+        qquicktableviewdelegate.cpp qquicktableviewdelegate_p.h
 )
 
 qt_internal_extend_target(QuickTemplates2 CONDITION QT_FEATURE_quick_treeview

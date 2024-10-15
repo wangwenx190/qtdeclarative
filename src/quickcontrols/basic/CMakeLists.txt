@@ -74,6 +74,11 @@ if (QT_FEATURE_quicktemplates2_calendar)
         "WeekNumberColumn.qml"
     )
 endif()
+if (QT_FEATURE_quick_tableview)
+    list(APPEND qml_files
+        "TableViewDelegate.qml"
+    )
+endif()
 if (QT_FEATURE_quick_treeview)
     list(APPEND qml_files
         "TreeViewDelegate.qml"

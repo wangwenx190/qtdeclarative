@@ -61,7 +61,11 @@
 
     \snippet qml/tableview/cpp-tablemodel.h 0
 
-    And then how to use it from QML:
+    And then the \l TableViewDelegate automatically uses the model to set/get data
+    to/from the model. The \l TableViewDelegate uses the \l {Qt::ItemDataRole}{Qt::DisplayRole}
+    for display text and \l {Qt::ItemDataRole}{Qt::EditRole} for editing data in the model.
+
+    The following snippet shows how to use the model from QML in a custom delegate:
 
     \snippet qml/tableview/cpp-tablemodel.qml 0
 
@@ -71,6 +75,32 @@
     example), \l TableModel can be used:
 
     \snippet qml/tableview/qml-tablemodel.qml 0
+
+    As the \l TableViewDelegate uses the \l {Qt::ItemDataRole}{Qt::EditRole} to set
+    the data, it's necessary to specify the edit role in the \l TableModelColumn when
+    the delegate is \l TableViewDelegate:
+
+    \code
+    model: TableModel {
+        TableModelColumn { display: "name", edit: "name" }
+        TableModelColumn { display: "color", edit: "color" }
+
+        rows: [
+            {
+                "name": "cat",
+                "color": "black"
+            },
+            {
+                "name": "dog",
+                "color": "brown"
+            },
+            {
+                "name": "bird",
+                "color": "white"
+            }
+        ]
+     }
+    \endcode
 
     \section1 Reusing items
 
@@ -233,7 +263,8 @@
     be allowed to select individual cells, rows, or columns.
 
     To find out whether a delegate is selected or current, declare the
-    following properties:
+    following properties (unless the delegate is a \l TableViewDelegate,
+    in which case the properties have are already been added):
 
     \code
     delegate: Item {
@@ -278,8 +309,11 @@
     You can also disable keyboard navigation fully (in case you want to implement your
     own key handlers) by setting \l keyNavigationEnabled to \c false.
 
+    \note By default, the \l TableViewDelegate renders the current and selected cells,
+    so there is no need to add these properties.
+
     The following example demonstrates how you can use keyboard navigation together
-    with \c current and \c selected properties:
+    with \c current and \c selected properties in a custom delegate:
 
     \snippet qml/tableview/keyboard-navigation.qml 0
 
@@ -451,8 +485,16 @@
 /*!
     \qmlproperty Component QtQuick::TableView::delegate
 
-    The delegate provides a template defining each cell item instantiated by the
-    view. The model index is exposed as an accessible \c index property. The same
+    The delegate provides a template defining each cell item instantiated by the view.
+    It can be any custom component, but it's recommended to use \l {TableViewDelegate},
+    as it styled according to the application style, and offers out-of-the-box functionality.
+
+    To use \l TableViewDelegate, simply set it as the delegate:
+    \code
+    delegate: TableViewDelegate { }
+    \endcode
+
+    The model index is exposed as an accessible \c index property. The same
     applies to \c row and \c column. Properties of the model are also available
     depending upon the type of \l {qml-data-models}{Data Model}.
 
@@ -461,9 +503,10 @@
     information. Explicit width or height settings are ignored and overwritten.
 
     Inside the delegate, you can optionally add one or more of the following
-    properties. TableView modifies the values of these properties to inform the
-    delegate which state it's in. This can be used by the delegate to render
-    itself differently according on its own state.
+    properties (unless the delegate is a \l TableViewDelegate, in which case
+    the properties have already been added). TableView modifies the values
+    of these properties to inform the delegate which state it's in. This can be
+    used by the delegate to render itself differently according on its own state.
 
     \list
     \li required property bool current - \c true if the delegate is \l {Keyboard navigation}{current.}
@@ -474,7 +517,7 @@
     VerticalHeaderView. (since Qt 6.8)
     \endlist
 
-    The following example shows how to use these properties:
+    The following example shows how to use these properties in a custom delegate:
     \code
     delegate: Rectangle {
         required property bool current
@@ -488,7 +531,8 @@
     They are also reused if the \l reuseItems property is set to \c true. You
     should therefore avoid storing state information in the delegates.
 
-    \sa {Row heights and column widths}, {Reusing items}, {Required Properties}
+    \sa {Row heights and column widths}, {Reusing items}, {Required Properties},
+    {TableViewDelegate}, {Customizing TableViewDelegate}
 */
 
 /*!
@@ -1496,7 +1540,7 @@
     inside the \l {TableView::delegate}{TableView delegate.}. The latter can be done
     by defining a property \c {required property bool editing} inside it, that you
     bind to the \l {QQuickItem::}{visible} property of some of the child items.
-    The following snippet shows how to do that:
+    The following snippet shows how to do that in a custom delegate:
 
     \snippet qml/tableview/editdelegate.qml 1
 
@@ -1504,7 +1548,21 @@
     on it. If you want active focus to be set on a child of the edit delegate instead, let
     the edit delegate be a \l FocusScope.
 
-    \sa editTriggers, TableView::commit, edit(), closeEditor(), {Editing cells}
+    By default, \l TableViewDelegate provides an \l {TableView::editDelegate}{edit delegate},
+    and you can also set your own:
+
+    \code
+    delegate: TableViewDelegate {
+        TableView.editDelegate: TextField {
+            width: parent.width
+            height: parent.height
+            text: display
+            TableView.onCommit: display = text
+        }
+    }
+    \endcode
+
+    \sa editTriggers, TableView::commit, edit(), closeEditor(), {Editing cells}, TableViewDelegate
 */
 
 QT_BEGIN_NAMESPACE
@@ -1516,6 +1574,7 @@ Q_LOGGING_CATEGORY(lcTableViewDelegateLifecycle, "qt.quick.tableview.lifecycle")
 
 static const Qt::Edge allTableEdges[] = { Qt::LeftEdge, Qt::RightEdge, Qt::TopEdge, Qt::BottomEdge };
 
+static const char* kRequiredProperty_tableView = "tableView";
 static const char* kRequiredProperties = "_qt_tableview_requiredpropertymask";
 static const char* kRequiredProperty_selected = "selected";
 static const char* kRequiredProperty_current = "current";
@@ -4365,6 +4424,8 @@ void QQuickTableViewPrivate::initItemCallback(int modelIndex, QObject *object)
     const QPoint visualCell = QPoint(visualColumnIndex(cell.x()), visualRowIndex(cell.y()));
     const bool current = currentInSelectionModel(visualCell);
     const bool selected = selectedInSelectionModel(visualCell);
+
+    setRequiredProperty(kRequiredProperty_tableView, QVariant::fromValue(q), modelIndex, item, true);
     setRequiredProperty(kRequiredProperty_current, QVariant::fromValue(current), modelIndex, object, true);
     setRequiredProperty(kRequiredProperty_selected, QVariant::fromValue(selected), modelIndex, object, true);
     setRequiredProperty(kRequiredProperty_editing, QVariant::fromValue(false), modelIndex, item, true);
@@ -4384,10 +4445,14 @@ void QQuickTableViewPrivate::itemPooledCallback(int modelIndex, QObject *object)
 
 void QQuickTableViewPrivate::itemReusedCallback(int modelIndex, QObject *object)
 {
+    Q_Q(QQuickTableView);
+
     const QPoint cell = cellAtModelIndex(modelIndex);
     const QPoint visualCell = QPoint(visualColumnIndex(cell.x()), visualRowIndex(cell.y()));
     const bool current = currentInSelectionModel(visualCell);
     const bool selected = selectedInSelectionModel(visualCell);
+
+    setRequiredProperty(kRequiredProperty_tableView, QVariant::fromValue(q), modelIndex, object, false);
     setRequiredProperty(kRequiredProperty_current, QVariant::fromValue(current), modelIndex, object, false);
     setRequiredProperty(kRequiredProperty_selected, QVariant::fromValue(selected), modelIndex, object, false);
     // Note: the edit item will never be reused, so no reason to set kRequiredProperty_editing
