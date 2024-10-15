@@ -2512,6 +2512,16 @@ void TestQmllint::qdsPlugin_data()
                                                          Message{ warning, 13, 35 },
                                                  } };
     }
+
+    QTest::addRow("UnsupportedBindings")
+            << u"qdsPlugin/UnsupportedBindings.ui.qml"_s
+            << Result{ {
+                       Message{ u"Referencing the parent of the root item is not supported in a UI file (.ui.qml)"_s, 4, 25 },
+               } };
+
+    QTest::addRow("SupportedBindings")
+            << u"qdsPlugin/SupportedBindings.ui.qml"_s
+            << Result::clean();
 }
 
 void TestQmllint::qdsPlugin()

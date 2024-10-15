@@ -17,6 +17,9 @@ using namespace QQmlSA;
 static constexpr LoggerWarningId ErrFunctionsNotSupportedInQmlUi{
     "QtDesignStudio.FunctionsNotSupportedInQmlUi"
 };
+static constexpr LoggerWarningId WarnReferenceToParentItemNotSupportedByVisualDesigner{
+    "QtDesignStudio.ReferenceToParentItemNotSupportedByVisualDesigner"
+};
 
 class FunctionCallValidator : public PropertyPass
 {
@@ -27,12 +30,40 @@ public:
                 SourceLocation location) override;
 };
 
+class QdsBindingValidator : public PropertyPass
+{
+public:
+    QdsBindingValidator(PassManager *manager, const Element &)
+        : PropertyPass(manager), m_statesType(resolveType("QtQuick", "State"))
+    {
+    }
+
+    void onRead(const QQmlSA::Element &element, const QString &propertyName,
+                const QQmlSA::Element &readScope, QQmlSA::SourceLocation location) override;
+
+private:
+    Element m_statesType;
+};
+
+void QdsBindingValidator::onRead(const QQmlSA::Element &element, const QString &propertyName,
+                                 const QQmlSA::Element &readScope, QQmlSA::SourceLocation location)
+{
+    Q_UNUSED(readScope);
+
+    if (element.isFileRootComponent() && propertyName == u"parent") {
+        emitWarning("Referencing the parent of the root item is not supported in a UI file (.ui.qml)",
+                    WarnReferenceToParentItemNotSupportedByVisualDesigner, location);
+    }
+}
+
 void QmlLintQdsPlugin::registerPasses(PassManager *manager, const Element &rootElement)
 {
     if (!rootElement.filePath().endsWith(u".ui.qml"))
         return;
 
     manager->registerPropertyPass(std::make_shared<FunctionCallValidator>(manager),
+                                  QAnyStringView(), QAnyStringView());
+    manager->registerPropertyPass(std::make_shared<QdsBindingValidator>(manager, rootElement),
                                   QAnyStringView(), QAnyStringView());
 }
 
