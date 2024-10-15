@@ -58,6 +58,7 @@ const QQmlSA::LoggerWarningId qmlInvalidLintDirective{ "invalid-lint-directive" 
 const QQmlSA::LoggerWarningId qmlUseProperFunction{ "use-proper-function" };
 const QQmlSA::LoggerWarningId qmlAccessSingleton{ "access-singleton-via-object" };
 const QQmlSA::LoggerWarningId qmlTopLevelComponent{ "top-level-component" };
+const QQmlSA::LoggerWarningId qmlTranslationFunctionMismatch{ "translation-function-mismatch"};
 const QQmlSA::LoggerWarningId qmlUncreatableType{ "uncreatable-type" };
 const QQmlSA::LoggerWarningId qmlMissingEnumEntry{ "missing-enum-entry" };
 
@@ -121,6 +122,11 @@ const QList<QQmlJS::LoggerCategory> &QQmlJSLogger::defaultCategories()
         QQmlJS::LoggerCategory{ qmlIncompatibleType.name().toString(),
                                 QStringLiteral("IncompatibleType"),
                                 QStringLiteral("Warn about missing types"), QtWarningMsg },
+        QQmlJS::LoggerCategory{ qmlTranslationFunctionMismatch.name().toString(),
+                                QStringLiteral("TranslationFunctionMismatch"),
+                                QStringLiteral("Warn about usages of ID and non-ID translation "
+                                               "functions in the same file."),
+                                QtWarningMsg },
         QQmlJS::LoggerCategory{ qmlMissingProperty.name().toString(),
                                 QStringLiteral("MissingProperty"),
                                 QStringLiteral("Warn about missing properties"), QtWarningMsg },

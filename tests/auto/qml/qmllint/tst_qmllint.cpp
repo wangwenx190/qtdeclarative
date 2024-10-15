@@ -1195,6 +1195,20 @@ expression: \${expr} \${expr} \\\${expr} \\\${expr}`)",
                        { uR"("D" was not found for the type of parameter "d" in method "i".)"_s, 7, 17 },
                        { uR"("G" was not found for the type of parameter "g" in method "i".)"_s, 7, 26 },
                }};
+
+    {
+        const QString warning = u"Do not mix translation functions"_s;
+        QTest::addRow("BadTranslationMix") << testFile(u"translations/BadMix.qml"_s)
+                                           << Result{ {
+                                                      Message{ warning, 5, 49 },
+                                                      Message{ warning, 6, 56 },
+                                              } };
+        QTest::addRow("BadTranslationMixWithMacros")
+                << testFile(u"translations/BadMixWithMacros.qml"_s)
+                << Result{ {
+                           Message{ warning, 5, 29 },
+                   } };
+    }
 }
 
 void TestQmllint::dirtyQmlCode()
@@ -1213,6 +1227,9 @@ void TestQmllint::dirtyQmlCode()
     QEXPECT_FAIL("bad tranlsation binding (qsTr)", "We currently do not check translation binding",
                  Abort);
 
+    QEXPECT_FAIL("BadTranslationMixWithMacros",
+                 "Translation macros are currently invisible to QQmlJSTypePropagator", Abort);
+
     callQmllint(filename, result.flags.testFlag(Result::ExitsNormally), &warnings, {}, {}, {},
                 UseDefaultImports, nullptr, result.flags.testFlag(Result::Flag::AutoFixable));
 
@@ -1223,6 +1240,9 @@ void TestQmllint::dirtyQmlCode()
                              "We're currently not able to verify any non-trivial QString "
                              "conversion that "
                              "requires QQmlStringConverters",
+                             Abort);
+                QEXPECT_FAIL("BadTranslationMixWithMacros",
+                             "Translation macros are currently invisible to QQmlJSTypePropagator",
                              Abort);
             },
             [] {
@@ -1395,6 +1415,11 @@ void TestQmllint::cleanQmlCode_data()
 #endif
     QTest::newRow("thisObject") << QStringLiteral("thisObject.qml");
     QTest::newRow("aliasGroup") << QStringLiteral("aliasGroup.qml");
+
+    QTest::addRow("ValidTranslations") << u"translations/qsTranslateTranslation.qml"_s;
+    QTest::addRow("ValidTranslations2") << u"translations/qsTrTranslation.qml"_s;
+    QTest::addRow("ValidTranslations3") << u"translations/qsTrIdTranslation.qml"_s;
+    QTest::addRow("ValidTranslations4") << u"translations/Good.qml"_s;
 }
 
 void TestQmllint::cleanQmlCode()

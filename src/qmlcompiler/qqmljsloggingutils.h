@@ -74,6 +74,7 @@ extern const Q_QMLCOMPILER_EXPORT QQmlSA::LoggerWarningId qmlInvalidLintDirectiv
 extern const Q_QMLCOMPILER_EXPORT QQmlSA::LoggerWarningId qmlUseProperFunction;
 extern const Q_QMLCOMPILER_EXPORT QQmlSA::LoggerWarningId qmlAccessSingleton;
 extern const Q_QMLCOMPILER_EXPORT QQmlSA::LoggerWarningId qmlTopLevelComponent;
+extern const Q_QMLCOMPILER_EXPORT QQmlSA::LoggerWarningId qmlTranslationFunctionMismatch;
 extern const Q_QMLCOMPILER_EXPORT QQmlSA::LoggerWarningId qmlUncreatableType;
 extern const Q_QMLCOMPILER_EXPORT QQmlSA::LoggerWarningId qmlMissingEnumEntry;
 

@@ -46,6 +46,7 @@ qt_internal_add_module(QmlCompiler
         qqmlsaconstants.h
         qqmlsasourcelocation.cpp qqmlsasourcelocation.h qqmlsasourcelocation_p.h
         qresourcerelocater.cpp qresourcerelocater_p.h
+        qqmljstranslationfunctionmismatchcheck_p.h qqmljstranslationfunctionmismatchcheck.cpp
     NO_UNITY_BUILD_SOURCES
         qqmljsoptimizations.cpp
     PUBLIC_LIBRARIES
