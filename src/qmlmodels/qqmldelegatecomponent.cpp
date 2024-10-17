@@ -9,7 +9,8 @@ QT_BEGIN_NAMESPACE
 /*!
     \qmltype DelegateChoice
 //!    \nativetype QQmlDelegateChoice
-    \inqmlmodule Qt.labs.qmlmodels
+    \inqmlmodule QtQml.Models
+    \since 6.9
     \brief Encapsulates a delegate and when to use it.
 
     The DelegateChoice type wraps a delegate and defines the circumstances
@@ -21,7 +22,7 @@ QT_BEGIN_NAMESPACE
 */
 
 /*!
-    \qmlproperty variant Qt.labs.qmlmodels::DelegateChoice::roleValue
+    \qmlproperty variant QtQml.Models::DelegateChoice::roleValue
     This property holds the value used to match the role data for the role provided by \l DelegateChooser::role.
 */
 QVariant QQmlDelegateChoice::roleValue() const
@@ -39,7 +40,7 @@ void QQmlDelegateChoice::setRoleValue(const QVariant &value)
 }
 
 /*!
-    \qmlproperty int Qt.labs.qmlmodels::DelegateChoice::row
+    \qmlproperty int QtQml.Models::DelegateChoice::row
     This property holds the value used to match the row value of model elements.
     With models that have only the index property (and thus only one column), this property
     should be intended as an index, and set to the desired index value.
@@ -51,7 +52,7 @@ void QQmlDelegateChoice::setRoleValue(const QVariant &value)
 */
 
 /*!
-    \qmlproperty int Qt.labs.qmlmodels::DelegateChoice::index
+    \qmlproperty int QtQml.Models::DelegateChoice::index
     This property holds the value used to match the index value of model elements.
     This is effectively an alias for \l row.
 
@@ -73,7 +74,7 @@ void QQmlDelegateChoice::setRow(int r)
 }
 
 /*!
-    \qmlproperty int Qt.labs.qmlmodels::DelegateChoice::column
+    \qmlproperty int QtQml.Models::DelegateChoice::column
     This property holds the value used to match the column value of model elements.
 */
 int QQmlDelegateChoice::column() const
@@ -96,7 +97,7 @@ QQmlComponent *QQmlDelegateChoice::delegate() const
 }
 
 /*!
-    \qmlproperty Component Qt.labs.qmlmodels::DelegateChoice::delegate
+    \qmlproperty Component QtQml.Models::DelegateChoice::delegate
     This property holds the delegate to use if this choice matches the model item.
 */
 void QQmlDelegateChoice::setDelegate(QQmlComponent *delegate)
@@ -138,7 +139,8 @@ bool QQmlDelegateChoice::match(int row, int column, const QVariant &value) const
 /*!
     \qmltype DelegateChooser
 //!    \nativetype QQmlDelegateChooser
-    \inqmlmodule Qt.labs.qmlmodels
+    \inqmlmodule QtQml.Models
+    \since 6.9
     \brief Allows a view to use different delegates for different types of items in the model.
 
     The DelegateChooser is a special \l Component type intended for those scenarios where a
@@ -154,9 +156,9 @@ bool QQmlDelegateChoice::match(int row, int column, const QVariant &value) const
    delegate with each setting:
 
     \qml
+    import QtQml.Models
     import QtQuick
     import QtQuick.Controls
-    import Qt.labs.qmlmodels
 
     ListView {
         width: 200; height: 400
@@ -190,7 +192,7 @@ bool QQmlDelegateChoice::match(int row, int column, const QVariant &value) const
 */
 
 /*!
-    \qmlproperty string Qt.labs.qmlmodels::DelegateChooser::role
+    \qmlproperty string QtQml.Models::DelegateChooser::role
     This property holds the role or the property name used to determine the delegate for a given model item.
 
     \note For \l{QAbstractItemModel} based models, including \l{ListModel}, the DelegateChooser will
@@ -208,7 +210,7 @@ void QQmlDelegateChooser::setRole(const QString &role)
 }
 
 /*!
-    \qmlproperty list<DelegateChoice> Qt.labs.qmlmodels::DelegateChooser::choices
+    \qmlproperty list<DelegateChoice> QtQml.Models::DelegateChooser::choices
     \qmldefault
 
     The list of DelegateChoices for the chooser.

@@ -4,7 +4,7 @@
 #ifndef QQMLDELEGATECOMPONENT_P_H
 #define QQMLDELEGATECOMPONENT_P_H
 
-#include "qqmlmodelsglobal_p.h"
+#include <private/qtqmlmodelsglobal_p.h>
 
 //
 //  W A R N I N G
@@ -25,7 +25,7 @@ QT_REQUIRE_CONFIG(qml_delegate_model);
 
 QT_BEGIN_NAMESPACE
 
-class Q_LABSQMLMODELS_EXPORT QQmlDelegateChoice : public QObject
+class Q_QMLMODELS_EXPORT QQmlDelegateChoice : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QVariant roleValue READ roleValue WRITE setRoleValue NOTIFY roleValueChanged FINAL)
@@ -35,7 +35,7 @@ class Q_LABSQMLMODELS_EXPORT QQmlDelegateChoice : public QObject
     Q_PROPERTY(QQmlComponent* delegate READ delegate WRITE setDelegate NOTIFY delegateChanged FINAL)
     Q_CLASSINFO("DefaultProperty", "delegate")
     QML_NAMED_ELEMENT(DelegateChoice)
-    QML_ADDED_IN_VERSION(1, 0)
+    QML_ADDED_IN_VERSION(6, 9)
 
 public:
     QVariant roleValue() const;
@@ -67,14 +67,14 @@ private:
     QQmlComponent *m_delegate = nullptr;
 };
 
-class Q_LABSQMLMODELS_EXPORT QQmlDelegateChooser : public QQmlAbstractDelegateComponent
+class Q_QMLMODELS_EXPORT QQmlDelegateChooser : public QQmlAbstractDelegateComponent
 {
     Q_OBJECT
     Q_PROPERTY(QString role READ role WRITE setRole NOTIFY roleChanged FINAL)
     Q_PROPERTY(QQmlListProperty<QQmlDelegateChoice> choices READ choices CONSTANT FINAL)
     Q_CLASSINFO("DefaultProperty", "choices")
     QML_NAMED_ELEMENT(DelegateChooser)
-    QML_ADDED_IN_VERSION(1, 0)
+    QML_ADDED_IN_VERSION(6, 9)
 
 public:
     QString role() const final { return m_role; }
