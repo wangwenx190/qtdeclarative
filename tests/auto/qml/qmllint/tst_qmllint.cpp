@@ -2297,6 +2297,24 @@ void TestQmllint::testPlugin_data()
                         Message{ u"Saw call on  property now in scope Item"_s, 39, 22 }, // happening for Date.now()
                    },
                };
+    QTest::addRow("propertypass_pluginTest_translations")
+            << testFile(u"testPluginData/translations_pluginTest.qml"_s)
+            << Result{
+                   {
+                        // translations
+                        Message{ u"Saw call on ObjectPrototype property qsTr in scope Item"_s, 4, 34 },
+
+                        // should actually be qsTranslate, but better qsTr than nothing!
+                        // see also test "propertypass_pluginTest_qsTranslateEdgeCase" below
+                        Message{ u"Saw call on ObjectPrototype property qsTr in scope Item"_s, 5, 35 },
+
+                        Message{ u"Saw call on ObjectPrototype property qsTrId in scope Item"_s, 6, 36 },
+                        Message{ u"Saw call on ObjectPrototype property qsTr in scope Item"_s, 7, 46 },
+                        Message{ u"Saw call on ObjectPrototype property qsTranslate in scope Item"_s, 8, 47 },
+                        Message{ u"Saw call on ObjectPrototype property qsTrId in scope Item"_s, 9, 48 },
+                   },
+               };
+
     QTest::addRow("controlsWithQuick_pluginTest")
             << testFile(u"testPluginData/controlsWithQuick_pluginTest.qml"_s)
             << Result{ { Message{ u"QtQuick.Controls, QtQuick and QtQuick.Window present"_s } } };

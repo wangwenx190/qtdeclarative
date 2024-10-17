@@ -1570,6 +1570,16 @@ void QQmlJSTypePropagator::propagateCall(
     m_state.setHasSideEffects(true);
 }
 
+void QQmlJSTypePropagator::propagateTranslationMethod_SAcheck(const QString &methodName)
+{
+    QQmlSA::PassManagerPrivate::get(m_passManager)
+    ->analyzeCall(QQmlJSScope::createQQmlSAElement(m_typeResolver->jsGlobalObject()),
+                  methodName,
+                  QQmlJSScope::createQQmlSAElement(m_function->qmlScope.containedType()),
+                  QQmlSA::SourceLocationPrivate::createQQmlSASourceLocation(
+                          getCurrentNonEmptySourceLocation()));
+}
+
 bool QQmlJSTypePropagator::propagateTranslationMethod(
         const QList<QQmlJSMetaMethod> &methods, int argc, int argv)
 {
@@ -1597,6 +1607,9 @@ bool QQmlJSTypePropagator::propagateTranslationMethod(
             addReadRegister(argv + 1, stringType); // sourceText
             addReadRegister(argv, stringType);     // context
             setAccumulator(returnType);
+
+            if (m_passManager)
+                propagateTranslationMethod_SAcheck(method.methodName());
             return true;
         default:
             return false;
@@ -1612,6 +1625,9 @@ bool QQmlJSTypePropagator::propagateTranslationMethod(
             addReadRegister(argv + 1, stringType); // sourceText
             addReadRegister(argv, stringType);     // context
             setAccumulator(returnType);
+
+            if (m_passManager)
+                propagateTranslationMethod_SAcheck(method.methodName());
             return true;
         default:
             return false;
@@ -1629,6 +1645,9 @@ bool QQmlJSTypePropagator::propagateTranslationMethod(
         case 1:
             addReadRegister(argv, stringType);     // sourceText
             setAccumulator(returnType);
+
+            if (m_passManager)
+                propagateTranslationMethod_SAcheck(method.methodName());
             return true;
         default:
             return false;
@@ -1643,6 +1662,9 @@ bool QQmlJSTypePropagator::propagateTranslationMethod(
         case 1:
             addReadRegister(argv, stringType);     // sourceText
             setAccumulator(returnType);
+
+            if (m_passManager)
+                propagateTranslationMethod_SAcheck(method.methodName());
             return true;
         default:
             return false;
@@ -1657,6 +1679,9 @@ bool QQmlJSTypePropagator::propagateTranslationMethod(
         case 1:
             addReadRegister(argv, stringType);     // id
             setAccumulator(returnType);
+
+            if (m_passManager)
+                propagateTranslationMethod_SAcheck(method.methodName());
             return true;
         default:
             return false;
@@ -1668,6 +1693,9 @@ bool QQmlJSTypePropagator::propagateTranslationMethod(
         case 1:
             addReadRegister(argv, stringType);     // id
             setAccumulator(returnType);
+
+            if (m_passManager)
+                propagateTranslationMethod_SAcheck(method.methodName());
             return true;
         default:
             return false;

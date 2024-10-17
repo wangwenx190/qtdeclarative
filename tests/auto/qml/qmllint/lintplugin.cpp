@@ -140,6 +140,9 @@ void LintPlugin::registerPasses(QQmlSA::PassManager *manager, const QQmlSA::Elem
     manager->registerPropertyPass(std::make_unique<PropertyTest>(manager), "", "", "log");
     manager->registerPropertyPass(std::make_unique<PropertyTest>(manager), "", "", "abs");
     manager->registerPropertyPass(std::make_unique<PropertyTest>(manager), "", "", "now");
+    manager->registerPropertyPass(std::make_unique<PropertyTest>(manager), "", "", "qsTr");
+    manager->registerPropertyPass(std::make_unique<PropertyTest>(manager), "", "", "qsTrId");
+    manager->registerPropertyPass(std::make_unique<PropertyTest>(manager), "", "", "qsTranslate");
     manager->registerPropertyPass(std::make_unique<PropertyTest>(manager), "QtQuick", "ListView");
     manager->registerPropertyPass(std::make_unique<PropertyTest>(manager), "QtQuick", "$internal$.QQuickEnterKeyAttached", "");
 

@@ -217,6 +217,7 @@ private:
     void propagateCall(
             const QList<QQmlJSMetaMethod> &methods, int argc, int argv,
             const QQmlJSRegisterContent &scope);
+    void propagateTranslationMethod_SAcheck(const QString &methodName);
     bool propagateTranslationMethod(const QList<QQmlJSMetaMethod> &methods, int argc, int argv);
     void propagateStringArgCall(const QQmlJSRegisterContent &base, int argv);
     bool propagateArrayMethod(const QString &name, int argc, int argv, const QQmlJSRegisterContent &valueType);

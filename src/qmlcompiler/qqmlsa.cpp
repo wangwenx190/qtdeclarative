@@ -1171,19 +1171,30 @@ void PassManagerPrivate::addBindingSourceLocations(const Element &element, const
         case QQmlSA::BindingType::GroupProperty:
             addBindingSourceLocations(element, Element{ binding.groupType() },
                                       prefix + binding.propertyName() + u'.');
-            break;
+            continue; // don't insert into m_bindingsByLocation
         case QQmlSA::BindingType::AttachedProperty:
             addBindingSourceLocations(element, Element{ binding.attachingType() },
                                       prefix + binding.propertyName() + u'.', true);
+            continue; // don't insert into m_bindingsByLocation
+        case QQmlSA::BindingType::Translation: {
+            analyzeCall(QQmlJSScope::createQQmlSAElement(m_typeResolver->jsGlobalObject()),
+                        u"qsTr"_s, element, binding.sourceLocation());
             break;
-        default:
-            m_bindingsByLocation.insert({ binding.sourceLocation().offset(),
-                                          BindingInfo{ prefix + binding.propertyName(), binding,
-                                                       currentScope, isAttached } });
-
-            if (binding.bindingType() != QQmlSA::BindingType::Script)
-                analyzeBinding(element, QQmlSA::Element(), binding.sourceLocation());
         }
+        case QQmlSA::BindingType::TranslationById: {
+            analyzeCall(QQmlJSScope::createQQmlSAElement(m_typeResolver->jsGlobalObject()),
+                        u"qsTrId"_s, element, binding.sourceLocation());
+            break;
+        }
+        default:
+            break;
+        }
+
+        m_bindingsByLocation.insert({ binding.sourceLocation().offset(),
+                                      BindingInfo{ prefix + binding.propertyName(), binding,
+                                                   currentScope, isAttached } });
+        if (binding.bindingType() != QQmlSA::BindingType::Script)
+            analyzeBinding(element, QQmlSA::Element(), binding.sourceLocation());
     }
 }
 
