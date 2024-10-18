@@ -118,6 +118,8 @@ private Q_SLOTS:
     void testPlugin_data();
     void testPlugin();
     void testPluginOnSettings();
+    void testPluginHelpCommandLine();
+    void testPluginCommandLine();
     void quickPlugin();
 #endif
 
@@ -2309,6 +2311,42 @@ void TestQmllint::testPluginOnSettings()
     // Verify that none of the passes do anything when they're not supposed to
     QVERIFY(runQmllint("settings/plugin/elemenpass_pluginSettingTest.qml", true, QStringList(),
                        false).isEmpty());
+}
+
+void TestQmllint::testPluginHelpCommandLine()
+{
+    auto qmllintOutput = [this](const QString& filename, const QStringList& args) {
+        QString output;
+        QString errorOutput;
+        runQmllint(
+                filename,
+                [&](QProcess &process) {
+                    QVERIFY(process.waitForFinished());
+                    QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+                    QCOMPARE(process.exitCode(), 0);
+                    output = process.readAllStandardOutput();
+                    errorOutput = process.readAllStandardError();
+                },
+                args);
+        return QPair<QString, QString>{ output, errorOutput };
+    };
+    {
+        // make sure plugin warnings are documented by --help
+        const auto [helpText, error] = qmllintOutput(u"testPluginData/nothing_pluginTest.qml"_s,
+                                                     QStringList{ u"--help"_s });
+        QVERIFY(helpText.contains(u"--Quick.property-changes-parsed"_s));
+    }
+}
+
+void TestQmllint::testPluginCommandLine()
+{
+    // make sure plugin warnings are accepted as options
+    const QString warnings =
+            runQmllint(testFile(u"testPluginData/nothing_pluginTest.qml"_s), true,
+                       QStringList{ u"--Quick.property-changes-parsed"_s, u"disable"_s });
+    // should not contain a warning about --Quick.property-changes-parsed being an unknown option
+    // and no warnings
+    QVERIFY(warnings.isEmpty());
 }
 
 // TODO: Eventually tests for (real) plugins need to be moved into a separate file
