@@ -220,7 +220,7 @@ std::vector<QQmlJSLinter::Plugin> QQmlJSLinter::loadPlugins(QStringList paths)
 
 #if QT_CONFIG(library)
     for (const QString &pluginDir : paths) {
-        QDirIterator it { pluginDir };
+        QDirIterator it{ pluginDir, QDir::Files };
 
         while (it.hasNext()) {
             auto potentialPlugin = it.next();
