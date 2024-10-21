@@ -240,12 +240,12 @@ bool QQmlJSImportVisitor::isTypeResolved(const QQmlJSScope::ConstPtr &type)
     return isTypeResolved(type, handleUnresolvedType);
 }
 
-static bool mayBeUnresolvedGeneralizedGroupedProperty(const QQmlJSScope::ConstPtr &scope)
+static bool mayBeUnresolvedGroupedProperty(const QQmlJSScope::ConstPtr &scope)
 {
     return scope->scopeType() == QQmlSA::ScopeType::GroupedPropertyScope && !scope->baseType();
 }
 
-void QQmlJSImportVisitor::resolveAliasesAndIds()
+void QQmlJSImportVisitor::resolveAliases()
 {
     QQueue<QQmlJSScope::Ptr> objects;
     objects.enqueue(m_exportedRootScope);
@@ -335,20 +335,8 @@ void QQmlJSImportVisitor::resolveAliasesAndIds()
         }
 
         const auto childScopes = object->childScopes();
-        for (const auto &childScope : childScopes) {
-            if (mayBeUnresolvedGeneralizedGroupedProperty(childScope)) {
-                const QString name = childScope->internalName();
-                if (object->isNameDeferred(name)) {
-                    const QQmlJSScope::ConstPtr deferred = m_scopesById.scope(name, childScope);
-                    if (!deferred.isNull()) {
-                        QQmlJSScope::resolveGeneralizedGroup(
-                                childScope, deferred, m_rootScopeImports.contextualTypes(),
-                                &m_usedTypes);
-                    }
-                }
-            }
+        for (const auto &childScope : childScopes)
             objects.enqueue(childScope);
-        }
 
         if (doRequeue)
             requeue.enqueue(object);
@@ -368,6 +356,35 @@ void QQmlJSImportVisitor::resolveAliasesAndIds()
             m_logger->log(QStringLiteral("Alias \"%1\" is part of an alias cycle")
                                   .arg(property.propertyName()),
                           qmlAliasCycle, property.sourceLocation());
+        }
+    }
+}
+
+void QQmlJSImportVisitor::resolveGroupProperties()
+{
+    QQueue<QQmlJSScope::Ptr> objects;
+    objects.enqueue(m_exportedRootScope);
+
+    while (!objects.isEmpty()) {
+        const QQmlJSScope::Ptr object = objects.dequeue();
+        const auto childScopes = object->childScopes();
+        for (const auto &childScope : childScopes) {
+            if (mayBeUnresolvedGroupedProperty(childScope)) {
+                const QString name = childScope->internalName();
+                if (object->isNameDeferred(name)) {
+                    const QQmlJSScope::ConstPtr deferred = m_scopesById.scope(name, childScope);
+                    if (!deferred.isNull()) {
+                        QQmlJSScope::resolveGroup(
+                                childScope, deferred, m_rootScopeImports.contextualTypes(),
+                                &m_usedTypes);
+                    }
+                } else if (const QQmlJSScope::ConstPtr propType = object->property(name).type()) {
+                    QQmlJSScope::resolveGroup(
+                            childScope, propType, m_rootScopeImports.contextualTypes(),
+                            &m_usedTypes);
+                }
+            }
+            objects.enqueue(childScope);
         }
     }
 }
@@ -462,7 +479,8 @@ void QQmlJSImportVisitor::endVisit(UiProgram *)
         checkDeprecation(scope);
     }
 
-    resolveAliasesAndIds();
+    resolveAliases();
+    resolveGroupProperties();
 
     for (const auto &scope : m_objectDefinitionScopes)
         checkGroupedAndAttachedScopes(scope);
