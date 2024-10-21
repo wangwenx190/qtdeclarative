@@ -8,6 +8,7 @@
 #include <QtQuickTestUtils/private/qmlutils_p.h>
 #include <QtQmlCompiler/private/qqmljslinter_p.h>
 #include <QtQmlCompiler/private/qqmlsa_p.h>
+#include <QtQmlToolingSettings/private/qqmltoolingsettings_p.h>
 #include <QtCore/qplugin.h>
 #include <QtCore/qcomparehelpers.h>
 
@@ -31,11 +32,21 @@ public:
 
     struct Result
     {
-        enum Flag { ExitsNormally = 0x1, NoMessages = 0x2, AutoFixable = 0x4, HasDuplicates = 0x8 };
+        enum Flag {
+            ExitsNormally = 0x1,
+            NoMessages = 0x2,
+            AutoFixable = 0x4,
+            HasDuplicates = 0x8,
+            UseSettings = 0x10
+        };
 
         Q_DECLARE_FLAGS(Flags, Flag)
 
         static Result clean() { return Result { {}, {}, {}, { NoMessages, ExitsNormally } }; }
+        static Result cleanWithSettings()
+        {
+            return Result{ {}, {}, {}, { NoMessages, ExitsNormally, UseSettings } };
+        }
 
         QList<Message> expectedMessages = {};
         QList<Message> badMessages = {};
@@ -117,7 +128,6 @@ private Q_SLOTS:
     void hasTestPlugin();
     void testPlugin_data();
     void testPlugin();
-    void testPluginOnSettings();
     void testPluginHelpCommandLine();
     void testPluginCommandLine();
     void quickPlugin();
@@ -157,7 +167,7 @@ private:
                      QStringList resources = {},
                      DefaultImportOption defaultImports = UseDefaultImports,
                      QList<QQmlJS::LoggerCategory> *categories = nullptr, bool autoFixable = false,
-                     LintType type = LintFile);
+                     LintType type = LintFile, bool readSettings = false);
 
     void searchWarnings(const QJsonArray &warnings, const QString &string,
                         QtMsgType type = QtWarningMsg, quint32 line = 0, quint32 column = 0,
@@ -188,6 +198,7 @@ private:
 
     QStringList m_defaultImportPaths;
     QQmlJSLinter m_linter;
+    QList<QQmlJS::LoggerCategory> m_categories;
 };
 
 Q_DECLARE_METATYPE(TestQmllint::Result)
@@ -196,8 +207,9 @@ TestQmllint::TestQmllint()
     : QQmlDataTest(QT_QMLTEST_DATADIR),
       m_defaultImportPaths({ QLibraryInfo::path(QLibraryInfo::QmlImportsPath), dataDirectory() }),
       m_linter(m_defaultImportPaths)
-
 {
+    for (const QQmlJSLinter::Plugin &plugin : m_linter.plugins())
+        m_categories.append(plugin.categories());
 }
 
 void TestQmllint::initTestCase()
@@ -1692,7 +1704,7 @@ void TestQmllint::callQmllint(const QString &fileToLint, bool shouldSucceed, QJs
                               QStringList importPaths, QStringList qmldirFiles,
                               QStringList resources, DefaultImportOption defaultImports,
                               QList<QQmlJS::LoggerCategory> *categories, bool autoFixable,
-                              LintType type)
+                              LintType type, bool readSettings)
 {
     QJsonArray jsonOutput;
 
@@ -1705,8 +1717,15 @@ void TestQmllint::callQmllint(const QString &fileToLint, bool shouldSucceed, QJs
             ? m_defaultImportPaths + importPaths
             : importPaths;
     if (type == LintFile) {
-        const QList<QQmlJS::LoggerCategory> resolvedCategories =
-                categories != nullptr ? *categories : QQmlJSLogger::defaultCategories();
+        QList<QQmlJS::LoggerCategory> resolvedCategories =
+                categories != nullptr ? *categories : m_categories;
+
+        if (readSettings) {
+            QQmlToolingSettings settings(QLatin1String("qmllint"));
+            if (settings.search(lintedFile))
+                QQmlJS::LoggingUtils::updateLogLevels(resolvedCategories, settings, nullptr);
+        }
+
         lintResult = m_linter.lintFile(
                     lintedFile, nullptr, true, &jsonOutput, resolvedImportPaths, qmldirFiles,
                     resources, resolvedCategories);
@@ -1774,7 +1793,8 @@ void TestQmllint::runTest(const QString &testFile, const Result &result, QString
     QJsonArray warnings;
     callQmllint(testFile, result.flags.testFlag(Result::Flag::ExitsNormally), &warnings, importDirs,
                 qmltypesFiles, resources, defaultImports, categories,
-                result.flags.testFlag(Result::Flag::AutoFixable));
+                result.flags.testFlag(Result::Flag::AutoFixable), LintFile,
+                result.flags.testFlag(Result::Flag::UseSettings));
     checkResult(warnings, result);
 }
 
@@ -2343,6 +2363,13 @@ void TestQmllint::testPlugin_data()
     // Verify that none of the passes do anything when they're not supposed to
     QTest::addRow("nothing_pluginTest")
             << testFile(u"testPluginData/nothing_pluginTest.qml"_s) << Result::clean();
+    QTest::addRow("settings_pluginTest")
+            << testFile(u"settings/plugin/elementpass_pluginTest.qml"_s) << Result::cleanWithSettings();
+    QTest::addRow("old_settings_pluginTest")
+            << testFile(u"settings/pluginOld/elementpass_pluginTest.qml"_s) << Result::cleanWithSettings();
+    QTest::addRow("nosettings_pluginTest")
+            << testFile(u"settings/plugin/elementpass_pluginTest.qml"_s)
+            << Result{ { Message{ u"ElementTest OK"_s } }, {}, {} };
 }
 
 void TestQmllint::testPlugin()
@@ -2353,20 +2380,13 @@ void TestQmllint::testPlugin()
     runTest(fileName, expectedErrors);
 }
 
-void TestQmllint::testPluginOnSettings()
-{
-    // Verify that none of the passes do anything when they're not supposed to
-    QVERIFY(runQmllint("settings/plugin/elemenpass_pluginSettingTest.qml", true, QStringList(),
-                       false).isEmpty());
-}
-
 void TestQmllint::testPluginHelpCommandLine()
 {
     auto qmllintOutput = [this](const QString& filename, const QStringList& args) {
         QString output;
         QString errorOutput;
         runQmllint(
-                filename,
+                testFile(filename),
                 [&](QProcess &process) {
                     QVERIFY(process.waitForFinished());
                     QCOMPARE(process.exitStatus(), QProcess::NormalExit);

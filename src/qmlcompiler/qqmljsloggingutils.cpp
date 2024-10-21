@@ -154,6 +154,38 @@ QString levelToString(const QQmlJS::LoggerCategory &category)
     }
 };
 
+static QStringList settingsNamesForCategory(const LoggerCategory &category)
+{
+    const QString name = category.settingsName();
+    const QStringList result{ QStringLiteral("Warnings/") += name,
+                              QStringLiteral("Warnings/") += name.sliced(name.indexOf(u'.') + 1) };
+    return result;
+}
+
+static QString levelValueForCategory(const LoggerCategory &category,
+                                     const QQmlToolingSettings &settings,
+                                     QCommandLineParser *parser)
+{
+    const QString key = category.id().name().toString();
+    if (parser && parser->isSet(key))
+        return parser->value(key);
+
+    const QStringList settingsName = settingsNamesForCategory(category);
+    for (const QString &settingsName : settingsName) {
+        if (!settings.isSet(settingsName))
+            continue;
+        const QString value = settings.value(settingsName).toString();
+
+        // Do not try to set the levels if it's due to a default config option.
+        // This way we can tell which options have actually been overwritten by the user.
+        if (levelToString(category) == value)
+            return QString();
+
+        return value;
+    }
+    return QString();
+}
+
 bool applyLevelToCategory(const QStringView level, LoggerCategory &category)
 {
     if (level == "disable"_L1) {
@@ -188,20 +220,7 @@ void updateLogLevels(QList<LoggerCategory> &categories,
         if (category.isDefault())
             continue;
 
-        const QString value = [&] () {
-            const QString key = category.id().name().toString();
-            if (parser && parser->isSet(key))
-                return parser->value(key);
-
-            // Do not try to set the levels if it's due to a default config option.
-            // This way we can tell which options have actually been overwritten by the user.
-            const QString settingsName = QStringLiteral("Warnings/") + category.settingsName();
-            const QString value = settings.value(settingsName).toString();
-            if (levelToString(category) == value)
-                return QString();
-
-            return value;
-        }();
+        const QString value = levelValueForCategory(category, settings, parser);
         if (value.isEmpty())
             continue;
 
