@@ -154,6 +154,26 @@ QString levelToString(const QQmlJS::LoggerCategory &category)
     }
 };
 
+bool applyLevelToCategory(const QStringView level, LoggerCategory &category)
+{
+    if (level == "disable"_L1) {
+        category.setLevel(QtCriticalMsg);
+        category.setIgnored(true);
+        return true;
+    }
+    if (level == "info"_L1) {
+        category.setLevel(QtInfoMsg);
+        category.setIgnored(false);
+        return true;
+    }
+    if (level == "warning"_L1) {
+        category.setLevel(QtWarningMsg);
+        category.setIgnored(false);
+        return true;
+    }
+    return false;
+};
+
 /*!
 \internal
 Sets the category levels from a settings file and an optional parser.
@@ -185,16 +205,7 @@ void updateLogLevels(QList<LoggerCategory> &categories,
         if (value.isEmpty())
             continue;
 
-        if (value == "disable"_L1) {
-            category.setLevel(QtCriticalMsg);
-            category.setIgnored(true);
-        } else if (value == "info"_L1) {
-            category.setLevel(QtInfoMsg);
-            category.setIgnored(false);
-        } else if (value == "warning"_L1) {
-            category.setLevel(QtWarningMsg);
-            category.setIgnored(false);
-        } else {
+        if (!applyLevelToCategory(value, category)) {
             qWarning() << "Invalid logging level" << value << "provided for"
                        << category.id().name().toString()
                        << "(allowed are: disable, info, warning)";

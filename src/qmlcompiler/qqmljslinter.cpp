@@ -192,6 +192,16 @@ bool QQmlJSLinter::Plugin::parseMetaData(const QJsonObject &metaData, QString pl
         m_categories << QQmlJS::LoggerCategory{ categoryId, settingsName,
                                                 object["description"_L1].toString(), QtWarningMsg,
                                                 ignored };
+        const auto itLevel = object.find("defaultLevel"_L1);
+        if (itLevel == object.end())
+            continue;
+
+        const QString level = itLevel->toString();
+        if (!QQmlJS::LoggingUtils::applyLevelToCategory(level, m_categories.last())) {
+            qWarning() << "Invalid logging level" << level << "provided for"
+                       << m_categories.last().id().name().toString()
+                       << "(allowed are: disable, info, warning) found in plugin metadata";
+        }
     }
 
     return true;

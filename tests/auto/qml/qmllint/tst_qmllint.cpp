@@ -2219,12 +2219,30 @@ void TestQmllint::hasTestPlugin()
 {
     bool pluginFound = false;
     for (const QQmlJSLinter::Plugin &plugin : m_linter.plugins()) {
-        if (plugin.name() == "testPlugin") {
-            pluginFound = true;
-            QCOMPARE(plugin.author(), u"Qt"_s);
-            QCOMPARE(plugin.description(), u"A test plugin for tst_qmllint"_s);
-            QCOMPARE(plugin.version(), u"1.0"_s);
-            break;
+        if (plugin.name() != "testPlugin")
+            continue;
+
+        pluginFound = true;
+        QCOMPARE(plugin.author(), u"Qt"_s);
+        QCOMPARE(plugin.description(), u"A test plugin for tst_qmllint"_s);
+        QCOMPARE(plugin.version(), u"1.0"_s);
+
+        for (auto &category : plugin.categories()) {
+            if (category.name() == u"testPlugin.TestDefaultValue") {
+                QCOMPARE(category.level(), QtCriticalMsg);
+                QCOMPARE(category.isIgnored(), true);
+            } else if (category.name() == u"testPlugin.TestDefaultValue2") {
+                QCOMPARE(category.level(), QtInfoMsg);
+                QCOMPARE(category.isIgnored(), false);
+            } else if (category.name() == u"testPlugin.test") {
+                QCOMPARE(category.level(), QtWarningMsg);
+                QCOMPARE(category.isIgnored(), false);
+            } else if (category.name() == u"testPlugin.TestDefaultValue3"){
+                QCOMPARE(category.level(), QtWarningMsg);
+                QCOMPARE(category.isIgnored(), false);
+            } else {
+                QFAIL("This category was not tested!");
+            }
         }
     }
     QVERIFY(pluginFound);
