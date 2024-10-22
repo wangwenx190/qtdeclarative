@@ -44,7 +44,7 @@ public:
     QQmlJSLinter(const QStringList &importPaths, const QStringList &extraPluginPaths = {},
                  bool useAbsolutePath = false);
 
-    enum LintResult { FailedToOpen, FailedToParse, HasWarnings, LintSuccess };
+    enum LintResult { FailedToOpen, FailedToParse, HasWarnings, HasErrors, LintSuccess };
     enum FixResult { NothingToFix, FixError, FixSuccess };
 
     class Q_QMLCOMPILER_EXPORT Plugin

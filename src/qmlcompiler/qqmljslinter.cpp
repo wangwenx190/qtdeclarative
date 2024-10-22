@@ -196,7 +196,7 @@ bool QQmlJSLinter::Plugin::parseMetaData(const QJsonObject &metaData, QString pl
         if (!QQmlJS::LoggingUtils::applyLevelToCategory(level, m_categories.last())) {
             qWarning() << "Invalid logging level" << level << "provided for"
                        << m_categories.last().id().name().toString()
-                       << "(allowed are: disable, info, warning) found in plugin metadata";
+                       << "(allowed are: disable, info, warning, error) found in plugin metadata.";
         }
     }
 
@@ -444,7 +444,7 @@ QQmlJSLinter::LintResult QQmlJSLinter::lintFile(const QString &filename,
     QJsonArray warnings;
     QJsonObject result;
 
-    bool success = true;
+    LintResult success = LintSuccess;
 
     QScopeGuard jsonOutput([&] {
         if (!json)
@@ -452,7 +452,7 @@ QQmlJSLinter::LintResult QQmlJSLinter::lintFile(const QString &filename,
 
         result[u"filename"_s] = QFileInfo(filename).absoluteFilePath();
         result[u"warnings"] = warnings;
-        result[u"success"] = success;
+        result[u"success"] = success == LintSuccess;
 
         json->append(result);
     });
@@ -469,11 +469,11 @@ QQmlJSLinter::LintResult QQmlJSLinter::lintFile(const QString &filename,
                                                             .arg(filename, file.errorString()),
                                                     QtCriticalMsg, QQmlJS::SourceLocation() },
                         qmlImport.name());
-                success = false;
             } else if (!silent) {
                 qWarning() << "Failed to open file" << filename << file.error();
             }
-            return FailedToOpen;
+            success = FailedToOpen;
+            return success;
         }
 
         code = QString::fromUtf8(file.readAll());
@@ -495,10 +495,9 @@ QQmlJSLinter::LintResult QQmlJSLinter::lintFile(const QString &filename,
     lexer.setCode(code, /*lineno = */ 1, /*qmlMode=*/!isJavaScript);
     QQmlJS::Parser parser(&engine);
 
-    success = isJavaScript ? (isESModule ? parser.parseModule() : parser.parseProgram())
-                           : parser.parse();
-
-    if (!success) {
+    if (!(isJavaScript ? (isESModule ? parser.parseModule() : parser.parseProgram())
+                       : parser.parse())) {
+        success = FailedToParse;
         const auto diagnosticMessages = parser.diagnosticMessages();
         for (const QQmlJS::DiagnosticMessage &m : diagnosticMessages) {
             if (json) {
@@ -511,10 +510,10 @@ QQmlJSLinter::LintResult QQmlJSLinter::lintFile(const QString &filename,
                                                 .arg(m.message);
             }
         }
-        return FailedToParse;
+        return success;
     }
 
-    if (success && !isJavaScript) {
+    if (!isJavaScript) {
         const auto check = [&](QQmlJSResourceFileMapper *mapper) {
             if (m_importer.importPaths() != qmlImportPaths)
                 m_importer.setImportPaths(qmlImportPaths);
@@ -594,13 +593,13 @@ QQmlJSLinter::LintResult QQmlJSLinter::lintFile(const QString &filename,
             }
             passMan->analyze(QQmlJSScope::createQQmlSAElement(v.result()));
 
-            success = !m_logger->hasWarnings() && !m_logger->hasErrors();
-
             if (m_logger->hasErrors()) {
+                success = HasErrors;
                 if (json)
                     processMessages(warnings);
                 return;
-            }
+            } else if (m_logger->hasWarnings())
+                success = HasWarnings;
 
             if (passMan) {
                 // passMan now has a pointer to the moved from type resolver
@@ -627,7 +626,10 @@ QQmlJSLinter::LintResult QQmlJSLinter::lintFile(const QString &filename,
                 m_logger->processMessages(globalWarnings, qmlImport);
             }
 
-            success &= !m_logger->hasWarnings() && !m_logger->hasErrors();
+            if (m_logger->hasErrors())
+                success = HasErrors;
+            else if (m_logger->hasWarnings())
+                success = HasWarnings;
 
             if (json)
                 processMessages(warnings);
@@ -641,7 +643,7 @@ QQmlJSLinter::LintResult QQmlJSLinter::lintFile(const QString &filename,
         }
     }
 
-    return success ? LintSuccess : HasWarnings;
+    return success;
 }
 
 QQmlJSLinter::LintResult QQmlJSLinter::lintModule(

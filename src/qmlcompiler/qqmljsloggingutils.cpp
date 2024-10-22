@@ -139,7 +139,6 @@ namespace LoggingUtils {
 
 QString levelToString(const QQmlJS::LoggerCategory &category)
 {
-    Q_ASSERT(category.isIgnored() || category.level() != QtCriticalMsg);
     if (category.isIgnored())
         return QStringLiteral("disable");
 
@@ -148,6 +147,8 @@ QString levelToString(const QQmlJS::LoggerCategory &category)
         return QStringLiteral("info");
     case QtWarningMsg:
         return QStringLiteral("warning");
+    case QtCriticalMsg:
+        return QStringLiteral("error");
     default:
         Q_UNREACHABLE();
         break;
@@ -188,6 +189,10 @@ static QString levelValueForCategory(const LoggerCategory &category,
 
 bool applyLevelToCategory(const QStringView level, LoggerCategory &category)
 {
+    // you can't downgrade errors
+    if (category.level() == QtCriticalMsg && !category.isIgnored() && level != "error"_L1)
+        return false;
+
     if (level == "disable"_L1) {
         category.setLevel(QtCriticalMsg);
         category.setIgnored(true);
@@ -203,6 +208,12 @@ bool applyLevelToCategory(const QStringView level, LoggerCategory &category)
         category.setIgnored(false);
         return true;
     }
+    if (level == "error"_L1) {
+        category.setLevel(QtCriticalMsg);
+        category.setIgnored(false);
+        return true;
+    }
+
     return false;
 };
 
@@ -227,9 +238,9 @@ void updateLogLevels(QList<LoggerCategory> &categories,
         if (!applyLevelToCategory(value, category)) {
             qWarning() << "Invalid logging level" << value << "provided for"
                        << category.id().name().toString()
-                       << "(allowed are: disable, info, warning)";
+                       << "(allowed are: disable, info, warning, error)\n."
+                          "You can't change categories that have level \"error\" by default.";
             success = false;
-
         }
     }
     if (!success && parser)

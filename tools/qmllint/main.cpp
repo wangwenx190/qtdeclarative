@@ -77,6 +77,7 @@ All warnings can be set to three levels:
     disable - Fully disables the warning.
     info - Displays the warning but does not influence the return code.
     warning - Displays the warning and leads to a non-zero exit code if encountered.
+    error - Displays the warning as error and leads to a non-zero exit code if encountered.
 )"));
 
     parser.addHelpOption();

@@ -138,6 +138,7 @@ private Q_SLOTS:
 #endif
 
     void replayImportWarnings();
+    void errorCategory();
 
 private:
     enum DefaultImportOption { NoDefaultImports, UseDefaultImports };
@@ -2261,6 +2262,9 @@ void TestQmllint::hasTestPlugin()
             } else if (category.name() == u"testPlugin.TestDefaultValue3"){
                 QCOMPARE(category.level(), QtWarningMsg);
                 QCOMPARE(category.isIgnored(), false);
+            } else if (category.name() == u"testPlugin.TestDefaultValue4"){
+                QCOMPARE(category.level(), QtCriticalMsg);
+                QCOMPARE(category.isIgnored(), false);
             } else {
                 QFAIL("This category was not tested!");
             }
@@ -2649,6 +2653,20 @@ void TestQmllint::replayImportWarnings()
 
     // Warning because the offending import is now direct.
     searchWarnings(warnings, "Ambiguous type detected. T 1.0 is defined multiple times.");
+}
+
+void TestQmllint::errorCategory()
+{
+    {
+        const QString output = runQmllint(testFile(u"HasUnqualified.qml"_s), false,
+                                          QStringList{ u"--unqualified"_s, u"error"_s });
+        QVERIFY(output.startsWith("Error: "));
+    }
+    {
+        const QString output = runQmllint(testFile(u"HasUnqualified.qml"_s), true);
+        QVERIFY(output.startsWith("Warning: "));
+    }
+
 }
 
 QTEST_GUILESS_MAIN(TestQmllint)
