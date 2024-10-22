@@ -104,6 +104,8 @@ public:
     void setParentMenu(QQuickMenu *parent);
     void resolveParentItem();
 
+    void popup(QQuickItem *menuItem = nullptr);
+
     void propagateKeyEvent(QKeyEvent *event);
 
     void startHoverTimer();

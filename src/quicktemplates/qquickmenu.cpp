@@ -1113,7 +1113,7 @@ void QQuickMenuPrivate::onItemTriggered()
 
     if (QQuickMenu *subMenu = item->subMenu()) {
         auto subMenuPrivate = QQuickMenuPrivate::get(subMenu);
-        subMenu->popup(subMenuPrivate->firstEnabledMenuItem());
+        subMenuPrivate->popup(subMenuPrivate->firstEnabledMenuItem());
     } else {
         q->dismiss();
     }
@@ -1988,25 +1988,25 @@ int QQuickMenu::count() const
     return d->contentModel->count();
 }
 
-void QQuickMenu::popup(QQuickItem *menuItem)
+void QQuickMenuPrivate::popup(QQuickItem *menuItem)
 {
-    Q_D(QQuickMenu);
+    Q_Q(QQuickMenu);
     // No position has been explicitly specified, so position the menu at the mouse cursor
     // on desktop platforms that have a mouse cursor available and support multiple windows.
     QQmlNullableValue<QPointF> pos;
 #if QT_CONFIG(cursor)
-    if (d->parentItem && QGuiApplicationPrivate::platformIntegration()->hasCapability(QPlatformIntegration::MultipleWindows))
-        pos = d->parentItem->mapFromGlobal(QCursor::pos());
+    if (parentItem && QGuiApplicationPrivate::platformIntegration()->hasCapability(QPlatformIntegration::MultipleWindows))
+        pos = parentItem->mapFromGlobal(QCursor::pos());
 #endif
 
     // As a fallback, center the menu over its parent item.
-    if (!pos.isValid() && d->parentItem)
-        pos = QPointF((d->parentItem->width() - width()) / 2, (d->parentItem->height() - height()) / 2);
+    if (!pos.isValid() && parentItem)
+        pos = QPointF((parentItem->width() - q->width()) / 2, (parentItem->height() - q->height()) / 2);
 
-    popup(pos.isValid() ? pos.value() : QPointF(), menuItem);
+    q->popup(pos.isValid() ? pos.value() : QPointF(), menuItem);
 }
 
-void QQuickMenu::popup(const QPointF &pos, QQuickItem *menuItem)
+void QQuickMenu::popup(const QPointF &position, QQuickItem *menuItem)
 {
     Q_D(QQuickMenu);
     qreal offset = 0;
@@ -2014,7 +2014,7 @@ void QQuickMenu::popup(const QPointF &pos, QQuickItem *menuItem)
     if (menuItem)
         offset = d->popupItem->mapFromItem(menuItem, QPointF(0, 0)).y();
 #endif
-    setPosition(pos - QPointF(0, offset));
+    setPosition(position - QPointF(0, offset));
 
     if (menuItem)
         d->setCurrentIndex(d->contentModel->indexOf(menuItem, nullptr), Qt::PopupFocusReason);
@@ -2068,66 +2068,49 @@ void QQuickMenu::popup(const QPointF &pos, QQuickItem *menuItem)
 
     \sa dismiss(), Popup::open()
 */
-void QQuickMenu::popup(QQmlV4FunctionPtr args)
+
+void QQuickMenu::popup(QQuickItem *parent, qreal x, qreal y, QQuickItem *menuItem)
+{
+    popup(parent, QPointF {x, y}, menuItem);
+}
+
+void QQuickMenu::popup(QQuickItem *parent, const QPointF &position, QQuickItem *menuItem)
 {
     Q_D(QQuickMenu);
-    const int len = args->length();
-    if (len > 4) {
-        args->v4engine()->throwTypeError();
-        return;
-    }
+    if (parent && !d->popupItem->isAncestorOf(parent))
+        setParentItem(parent);
+    popup(position, menuItem);
+}
 
-    QV4::ExecutionEngine *v4 = args->v4engine();
-    QV4::Scope scope(v4);
-
-    QQmlNullableValue<QPointF> pos;
-    QQuickItem *menuItem = nullptr;
+void QQuickMenu::popup(QQuickItem *parent, QQuickItem *menuItem)
+{
+    Q_D(QQuickMenu);
     QQuickItem *parentItem = nullptr;
-
-    if (len > 0) {
-        // Item parent
-        QV4::ScopedValue firstArg(scope, (*args)[0]);
-        if (const QV4::QObjectWrapper *obj = firstArg->as<QV4::QObjectWrapper>()) {
-            QQuickItem *item = qobject_cast<QQuickItem *>(obj->object());
-            if (item && !d->popupItem->isAncestorOf(item))
-                parentItem = item;
-        } else if (firstArg->isUndefined()) {
-            resetParentItem();
-            parentItem = d->parentItem;
-        }
-
-        // MenuItem item
-        QV4::ScopedValue lastArg(scope, (*args)[len - 1]);
-        if (const QV4::QObjectWrapper *obj = lastArg->as<QV4::QObjectWrapper>()) {
-            QQuickItem *item = qobject_cast<QQuickItem *>(obj->object());
-            if (item && d->popupItem->isAncestorOf(item))
-                menuItem = item;
-        }
-    }
-
-    if (len >= 3 || (!parentItem && len >= 2)) {
-        // real x, real y
-        QV4::ScopedValue xArg(scope, (*args)[parentItem ? 1 : 0]);
-        QV4::ScopedValue yArg(scope, (*args)[parentItem ? 2 : 1]);
-        if (xArg->isNumber() && yArg->isNumber())
-            pos = QPointF(xArg->asDouble(), yArg->asDouble());
-    }
-
-    if (!pos.isValid() && (len >= 2 || (!parentItem && len >= 1))) {
-        // point pos
-        QV4::ScopedValue posArg(scope, (*args)[parentItem ? 1 : 0]);
-        const QVariant var = QV4::ExecutionEngine::toVariant(posArg, QMetaType {});
-        if (var.userType() == QMetaType::QPointF)
-            pos = var.toPointF();
-    }
-
+    if (parent && !d->popupItem->isAncestorOf(parent))
+        parentItem = parent;
     if (parentItem)
         setParentItem(parentItem);
+    d->popup(menuItem);
+}
 
-    if (pos.isValid())
-        popup(pos, menuItem);
-    else
-        popup(menuItem);
+// if a single argument is given, it is treated as both the parent _and_ the menu item
+// note: This differs from QQuickMenuPrivate::popup, which doesn't do parent handling
+void QQuickMenu::popup(QQuickItem *parent)
+{
+    Q_D(QQuickMenu);
+    QQuickItem *menuItem = nullptr;
+    if (parent) {
+        if (!d->popupItem->isAncestorOf(parent))
+            setParentItem(parent);
+        if (d->popupItem->isAncestorOf(parent))
+            menuItem = parent;
+    }
+    d->popup(menuItem);
+}
+
+void QQuickMenu::popup(qreal x, qreal y, QQuickItem *menuItem)
+{
+    popup(QPointF {x, y}, menuItem);
 }
 
 /*!
@@ -2232,7 +2215,7 @@ void QQuickMenu::keyPressEvent(QKeyEvent *event)
         } else {
             if (QQuickMenu *subMenu = d->currentSubMenu()) {
                 auto subMenuPrivate = QQuickMenuPrivate::get(subMenu);
-                subMenu->popup(subMenuPrivate->firstEnabledMenuItem());
+                subMenuPrivate->popup(subMenuPrivate->firstEnabledMenuItem());
                 event->accept();
             }
         }
