@@ -99,6 +99,9 @@ public:
         bool hasInlineSourceCode = false;
     };
 
+    bool isTypeLoaderThread() const;
+    bool isEngineThread() const;
+
 protected:
     // Can be called from within callbacks
     void setError(const QQmlError &);

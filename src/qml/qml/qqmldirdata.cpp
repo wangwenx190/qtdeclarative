@@ -27,11 +27,13 @@ void QQmlQmldirData::setPriority(
         QQmlTypeLoader::Blob *blob, const QQmlTypeLoader::Blob::PendingImportPtr &import,
         int priority)
 {
+    Q_ASSERT(isTypeLoaderThread());
     m_imports.insert(blob, { import, priority });
 }
 
 void QQmlQmldirData::dataReceived(const SourceCodeData &data)
 {
+    Q_ASSERT(isTypeLoaderThread());
     QString error;
     m_content = data.readAll(&error);
     if (!error.isEmpty()) {
@@ -42,6 +44,7 @@ void QQmlQmldirData::dataReceived(const SourceCodeData &data)
 
 void QQmlQmldirData::initializeFromCachedUnit(const QQmlPrivate::CachedQmlUnit *)
 {
+    Q_ASSERT(isTypeLoaderThread());
     Q_UNIMPLEMENTED();
 }
 

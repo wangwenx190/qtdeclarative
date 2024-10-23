@@ -45,6 +45,8 @@ bool QQmlScriptBlob::hasScriptValue() const
 
 void QQmlScriptBlob::dataReceived(const SourceCodeData &data)
 {
+    Q_ASSERT(isTypeLoaderThread());
+
     if (readCacheFile()) {
         auto unit = QQml::makeRefPointer<QV4::CompiledData::CompilationUnit>();
         QString error;
@@ -124,12 +126,15 @@ void QQmlScriptBlob::dataReceived(const SourceCodeData &data)
 
 void QQmlScriptBlob::initializeFromCachedUnit(const QQmlPrivate::CachedQmlUnit *cachedUnit)
 {
+    Q_ASSERT(isTypeLoaderThread());
     initializeFromCompilationUnit(QQml::makeRefPointer<QV4::CompiledData::CompilationUnit>(
             cachedUnit->qmlData, cachedUnit->aotCompiledFunctions, urlString(), finalUrlString()));
 }
 
 void QQmlScriptBlob::done()
 {
+    Q_ASSERT(isTypeLoaderThread());
+
     if (isError())
         return;
 
@@ -181,6 +186,8 @@ QString QQmlScriptBlob::stringAt(int index) const
 
 void QQmlScriptBlob::scriptImported(const QQmlRefPointer<QQmlScriptBlob> &blob, const QV4::CompiledData::Location &location, const QString &qualifier, const QString &nameSpace)
 {
+    Q_ASSERT(isTypeLoaderThread());
+
     ScriptReference ref;
     ref.script = blob;
     ref.location = location;
@@ -193,6 +200,7 @@ void QQmlScriptBlob::scriptImported(const QQmlRefPointer<QQmlScriptBlob> &blob, 
 void QQmlScriptBlob::initializeFromCompilationUnit(
         QQmlRefPointer<QV4::CompiledData::CompilationUnit> &&unit)
 {
+    Q_ASSERT(isTypeLoaderThread());
     Q_ASSERT(!m_scriptData);
     Q_ASSERT(unit);
 
@@ -249,6 +257,10 @@ void QQmlScriptBlob::initializeFromCompilationUnit(
  */
 void QQmlScriptBlob::initializeFromNative()
 {
+    // Yes, this happens on the engine thread.
+    // "Native" script blobs are never sent to the type loader thread.
+    Q_ASSERT(isEngineThread());
+
     Q_ASSERT(!m_scriptData);
     m_scriptData.adopt(new QQmlScriptData());
     m_scriptData->url = finalUrl();
