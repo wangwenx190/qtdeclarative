@@ -50,6 +50,7 @@ public:
         return m_entries;
     }
 
+    void registerFile(const QString &moduleId, const QString &filepath);
     void addEntry(const QString &moduleId, const QString &filepath, const AotStatsEntry &entry);
     void insert(const AotStats &other);
 
@@ -78,6 +79,7 @@ public:
     static QString moduleId() { return s_moduleId; }
     static void setModuleId(const QString &moduleId) { s_moduleId = moduleId; }
 
+    static void registerFile(const QString &filepath);
     static void addEntry(const QString &filepath, const QQmlJS::AotStatsEntry &entry);
 
 private:

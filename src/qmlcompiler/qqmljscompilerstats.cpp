@@ -160,6 +160,11 @@ QJsonDocument AotStats::toJsonDocument() const
     return QJsonDocument(modulesArray);
 }
 
+void AotStats::registerFile(const QString &moduleId, const QString &filepath)
+{
+    m_entries[moduleId][filepath] = {};
+}
+
 void AotStats::addEntry(
         const QString &moduleId, const QString &filepath, const AotStatsEntry &entry)
 {
@@ -176,6 +181,11 @@ bool AotStats::saveToDisk(const QString &filepath) const
 
     file.write(this->toJsonDocument().toJson(QJsonDocument::Indented));
     return true;
+}
+
+void QQmlJSAotCompilerStats::registerFile(const QString &filepath)
+{
+    QQmlJSAotCompilerStats::instance()->registerFile(s_moduleId, filepath);
 }
 
 void QQmlJSAotCompilerStats::addEntry(const QString &filepath, const QQmlJS::AotStatsEntry &entry)
