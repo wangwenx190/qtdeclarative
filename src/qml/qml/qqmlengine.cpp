@@ -1077,14 +1077,10 @@ QJSValue QQmlEngine::singletonInstance<QJSValue>(QAnyStringView uri, QAnyStringV
 {
     Q_D(QQmlEngine);
 
-    auto loadHelper = QQml::makeRefPointer<LoadHelper>(&d->typeLoader, uri);
+    auto loadHelper = QQml::makeRefPointer<LoadHelper>(
+            &d->typeLoader, uri, typeName, QQmlTypeLoader::Synchronous);
+    const QQmlType type = loadHelper->type();
 
-    auto [moduleStatus, type] = loadHelper->resolveType(typeName);
-
-    if (moduleStatus == LoadHelper::ResolveTypeResult::NoSuchModule)
-        return {};
-    if (!type.isValid())
-        return {};
     if (!type.isSingleton())
         return {};
 
@@ -2147,10 +2143,69 @@ bool QQml_isFileCaseCorrect(const QString &fileName, int lengthIn /* = -1 */)
 
 void hasJsOwnershipIndicator(QQmlGuardImpl *) {};
 
-LoadHelper::LoadHelper(QQmlTypeLoader *loader, QAnyStringView uri)
+LoadHelper::LoadHelper(
+        QQmlTypeLoader *loader, QAnyStringView uri, QAnyStringView typeName,
+        QQmlTypeLoader::Mode mode)
     : QQmlTypeLoader::Blob({}, QQmlDataBlob::QmlFile, loader)
     , m_uri(uri.toString())
+    , m_typeName(typeName.toString())
+    , m_mode(mode)
+{
+    m_typeLoader->lock();
+    m_typeLoader->loadWithStaticData(this, QByteArray(), m_mode);
+    m_typeLoader->unlock();
+}
 
+void LoadHelper::registerCallback(QQmlComponentPrivate *callback)
+{
+    m_callback = callback;
+}
+
+void LoadHelper::unregisterCallback(QQmlComponentPrivate *callback)
+{
+    if (m_callback) {
+        Q_ASSERT(callback == m_callback);
+        m_callback = nullptr;
+    }
+}
+
+void LoadHelper::done()
+{
+    if (!couldFindModule()) {
+        m_resolveTypeResult = ResolveTypeResult::NoSuchModule;
+        return;
+    }
+
+    QQmlTypeModule *module = QQmlMetaType::typeModule(m_uri, QTypeRevision{});
+    if (module) {
+        m_type = module->type(m_typeName, {});
+        if (m_type.isValid()) {
+            m_resolveTypeResult = ResolveTypeResult::ModuleFound;
+            return;
+        }
+    }
+
+    // The module exists (see check above), but there is no QQmlTypeModule
+    // ==> pure QML module, attempt resolveType
+    QTypeRevision versionReturn;
+    QList<QQmlError> errors;
+    QQmlImportNamespace *ns_return = nullptr;
+    m_importCache->resolveType(
+            typeLoader(), m_typeName, &m_type, &versionReturn, &ns_return, &errors);
+    m_resolveTypeResult = ResolveTypeResult::ModuleFound;
+}
+
+void LoadHelper::completed()
+{
+    QQmlTypeLoader::Blob::completed();
+
+    if (m_callback) {
+        m_callback->completeLoadFromModule(m_uri, m_typeName);
+        m_callback = nullptr;
+    }
+}
+
+void LoadHelper::dataReceived(const SourceCodeData &)
 {
     auto import = std::make_shared<PendingImport>();
     import->uri = m_uri;
@@ -2159,27 +2214,6 @@ LoadHelper::LoadHelper(QQmlTypeLoader *loader, QAnyStringView uri)
         qCDebug(lcQmlImport) << "LoadHelper: Errors loading " << m_uri << errorList;
         m_uri.clear(); // reset m_uri to remember the failure
     }
-}
-
-LoadHelper::ResolveTypeResult LoadHelper::resolveType(QAnyStringView typeName)
-{
-    QQmlType type;
-    if (!couldFindModule())
-        return {ResolveTypeResult::NoSuchModule, type};
-    QQmlTypeModule *module = QQmlMetaType::typeModule(m_uri, QTypeRevision{});
-    if (module) {
-        type = module->type(typeName.toString(), {});
-        if (type.isValid())
-            return {ResolveTypeResult::ModuleFound, type};
-    }
-    // The module exists (see check above), but there is no QQmlTypeModule
-    // ==> pure QML module, attempt resolveType
-    QTypeRevision versionReturn;
-    QList<QQmlError> errors;
-    QQmlImportNamespace *ns_return = nullptr;
-    m_importCache->resolveType(
-            typeLoader(), typeName.toString(), &type, &versionReturn, &ns_return, &errors);
-    return {ResolveTypeResult::ModuleFound, type};
 }
 
 bool LoadHelper::couldFindModule() const

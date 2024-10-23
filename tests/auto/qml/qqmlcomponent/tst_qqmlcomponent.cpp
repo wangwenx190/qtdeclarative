@@ -133,6 +133,8 @@ private slots:
     void boundComponent();
     void loadFromModule_data();
     void loadFromModule();
+    void loadFromModuleSyncAndAsync_data();
+    void loadFromModuleSyncAndAsync();
     void loadFromModuleLifecycle();
     void loadFromModuleThenCreateWithIncubator();
     void loadFromModuleFailures_data();
@@ -1362,6 +1364,26 @@ void tst_qqmlcomponent::loadFromModule()
     const char *name = object->metaObject()->className();
     QVERIFY2(classNameMatcher.match(name).hasMatch(),
              name);
+}
+
+void tst_qqmlcomponent::loadFromModuleSyncAndAsync_data()
+{
+    loadFromModule_data();
+}
+
+void tst_qqmlcomponent::loadFromModuleSyncAndAsync()
+{
+    QFETCH(QString, uri);
+    QFETCH(QString, typeName);
+
+    QQmlEngine engine;
+    QQmlComponent syncAndAsync(&engine);
+    syncAndAsync.loadFromModule(uri, typeName, QQmlComponent::Asynchronous);
+    QVERIFY(syncAndAsync.isLoading());
+    syncAndAsync.loadFromModule(uri, typeName, QQmlComponent::PreferSynchronous);
+    QVERIFY2(syncAndAsync.isReady(), qPrintable(syncAndAsync.errorString()));
+    std::unique_ptr<QObject> object(syncAndAsync.create());
+    QVERIFY(object);
 }
 
 void tst_qqmlcomponent::loadFromModuleLifecycle()

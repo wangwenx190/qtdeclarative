@@ -322,8 +322,12 @@ void QQmlComponentPrivate::clear()
         typeData.reset();
     }
 
+    if (loadHelper) {
+        loadHelper->unregisterCallback(this);
+        loadHelper.reset();
+    }
+
     compilationUnit.reset();
-    loadedType = {};
     inlineComponentName.reset();
 }
 
@@ -492,8 +496,10 @@ QQmlComponent::Status QQmlComponent::status() const
         return Loading;
     else if (!d->state.errors.isEmpty())
         return Error;
-    else if (d->engine && (d->compilationUnit || d->loadedType.isValid()))
+    else if (d->engine && (d->compilationUnit || d->loadedType().isValid()))
         return Ready;
+    else if (d->loadHelper)
+        return Loading;
     else
         return Null;
 }
@@ -1082,7 +1088,8 @@ QObject *QQmlComponentPrivate::beginCreate(QQmlRefPointer<QQmlContextData> conte
 
     QObject *rv = nullptr;
 
-    if (!loadedType.isValid()) {
+    const QQmlType type = loadedType();
+    if (!type.isValid()) {
         enginePriv->referenceScarceResources();
         state.initCreator(std::move(context), compilationUnit, creationContext);
 
@@ -1102,10 +1109,10 @@ QObject *QQmlComponentPrivate::beginCreate(QQmlRefPointer<QQmlContextData> conte
         enginePriv->dereferenceScarceResources();
     } else {
         // TODO: extract into function
-        rv = loadedType.createWithQQmlData();
+        rv = type.createWithQQmlData();
         QQmlPropertyCache::ConstPtr propertyCache = QQmlData::ensurePropertyCache(rv);
         QQmlParserStatus *parserStatus = nullptr;
-        const int parserStatusCast = loadedType.parserStatusCast();
+        const int parserStatusCast = type.parserStatusCast();
         if (parserStatusCast != -1) {
             parserStatus = reinterpret_cast<QQmlParserStatus*>(reinterpret_cast<char *>(rv) + parserStatusCast);
             parserStatus->classBegin();
@@ -1120,7 +1127,7 @@ QObject *QQmlComponentPrivate::beginCreate(QQmlRefPointer<QQmlContextData> conte
         }
         if (parserStatus)
             parserStatus->componentComplete();
-        if (const int finalizerCast = loadedType.finalizerCast(); finalizerCast != -1) {
+        if (const int finalizerCast = type.finalizerCast(); finalizerCast != -1) {
             auto* hook = reinterpret_cast<QQmlFinalizerHook *>(reinterpret_cast<char *>(rv) + finalizerCast);
             hook->componentFinalized();
         }
@@ -1270,7 +1277,7 @@ void QQmlComponentPrivate::completeCreate()
             state.errors.push_back(QQmlComponentPrivate::AnnotatedQmlError { error, true });
         }
     }
-    if (loadedType.isValid()) {
+    if (loadedType().isValid()) {
         /*
            We can directly set completePending to false, as finalize is only concerned
            with setting up pending bindings, but that cannot happen here, as we're
@@ -1344,23 +1351,37 @@ void QQmlComponent::loadFromModule(QAnyStringView uri, QAnyStringView typeName,
                                    QQmlComponent::CompilationMode mode)
 {
     Q_D(QQmlComponent);
-    auto [status, type] = d->prepareLoadFromModule(uri, typeName);
-    d->completeLoadFromModule(uri, typeName, type, status, mode);
+
+    QQmlTypeLoader::Mode typeLoaderMode = QQmlTypeLoader::Synchronous;
+    switch (mode) {
+    case QQmlComponent::PreferSynchronous:
+        typeLoaderMode = QQmlTypeLoader::PreferSynchronous;
+        break;
+    case QQmlComponent::Asynchronous:
+        typeLoaderMode = QQmlTypeLoader::Asynchronous;
+        break;
+    }
+
+    d->prepareLoadFromModule(uri, typeName, typeLoaderMode);
+    if (d->loadHelper->isCompleteOrError())
+        d->completeLoadFromModule(uri, typeName);
+    else
+        d->loadHelper->registerCallback(d);
 }
 
-LoadHelper::ResolveTypeResult QQmlComponentPrivate::prepareLoadFromModule(QAnyStringView uri,
-                                                                          QAnyStringView typeName)
+void QQmlComponentPrivate::prepareLoadFromModule(
+        QAnyStringView uri, QAnyStringView typeName, QQmlTypeLoader::Mode mode)
 {
-    auto enginePriv = QQmlEnginePrivate::get(engine);
-    // LoadHelper must be on the Heap as it derives from QQmlRefCount
-    auto loadHelper = QQml::makeRefPointer<LoadHelper>(&enginePriv->typeLoader, uri);
+    // Don't let any old loadHelper call us back anymore.
+    if (loadHelper)
+        loadHelper->unregisterCallback(this);
 
-    return loadHelper->resolveType(typeName);
+    QQmlTypeLoader *typeLoader = &QQmlEnginePrivate::get(engine)->typeLoader;
+    // LoadHelper must be on the Heap as it derives from QQmlRefCount
+    loadHelper = QQml::makeRefPointer<LoadHelper>(typeLoader, uri, typeName, mode);
 }
 
-void QQmlComponentPrivate::completeLoadFromModule(QAnyStringView uri, QAnyStringView typeName, QQmlType type,
-                                                  LoadHelper::ResolveTypeResult::Status moduleStatus,
-                                                  QQmlComponent::CompilationMode mode)
+void QQmlComponentPrivate::completeLoadFromModule(QAnyStringView uri, QAnyStringView typeName)
 {
     Q_Q(QQmlComponent);
 
@@ -1385,16 +1406,28 @@ void QQmlComponentPrivate::completeLoadFromModule(QAnyStringView uri, QAnyString
         emit q->statusChanged(q->status());
     };
     emitProgressReset();
-    if (moduleStatus == LoadHelper::ResolveTypeResult::NoSuchModule) {
+
+    const QQmlType type = loadHelper->type();
+
+    if (loadHelper->resolveTypeResult() == LoadHelper::ResolveTypeResult::NoSuchModule)  {
         reportError(QLatin1String(R"(No module named "%1" found)").arg(uri.toString()));
     } else if (!type.isValid()) {
         reportError(QLatin1String(R"(Module "%1" contains no type named "%2")")
                     .arg(uri.toString(), typeName.toString()));
     } else if (type.isCreatable()) {
-        clear();
-        loadedType = type;
         emitComplete();
     } else if (type.isComposite()) {
+        QQmlComponent::CompilationMode mode = QQmlComponent::PreferSynchronous;
+        switch (loadHelper->mode()) {
+        case QQmlTypeLoader::Asynchronous:
+            mode = QQmlComponent::Asynchronous;
+            break;
+        case QQmlTypeLoader::PreferSynchronous:
+        case QQmlTypeLoader::Synchronous:
+            mode = QQmlComponent::PreferSynchronous;
+            break;
+        }
+
         // loadUrl takes care of signal emission
         loadUrl(type.sourceUrl(), mode);
     } else if (type.isInlineComponentType()) {
@@ -1480,7 +1513,7 @@ void QQmlComponent::create(QQmlIncubator &incubator, QQmlContext *context, QQmlC
     incubator.clear();
     QExplicitlySharedDataPointer<QQmlIncubatorPrivate> p(incubator.d);
 
-    if (d->loadedType.isValid()) {
+    if (d->loadedType().isValid()) {
         // there isn't really an incubation process for C++ backed types
         // so just create the object and signal that we are ready
 

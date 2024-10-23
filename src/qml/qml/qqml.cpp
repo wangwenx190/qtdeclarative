@@ -377,9 +377,10 @@ int qmlTypeId(const char *uri, int versionMajor, int versionMinor, const char *q
        Types; internal code should use QQmlMetaType API.
     */
     QQmlEngine engine;
-    auto *enginePriv = QQmlEnginePrivate::get(&engine);
-    auto loadHelper = QQml::makeRefPointer<LoadHelper>(&enginePriv->typeLoader, uri);
-    auto type = loadHelper->resolveType(qmlName).type;
+    QQmlTypeLoader *typeLoader = &QQmlEnginePrivate::get(&engine)->typeLoader;
+    auto loadHelper = QQml::makeRefPointer<LoadHelper>(
+            typeLoader, uri, qmlName, QQmlTypeLoader::Synchronous);
+    const QQmlType type = loadHelper->type();
     if (type.availableInVersion(revision))
         return type.index();
     else
