@@ -41,10 +41,10 @@ public:
             // offset + length <= (maxLength - 1) + (maxLength - 1) = std::numeric_limits<quint32>::max()
             Q_ASSERT_X(length < maxLength && offset < maxLength && offset + length < maxLength,
                        "QQmlJS::SourceLocation", "File size is limited to 2GB!");
-            Q_ASSERT_X(line <= offset, "QQmlJS::SourceLocation",
-                       "Invalid line or offset: line can't be greater than the offset!");
-            Q_ASSERT_X(column <= offset, "QQmlJS::SourceLocation",
-                       "Invalid column or offset: column can't be greater than the offset!");
+            Q_ASSERT_X(line < maxLength, "QQmlJS::SourceLocation",
+                       "Line exceeded maxLength of 2^31 - 1");
+            Q_ASSERT_X(column < maxLength, "QQmlJS::SourceLocation",
+                       "Column exceeded maxLength of 2^31 - 1");
         }
     }
 
@@ -56,10 +56,10 @@ public:
 
             Q_ASSERT_X(offset + length < maxLength, "QQmlJS::SourceLocation",
                        "File size is limited to 4GB!");
-            Q_ASSERT_X(line <= offset, "QQmlJS::SourceLocation",
-                       "Invalid line or offset: line can't be greater than the offset!");
-            Q_ASSERT_X(column <= offset, "QQmlJS::SourceLocation",
-                       "Invalid column or offset: column can't be greater than the offset!");
+            Q_ASSERT_X(line < maxLength, "QQmlJS::SourceLocation",
+                       "Line exceeded maxLength of 2^32 - 1");
+            Q_ASSERT_X(column < maxLength, "QQmlJS::SourceLocation",
+                       "Column exceeded maxLength of 2^32 - 1");
         }
         return SourceLocation(quint32(offset), quint32(length), quint32(line), quint32(column));
     }
