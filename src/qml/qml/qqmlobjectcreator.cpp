@@ -671,7 +671,8 @@ void QQmlObjectCreator::setPropertyValue(const QQmlPropertyData *property, const
                 break;
             }
 
-            QVariant target = QQmlValueTypeProvider::createValueType(source, propertyType);
+            QVariant target = QQmlValueTypeProvider::createValueType(
+                    source, propertyType, engine->handle());
             if (target.isValid()) {
                 property->writeProperty(_qobject, target.data(), propertyWriteFlags);
                 break;
@@ -1216,7 +1217,7 @@ bool QQmlObjectCreator::setPropertyBinding(const QQmlPropertyData *bindingProper
             QMetaObject::metacall(_qobject, QMetaObject::WriteProperty, bindingProperty->coreIndex(), argv);
         } else {
             QVariant target = QQmlValueTypeProvider::createValueType(
-                    QVariant::fromValue(createdSubObject), bindingProperty->propType());
+                    QVariant::fromValue(createdSubObject), bindingProperty->propType(), v4);
             if (target.isValid())
                 bindingProperty->writeProperty(_qobject, target.data(), propertyWriteFlags);
             else
