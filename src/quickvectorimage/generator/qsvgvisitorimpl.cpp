@@ -156,7 +156,8 @@ inline bool isPathContainer(const QSvgStructureNode *node)
         case QSvgNode::Switch:
         case QSvgNode::Doc:
         case QSvgNode::Group:
-        case QSvgNode::Animation:
+        case QSvgNode::AnimateColor:
+        case QSvgNode::AnimateTransform:
         case QSvgNode::Use:
         case QSvgNode::Video:
         case QSvgNode::Image:
