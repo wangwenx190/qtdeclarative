@@ -71,9 +71,9 @@
     \li \l{Writing QML Modules}
     \li \l{Qt Qml Tooling}
         \list
-            \li \l{qmllint Reference}{qmllint}
+            \li \l{qmllint}
             \li \l{qmlformat}
-            \li \l{\QMLLS Reference}{qmlls}
+            \li \l{\QMLLS}{qmlls}
             \li \l{qmlprofiler}
             \li \l{qml}
             \li \l{qmlpreview}

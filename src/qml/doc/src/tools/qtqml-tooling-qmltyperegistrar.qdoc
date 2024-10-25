@@ -4,8 +4,12 @@
 /*!
 \page qtqml-tooling-qmltyperegistrar.html
 \title qmltyperegistrar
-\brief Overview of the qmltyperegistrar utility.
+\brief A tool that registers C++ classes to make them available from QML.
 \ingroup qtqml-tooling
+\ingroup qtqml-tooling-internal
+
+\c qmltyperegistrar generates C++ code to register C++ classes to QML and a
+\c{.qmltypes} file containing a JSON description of the classes.
 
 \c qmltyperegistrar is an internal tool shipped with Qt Qml. It is meant to be
 invoked by the build system only, you don't need to execute it directly.
