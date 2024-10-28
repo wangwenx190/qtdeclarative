@@ -1606,6 +1606,11 @@ bool QQuickWindow::event(QEvent *event)
     case QEvent::DevicePixelRatioChange:
         physicalDpiChanged();
         break;
+    case QEvent::SafeAreaMarginsChange:
+        // Update via transform instead of individual safeAreaMarginsChanged,
+        // so that we update the safe area margins in the correct paint order.
+        QQuickItemPrivate::get(d->contentItem)->transformChanged(d->contentItem);
+        break;
     case QEvent::ChildWindowAdded: {
         auto *childEvent = static_cast<QChildWindowEvent*>(event);
         auto *childWindow = childEvent->child();
