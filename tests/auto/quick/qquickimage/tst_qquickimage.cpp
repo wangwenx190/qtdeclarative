@@ -780,19 +780,25 @@ void tst_qquickimage::sourceSize_data()
 {
     QTest::addColumn<int>("sourceWidth");
     QTest::addColumn<int>("sourceHeight");
+    QTest::addColumn<qreal>("expectedSourceWidth");
+    QTest::addColumn<qreal>("expectedSourceHeight");
     QTest::addColumn<qreal>("implicitWidth");
     QTest::addColumn<qreal>("implicitHeight");
 
-    QTest::newRow("unscaled") << 0 << 0 << 300.0 << 300.0;
-    QTest::newRow("scale width") << 100 << 0 << 100.0 << 100.0;
-    QTest::newRow("scale height") << 0 << 150 << 150.0 << 150.0;
-    QTest::newRow("larger sourceSize") << 400 << 400 << 300.0 << 300.0;
+    QTest::newRow("unscaled")           << 0 << 0 << 0.0 << 0.0 << 300.0 << 300.0;
+    QTest::newRow("scale width")        << 100 << 0 << 100.0 << 0.0 << 100.0 << 100.0;
+    QTest::newRow("negative height")    << 100 << -1 << 100.0 << 300.0 << 300.0 << 300.0;
+    QTest::newRow("scale height")       << 0 << 150 << 0.0 << 150.0 << 150.0 << 150.0;
+    QTest::newRow("negative width")     << -1 << 150 << 0.0 << 150.0 << 150.0 << 150.0;
+    QTest::newRow("larger sourceSize")  << 400 << 400 << 400.0 << 400.0 << 300.0 << 300.0;
 }
 
 void tst_qquickimage::sourceSize()
 {
     QFETCH(int, sourceWidth);
     QFETCH(int, sourceHeight);
+    QFETCH(qreal, expectedSourceWidth);
+    QFETCH(qreal, expectedSourceHeight);
     QFETCH(qreal, implicitWidth);
     QFETCH(qreal, implicitHeight);
 
@@ -808,8 +814,8 @@ void tst_qquickimage::sourceSize()
     QQuickImage *image = qobject_cast<QQuickImage*>(window->rootObject());
     QVERIFY(image);
 
-    QCOMPARE(image->sourceSize().width(), sourceWidth);
-    QCOMPARE(image->sourceSize().height(), sourceHeight);
+    QCOMPARE(image->sourceSize().width(), expectedSourceWidth);
+    QCOMPARE(image->sourceSize().height(), expectedSourceHeight);
     QCOMPARE(image->implicitWidth(), implicitWidth);
     QCOMPARE(image->implicitHeight(), implicitHeight);
 }
