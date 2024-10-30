@@ -1119,6 +1119,7 @@ void QQmlDomAstCreator::endVisit(AST::UiObjectBinding *)
 
 bool QQmlDomAstCreator::visit(AST::UiScriptBinding *el)
 {
+    ++m_nestedFunctionDepth;
     QStringView code = qmlFilePtr->code();
     SourceLocation loc = combineLocations(el->statement);
     auto script = std::make_shared<ScriptExpression>(
@@ -1215,6 +1216,7 @@ void QQmlDomAstCreator::setScriptExpression (const std::shared_ptr<ScriptExpress
 
 void QQmlDomAstCreator::endVisit(AST::UiScriptBinding *)
 {
+    --m_nestedFunctionDepth;
     DomValue &lastEl = currentNode();
     index_type idx = currentIndex();
     if (lastEl.kind == DomType::Binding) {
