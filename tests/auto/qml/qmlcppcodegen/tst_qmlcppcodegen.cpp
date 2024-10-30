@@ -202,6 +202,7 @@ private slots:
     void popContextAfterRet();
     void prefixedType();
     void propertyOfParent();
+    void qtfont();
     void reduceWithNullThis();
     void readEnumFromInstance();
     void readonlyListProperty();
@@ -4217,6 +4218,26 @@ void tst_QmlCppCodegen::propertyOfParent()
         expected = !expected;
         object->setProperty("foo", expected);
     }
+}
+
+void tst_QmlCppCodegen::qtfont()
+{
+    QQmlEngine engine;
+    QQmlComponent component(&engine, QUrl(u"qrc:/qt/qml/TestTypes/qtfont.qml"_s));
+    QVERIFY2(component.isReady(), component.errorString().toUtf8());
+    QScopedPointer<QObject> object(component.create());
+    QVERIFY(!object.isNull());
+
+    const QVariant font = object->property("font");
+    QCOMPARE(font.metaType(), QMetaType::fromType<QFont>());
+
+    QFont expected;
+    expected.setFamily(u"Arial"_s);
+    expected.setWeight(QFont::Normal);
+    expected.setItalic(false);
+    expected.setPixelSize(32);
+
+    QCOMPARE(font.value<QFont>(), expected);
 }
 
 void tst_QmlCppCodegen::reduceWithNullThis()

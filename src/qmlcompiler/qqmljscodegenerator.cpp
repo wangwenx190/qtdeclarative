@@ -2673,24 +2673,23 @@ void QQmlJSCodeGenerator::generate_DefineObjectLiteral(int internalClassId, int 
     const int classSize = m_jsUnitGenerator->jsClassSize(internalClassId);
     Q_ASSERT(argc >= classSize);
 
-    if (m_typeResolver->equals(contained, m_typeResolver->varType())
-        || m_typeResolver->equals(contained, m_typeResolver->variantMapType())) {
-
-        m_body += m_state.accumulatorVariableOut + u" = QVariantMap {\n";
+    const auto createVariantMap = [&]() {
+        QString result;
+        result += u"QVariantMap {\n";
         const QQmlJSScope::ConstPtr propType = m_typeResolver->varType();
         for (int i = 0; i < classSize; ++i) {
-            m_body += u"{ "_s
+            result += u"{ "_s
                     + QQmlJSUtils::toLiteral(m_jsUnitGenerator->jsClassMember(internalClassId, i))
                     + u", "_s;
             const int currentArg = args + i;
             const QQmlJSScope::ConstPtr argType = registerType(currentArg).storedType();
             const QString consumedArg = consumedRegisterVariable(currentArg);
-            m_body += convertStored(argType, propType, consumedArg) + u" },\n";
+            result += convertStored(argType, propType, consumedArg) + u" },\n";
         }
 
         for (int i = classSize; i < argc; i += 3) {
             const int nameArg = args + i + 1;
-            m_body += u"{ "_s
+            result += u"{ "_s
                     + conversion(
                               registerType(nameArg),
                               conversionType(m_typeResolver->stringType()),
@@ -2698,14 +2697,26 @@ void QQmlJSCodeGenerator::generate_DefineObjectLiteral(int internalClassId, int 
                     + u", "_s;
 
             const int valueArg = args + i + 2;
-            m_body += convertStored(
+            result += convertStored(
                               registerType(valueArg).storedType(),
                               propType,
                               consumedRegisterVariable(valueArg))
                     + u" },\n";
         }
 
-        m_body += u"};\n";
+        result += u"}";
+        return result;
+    };
+
+    if (m_typeResolver->equals(contained, m_typeResolver->varType())
+            || m_typeResolver->equals(contained, m_typeResolver->variantMapType())) {
+        m_body += m_state.accumulatorVariableOut + u" = "_s + createVariantMap() + u";\n"_s;
+        return;
+    }
+
+    if (m_typeResolver->equals(contained,  m_typeResolver->jsValueType())) {
+        m_body += m_state.accumulatorVariableOut + u" = aotContext->engine->toScriptValue("_s
+                + createVariantMap() + u");\n"_s;
         return;
     }
 

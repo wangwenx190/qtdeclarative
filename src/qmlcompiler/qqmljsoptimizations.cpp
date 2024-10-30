@@ -377,7 +377,8 @@ void QQmlJSOptimizations::adjustTypes()
             addError(adjustErrorMessage(resultType, it->typeReaders.values()));
 
         if (m_typeResolver->equals(resultType, m_typeResolver->varType())
-                || m_typeResolver->equals(resultType, m_typeResolver->variantMapType())) {
+                || m_typeResolver->equals(resultType, m_typeResolver->variantMapType())
+                || m_typeResolver->equals(resultType, m_typeResolver->jsValueType())) {
             // It's all variant anyway
             return;
         }

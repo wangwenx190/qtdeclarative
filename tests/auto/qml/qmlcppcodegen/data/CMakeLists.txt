@@ -239,6 +239,7 @@ set(qml_files
     prefixedMetaType.qml
     pressAndHoldButton.qml
     qtbug113150.qml
+    qtfont.qml
     reduceWithNullThis.qml
     readEnumFromInstance.qml
     readonlyListProperty.qml
