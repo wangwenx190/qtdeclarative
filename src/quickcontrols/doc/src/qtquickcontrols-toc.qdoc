@@ -26,6 +26,7 @@
             \li \l {Material Style}
             \li \l {Universal Style}
             \li \l {Windows Style}
+            \li \l {FluentWinUI3 Style}
             \li \l {Customizing Qt Quick Controls}
         \endlist
     \li \l {Qt Quick Controls Guidelines}{Controls}
