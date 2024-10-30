@@ -1813,6 +1813,17 @@ QString QQmlEnginePrivate::offlineStorageDatabaseDirectory() const
     return q->offlineStoragePath() + QDir::separator() + QLatin1String("Databases") + QDir::separator();
 }
 
+static bool hasRequiredProperties(const QQmlPropertyCache::ConstPtr &propertyCache)
+{
+    bool requiredPropertiesFound = false;
+    // we don't expect to find any, so the loop has no early termination check
+    if (propertyCache) {
+        for (int idx = 0, count = propertyCache->propertyCount(); idx < count; ++idx)
+            requiredPropertiesFound |= propertyCache->property(idx)->isRequired();
+    }
+    return requiredPropertiesFound;
+}
+
 template<>
 QJSValue QQmlEnginePrivate::singletonInstance<QJSValue>(const QQmlType &type)
 {
@@ -1847,17 +1858,27 @@ QJSValue QQmlEnginePrivate::singletonInstance<QJSValue>(const QQmlType &type)
             type.createProxy(o);
 
             // if this object can use a property cache, create it now
-            QQmlData::ensurePropertyCache(o);
-
-            // even though the object is defined in C++, qmlContext(obj) and qmlEngine(obj)
-            // should behave identically to QML singleton types. You can, however, manually
-            // assign a context; and clearSingletons() retains the contexts, in which case
-            // we don't want to see warnings about the object already having a context.
-            QQmlData *data = QQmlData::get(o, true);
-            if (!data->context) {
-                auto contextData = QQmlContextData::get(new QQmlContext(q->rootContext(), q));
-                data->context = contextData.data();
-                contextData->addOwnedObject(data);
+            QQmlPropertyCache::ConstPtr propertyCache = QQmlData::ensurePropertyCache(o);
+            if (Q_UNLIKELY(hasRequiredProperties(propertyCache))) {
+                // there's no way to set required properties on a singleton
+                delete o;
+                o = nullptr;
+                QQmlError error;
+                error.setMessageType(QtMsgType::QtCriticalMsg);
+                error.setDescription(QString::asprintf("Singleton \"%s\" is not available because the type has unset required properties.",
+                                                       qPrintable(QString::fromUtf8(type.typeName()))));
+                warning(error);
+            } else {
+                // even though the object is defined in C++, qmlContext(obj) and qmlEngine(obj)
+                // should behave identically to QML singleton types. You can, however, manually
+                // assign a context; and clearSingletons() retains the contexts, in which case
+                // we don't want to see warnings about the object already having a context.
+                QQmlData *data = QQmlData::get(o, true);
+                if (!data->context) {
+                    auto contextData = QQmlContextData::get(new QQmlContext(q->rootContext(), q));
+                    data->context = contextData.data();
+                    contextData->addOwnedObject(data);
+                }
             }
         }
 

@@ -125,6 +125,7 @@ private slots:
     void requiredProperty();
     void requiredPropertyFromCpp_data();
     void requiredPropertyFromCpp();
+    void requiredPropertyInCppSingleton();
     void attachedProperties();
     void dynamicObjects();
     void valueTypes();
@@ -1934,6 +1935,18 @@ void tst_qqmllanguage::requiredPropertyFromCpp()
         QVERIFY(!o.isNull());
         QCOMPARE(o->property("test").toInt(), expectedValue);
     }
+}
+
+void tst_qqmllanguage::requiredPropertyInCppSingleton()
+{
+    qmlRegisterSingletonType<MyClassWithRequiredProperty>("example.org", 1, 0, "RequiredPropSingleton", [](QQmlEngine *, QJSEngine *) {return new MyClassWithRequiredProperty;});
+    auto error = QRegularExpression(
+                ".* \"RequiredPropSingleton\" is not available because the type has unset required properties.*"
+                );
+    QTest::ignoreMessage(QtMsgType::QtCriticalMsg, error);
+    QQmlEngine engine;
+    auto singleton = engine.singletonInstance<MyClassWithRequiredProperty *>("example.org", "RequiredPropSingleton");
+    QVERIFY(!singleton);
 }
 
 void tst_qqmllanguage::attachedProperties()
