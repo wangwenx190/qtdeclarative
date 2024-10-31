@@ -63,7 +63,6 @@ void QQmlRangeFormatting::process(RequestPointerArgument request)
     Q_ASSERT(selectedRangeEndLine >= 0);
 
     LineWriterOptions options;
-    options.updateOptions = LineWriterOptions::Update::None;
     options.attributesSequence = LineWriterOptions::AttributesSequence::Preserve;
 
     QTextStream in(&code);

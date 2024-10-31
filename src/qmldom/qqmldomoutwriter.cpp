@@ -26,8 +26,6 @@ OutWriterState::OutWriterState(
 
 void OutWriterState::closeState(OutWriter &w)
 {
-    if (w.lineWriter.options().updateOptions & LineWriterOptions::Update::Locations)
-        w.lineWriter.endSourceLocation(fullRegionId);
     if (!pendingRegions.isEmpty()) {
         qCWarning(writeOutLog) << "PendingRegions non empty when closing item"
                                << pendingRegions.keys();
@@ -53,26 +51,11 @@ void OutWriter::itemStart(const DomItem &it)
 {
     if (!topLocation->path())
         topLocation->setPath(it.canonicalPath());
-    bool updateLocs = lineWriter.options().updateOptions & LineWriterOptions::Update::Locations;
     FileLocations::Tree newFLoc = topLocation;
     Path itP = it.canonicalPath();
-    if (updateLocs) {
-        if (!states.isEmpty()
-            && states.last().itemCanonicalPath
-                    == itP.mid(0, states.last().itemCanonicalPath.length())) {
-            int oldL = states.last().itemCanonicalPath.length();
-            newFLoc = FileLocations::ensure(states.last().currentMap,
-                                            itP.mid(oldL, itP.length() - oldL),
-                                            AttachedInfo::PathType::Relative);
 
-        } else {
-            newFLoc = FileLocations::ensure(topLocation, itP, AttachedInfo::PathType::Canonical);
-        }
-    }
     states.append(OutWriterState(itP, it, newFLoc));
-    if (updateLocs)
-        state().fullRegionId = lineWriter.startSourceLocation(
-                [newFLoc](SourceLocation l) { FileLocations::updateFullLocation(newFLoc, l); });
+
     regionStart(MainRegion);
 }
 
@@ -90,10 +73,7 @@ void OutWriter::regionStart(FileLocationRegion region)
     Q_ASSERT(!state().pendingRegions.contains(region));
     FileLocations::Tree fMap = state().currentMap;
     if (!skipComments && state().pendingComments.contains(region)) {
-        bool updateLocs = lineWriter.options().updateOptions & LineWriterOptions::Update::Locations;
-        QList<SourceLocation> *cLocs =
-                (updateLocs ? &(fMap->info().preCommentLocations[region]) : nullptr);
-        state().pendingComments[region].writePre(*this, cLocs);
+        state().pendingComments[region].writePre(*this, nullptr);
     }
     state().pendingRegions[region] = lineWriter.startSourceLocation(
             [region, fMap](SourceLocation l) { FileLocations::addRegion(fMap, region, l); });
@@ -107,11 +87,7 @@ void OutWriter::regionEnd(FileLocationRegion region)
     state().pendingRegions.remove(region);
     if (state().pendingComments.contains(region)) {
         if (!skipComments) {
-            bool updateLocs =
-                    lineWriter.options().updateOptions & LineWriterOptions::Update::Locations;
-            QList<SourceLocation> *cLocs =
-                    (updateLocs ? &(fMap->info().postCommentLocations[region]) : nullptr);
-            state().pendingComments[region].writePost(*this, cLocs);
+            state().pendingComments[region].writePost(*this, nullptr);
         }
         state().pendingComments.remove(region);
     }

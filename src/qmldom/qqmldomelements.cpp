@@ -1814,29 +1814,8 @@ QString ScriptExpression::astRelocatableDump() const
     });
 }
 
-void ScriptExpression::writeOut(const DomItem &self, OutWriter &lw) const
+void ScriptExpression::writeOut(const DomItem &, OutWriter &lw) const
 {
-    OutWriter *ow = &lw;
-
-    std::optional<PendingSourceLocationId> codeLoc;
-    if (lw.lineWriter.options().updateOptions & LineWriterOptions::Update::Expressions)
-        codeLoc = lw.lineWriter.startSourceLocation([this, self, ow](SourceLocation myLoc) mutable {
-            QStringView reformattedCode =
-                    QStringView(ow->writtenStr).mid(myLoc.offset, myLoc.length);
-            if (reformattedCode != code()) {
-                // If some reformatting of the expression took place,
-                // it will be saved as an intermediate step.
-                // then it will be used to restore writtenOut fileItem
-                // in the OutWriter::restoreWrittenFile
-
-                //Interestingly enough, this copyWithUpdatedCode will
-                //instantiate Engine and Parser and will parse "reformattedCode"
-                //because it calls ScriptExpression::setCode function
-                std::shared_ptr<ScriptExpression> copy =
-                        copyWithUpdatedCode(self, reformattedCode.toString());
-                ow->addReformattedScriptExpression(self.canonicalPath(), copy);
-            }
-        });
     reformatAst(
             lw, m_astComments,
             [this](SourceLocation astL) {
@@ -1844,8 +1823,6 @@ void ScriptExpression::writeOut(const DomItem &self, OutWriter &lw) const
                 return this->code().mid(l.offset, l.length);
             },
             ast());
-    if (codeLoc)
-        lw.lineWriter.endSourceLocation(*codeLoc);
 }
 
 SourceLocation ScriptExpression::globalLocation(const DomItem &self) const

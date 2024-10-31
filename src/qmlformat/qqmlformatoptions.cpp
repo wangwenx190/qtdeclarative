@@ -5,8 +5,6 @@
 
 QQmlFormatOptions::QQmlFormatOptions()
 {
-    m_options.updateOptions = QQmlJS::Dom::LineWriterOptions::Update::None;
-
     setTabsEnabled(false);
     setNormalizeEnabled(false);
     setObjectsSpacing(false);
