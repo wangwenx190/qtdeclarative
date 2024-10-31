@@ -293,51 +293,6 @@ AttachedInfo::findAttachedInfo(const DomItem &item, QStringView fieldName)
     return res;
 }
 
-bool UpdatedScriptExpression::iterateDirectSubpaths(const DomItem &self, DirectVisitor visitor) const
-{
-    bool cont = true;
-    cont = cont && self.dvWrapField(visitor, Fields::expr, expr);
-    return cont;
-}
-
-UpdatedScriptExpression::Tree UpdatedScriptExpression::createTree(const Path &basePath)
-{
-    return AttachedInfoT<UpdatedScriptExpression>::createTree(basePath);
-}
-
-UpdatedScriptExpression::Tree UpdatedScriptExpression::ensure(
-        const UpdatedScriptExpression::Tree &base, const Path &basePath,
-        AttachedInfo::PathType pType)
-{
-    return AttachedInfoT<UpdatedScriptExpression>::ensure(base, basePath, pType);
-}
-
-AttachedInfoLookupResult<UpdatedScriptExpression::Tree>
-UpdatedScriptExpression::findAttachedInfo(const DomItem &item)
-{
-    return AttachedInfoT<UpdatedScriptExpression>::findAttachedInfo(
-            item, Fields::updatedScriptExpressions);
-}
-
-UpdatedScriptExpression::Tree UpdatedScriptExpression::treePtr(const DomItem &item)
-{
-    return AttachedInfoT<UpdatedScriptExpression>::treePtr(item, Fields::updatedScriptExpressions);
-}
-
-const UpdatedScriptExpression *UpdatedScriptExpression::exprPtr(const DomItem &item)
-{
-    if (UpdatedScriptExpression::Tree t = treePtr(item))
-        return &(t->info());
-    return nullptr;
-}
-
-bool UpdatedScriptExpression::visitTree(
-        const Tree &base, function_ref<bool(const Path &, const Tree &)> visitor,
-        const Path &basePath)
-{
-    return AttachedInfoT<UpdatedScriptExpression>::visitTree(base, visitor, basePath);
-}
-
 } // namespace Dom
 } // namespace QQmlJS
 QT_END_NAMESPACE

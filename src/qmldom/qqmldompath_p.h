@@ -575,7 +575,6 @@ QMLDOM_FIELD(typeArgumentName);
 QMLDOM_FIELD(typeName);
 QMLDOM_FIELD(types);
 QMLDOM_FIELD(universe);
-QMLDOM_FIELD(updatedScriptExpressions);
 QMLDOM_FIELD(uri);
 QMLDOM_FIELD(uris);
 QMLDOM_FIELD(validExposedAt);

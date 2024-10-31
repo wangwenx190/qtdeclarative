@@ -160,8 +160,6 @@ enum class DomType {
     AstComments, // hash-table from AST node to commented element
     FileLocations, // mapping from DomItem to file location ### REVISIT: try to move out of
                    // hierarchy?
-    UpdatedScriptExpression, // used in writeOut method when formatting changes ### Revisit: try to
-                             // move out of DOM hierarchy
 
     // convenience collecting types
     PropertyInfo, // not a DOM Item, just a convenience class

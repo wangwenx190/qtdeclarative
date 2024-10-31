@@ -1960,7 +1960,6 @@ constexpr bool domTypeIsObjWrap(DomType k)
     case DomType::CommentedElement:
     case DomType::RegionComments:
     case DomType::FileLocations:
-    case DomType::UpdatedScriptExpression:
         return true;
     default:
         return false;

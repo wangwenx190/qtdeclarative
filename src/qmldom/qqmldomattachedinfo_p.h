@@ -277,33 +277,6 @@ public:
     QMap<FileLocationRegion, QList<SourceLocation>> postCommentLocations;
 };
 
-class QMLDOM_EXPORT UpdatedScriptExpression
-{
-    Q_GADGET
-public:
-    using Tree = std::shared_ptr<AttachedInfoT<UpdatedScriptExpression>>;
-    constexpr static DomType kindValue = DomType::UpdatedScriptExpression;
-    DomType kind() const { return kindValue; }
-    bool iterateDirectSubpaths(const DomItem &self, DirectVisitor) const;
-
-    static Tree createTree(const Path &basePath);
-    static Tree ensure(const Tree &base, const Path &basePath, AttachedInfo::PathType pType);
-
-    // returns the path looked up and the found tree when looking for the info attached to item
-    static AttachedInfoLookupResult<Tree>
-    findAttachedInfo(const DomItem &item);
-    // convenience: find FileLocations::Tree attached to the given item
-    static Tree treePtr(const DomItem &);
-    // convenience: find FileLocations* attached to the given item (if there is one)
-    static const UpdatedScriptExpression *exprPtr(const DomItem &);
-
-    static bool visitTree(
-            const Tree &base, function_ref<bool(const Path &, const Tree &)> visitor,
-            const Path &basePath = Path());
-
-    std::shared_ptr<ScriptExpression> expr;
-};
-
 } // end namespace Dom
 } // end namespace QQmlJS
 
