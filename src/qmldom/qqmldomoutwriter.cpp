@@ -289,52 +289,17 @@ DomItem OutWriter::restoreWrittenFileItem(const DomItem &fileItem)
     }
 }
 
-DomItem OutWriter::writtenQmlFileItem(const DomItem &fileItem, const Path &filePath)
+DomItem OutWriter::writtenQmlFileItem(const DomItem &fileItem, const Path &)
 {
     Q_ASSERT(fileItem.internalKind() == DomType::QmlFile);
     auto mutableFile = fileItem.makeCopy(DomItem::CopyOption::EnvDisconnected);
-    // QmlFile specific visitor for reformattedScriptExpressions tree
-    // lambda function responsible for the update of the initial expression by the formatted one
-    auto exprUpdater = [&mutableFile, filePath](
-                               const Path &p, const UpdatedScriptExpression::Tree &t) {
-        if (std::shared_ptr<ScriptExpression> formattedExpr = t->info().expr) {
-            Q_ASSERT(p.mid(0, filePath.length()) == filePath);
-            MutableDomItem originalExprItem = mutableFile.path(p.mid(filePath.length()));
-            if (!originalExprItem)
-                qCWarning(writeOutLog) << "failed to get" << p.mid(filePath.length()) << "from"
-                                       << mutableFile.canonicalPath();
-            // Verifying originalExprItem.as<ScriptExpression>() == false is handy
-            // because we can't call setScript on the ScriptExpression itself and it needs to
-            // be called on the container / parent item. See setScript for details
-            else if (formattedExpr->ast()
-                     || (!originalExprItem.as<ScriptExpression>()
-                         || !originalExprItem.as<ScriptExpression>()->ast()))
-                originalExprItem.setScript(formattedExpr);
-            else {
-                logScriptExprUpdateSkipped(originalExprItem.item(),
-                                           originalExprItem.canonicalPath(), formattedExpr);
-            }
-        }
-        return true;
-    };
-    // update relevant formatted expressions
-    UpdatedScriptExpression::visitTree(reformattedScriptExpressions, exprUpdater);
     return mutableFile.item();
 }
 
-DomItem OutWriter::writtenJsFileItem(const DomItem &fileItem, const Path &filePath)
+DomItem OutWriter::writtenJsFileItem(const DomItem &fileItem, const Path &)
 {
     Q_ASSERT(fileItem.internalKind() == DomType::JsFile);
     auto mutableFile = fileItem.makeCopy(DomItem::CopyOption::EnvDisconnected);
-    UpdatedScriptExpression::visitTree(
-            reformattedScriptExpressions,
-            [&mutableFile, filePath](const Path &p, const UpdatedScriptExpression::Tree &t) {
-                if (std::shared_ptr<ScriptExpression> formattedExpr = t->info().expr) {
-                    Q_ASSERT(p.mid(0, filePath.length()) == filePath);
-                    mutableFile.mutableAs<JsFile>()->setExpression(formattedExpr);
-                }
-                return true;
-            });
     return mutableFile.item();
 }
 

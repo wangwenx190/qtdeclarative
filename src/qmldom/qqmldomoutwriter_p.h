@@ -54,13 +54,10 @@ public:
     Path currentPath;
     FileLocations::Tree topLocation;
     QString writtenStr;
-    UpdatedScriptExpression::Tree reformattedScriptExpressions;
     QList<OutWriterState> states;
 
     explicit OutWriter(LineWriter &lw)
-        : lineWriter(lw),
-          topLocation(FileLocations::createTree(Path())),
-          reformattedScriptExpressions(UpdatedScriptExpression::createTree(Path()))
+        : lineWriter(lw), topLocation(FileLocations::createTree(Path()))
     {
         lineWriter.addInnerSink([this](QStringView s) { writtenStr.append(s); });
         indenterId =
@@ -141,13 +138,6 @@ public:
         return lineWriter.addTextAddCallback(callback);
     }
     bool removeTextAddCallback(int i) { return lineWriter.removeTextAddCallback(i); }
-    void addReformattedScriptExpression(const Path &p, const std::shared_ptr<ScriptExpression> &exp)
-    {
-        if (auto updExp = UpdatedScriptExpression::ensure(reformattedScriptExpressions, p,
-                                                          AttachedInfo::PathType::Canonical)) {
-            updExp->info().expr = exp;
-        }
-    }
     DomItem restoreWrittenFileItem(const DomItem &fileItem);
 
 private:
