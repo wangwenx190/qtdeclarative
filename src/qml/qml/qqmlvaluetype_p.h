@@ -103,9 +103,8 @@ private:
     void *m_gadgetPtr = nullptr;
 };
 
-struct Q_QML_EXPORT QQmlPointFValueType
+struct Q_QML_EXPORT QQmlPointFValueType : public QPointF
 {
-    QPointF v;
     Q_PROPERTY(qreal x READ x WRITE setX FINAL)
     Q_PROPERTY(qreal y READ y WRITE setY FINAL)
     Q_GADGET
@@ -116,19 +115,17 @@ struct Q_QML_EXPORT QQmlPointFValueType
 
 public:
     Q_INVOKABLE QQmlPointFValueType() = default;
-    Q_INVOKABLE QQmlPointFValueType(const QPoint &point) : v(point) {}
+    Q_INVOKABLE QQmlPointFValueType(const QPointF &point) : QPointF(point) {}
+    Q_INVOKABLE QQmlPointFValueType(const QPoint &point) : QPointF(point) {}
     Q_INVOKABLE QString toString() const;
     qreal x() const;
     qreal y() const;
     void setX(qreal);
     void setY(qreal);
-
-    operator QPointF() const { return v; }
 };
 
-struct Q_QML_EXPORT QQmlPointValueType
+struct Q_QML_EXPORT QQmlPointValueType : public QPoint
 {
-    QPoint v;
     Q_PROPERTY(int x READ x WRITE setX FINAL)
     Q_PROPERTY(int y READ y WRITE setY FINAL)
     Q_GADGET
@@ -139,19 +136,17 @@ struct Q_QML_EXPORT QQmlPointValueType
 
 public:
     QQmlPointValueType() = default;
-    Q_INVOKABLE QQmlPointValueType(const QPointF &point) : v(point.toPoint()) {}
+    Q_INVOKABLE QQmlPointValueType(const QPoint &point) : QPoint(point) {}
+    Q_INVOKABLE QQmlPointValueType(const QPointF &point) : QPoint(point.toPoint()) {}
     Q_INVOKABLE QString toString() const;
     int x() const;
     int y() const;
     void setX(int);
     void setY(int);
-
-    operator QPoint() const { return v; }
 };
 
-struct Q_QML_EXPORT QQmlSizeFValueType
+struct Q_QML_EXPORT QQmlSizeFValueType : public QSizeF
 {
-    QSizeF v;
     Q_PROPERTY(qreal width READ width WRITE setWidth FINAL)
     Q_PROPERTY(qreal height READ height WRITE setHeight FINAL)
     Q_GADGET
@@ -162,19 +157,17 @@ struct Q_QML_EXPORT QQmlSizeFValueType
 
 public:
     Q_INVOKABLE QQmlSizeFValueType() = default;
-    Q_INVOKABLE QQmlSizeFValueType(const QSize &size) : v(size) {}
+    Q_INVOKABLE QQmlSizeFValueType(const QSizeF &size) : QSizeF(size) {}
+    Q_INVOKABLE QQmlSizeFValueType(const QSize &size) : QSizeF(size) {}
     Q_INVOKABLE QString toString() const;
     qreal width() const;
     qreal height() const;
     void setWidth(qreal);
     void setHeight(qreal);
-
-    operator QSizeF() const { return v; }
 };
 
-struct Q_QML_EXPORT QQmlSizeValueType
+struct Q_QML_EXPORT QQmlSizeValueType : QSize
 {
-    QSize v;
     Q_PROPERTY(int width READ width WRITE setWidth FINAL)
     Q_PROPERTY(int height READ height WRITE setHeight FINAL)
     Q_GADGET
@@ -185,19 +178,17 @@ struct Q_QML_EXPORT QQmlSizeValueType
 
 public:
     QQmlSizeValueType() = default;
-    Q_INVOKABLE QQmlSizeValueType(const QSizeF &size) : v(size.toSize()) {}
+    Q_INVOKABLE QQmlSizeValueType(const QSize &size) : QSize(size) {}
+    Q_INVOKABLE QQmlSizeValueType(const QSizeF &size) : QSize(size.toSize()) {}
     Q_INVOKABLE QString toString() const;
     int width() const;
     int height() const;
     void setWidth(int);
     void setHeight(int);
-
-    operator QSize() const { return v; }
 };
 
-struct Q_QML_EXPORT QQmlRectFValueType
+struct Q_QML_EXPORT QQmlRectFValueType : public QRectF
 {
-    QRectF v;
     Q_PROPERTY(qreal x READ x WRITE setX FINAL)
     Q_PROPERTY(qreal y READ y WRITE setY FINAL)
     Q_PROPERTY(qreal width READ width WRITE setWidth FINAL)
@@ -214,7 +205,8 @@ struct Q_QML_EXPORT QQmlRectFValueType
 
 public:
     Q_INVOKABLE QQmlRectFValueType() = default;
-    Q_INVOKABLE QQmlRectFValueType(const QRect &rect) : v(rect) {}
+    Q_INVOKABLE QQmlRectFValueType(const QRectF &rect) : QRectF(rect) {}
+    Q_INVOKABLE QQmlRectFValueType(const QRect &rect) : QRectF(rect) {}
     Q_INVOKABLE QString toString() const;
     qreal x() const;
     qreal y() const;
@@ -230,13 +222,10 @@ public:
     qreal right() const;
     qreal top() const;
     qreal bottom() const;
-
-    operator QRectF() const { return v; }
 };
 
-struct Q_QML_EXPORT QQmlRectValueType
+struct Q_QML_EXPORT QQmlRectValueType : QRect
 {
-    QRect v;
     Q_PROPERTY(int x READ x WRITE setX FINAL)
     Q_PROPERTY(int y READ y WRITE setY FINAL)
     Q_PROPERTY(int width READ width WRITE setWidth FINAL)
@@ -253,7 +242,8 @@ struct Q_QML_EXPORT QQmlRectValueType
 
 public:
     QQmlRectValueType() = default;
-    Q_INVOKABLE QQmlRectValueType(const QRectF &rect) : v(rect.toRect()) {}
+    Q_INVOKABLE QQmlRectValueType(const QRect &rect) : QRect(rect) {}
+    Q_INVOKABLE QQmlRectValueType(const QRectF &rect) : QRect(rect.toRect()) {}
     Q_INVOKABLE QString toString() const;
     int x() const;
     int y() const;
@@ -269,13 +259,10 @@ public:
     int right() const;
     int top() const;
     int bottom() const;
-
-    operator QRect() const { return v; }
 };
 
-struct Q_QML_EXPORT QQmlMarginsFValueType
+struct Q_QML_EXPORT QQmlMarginsFValueType : public QMarginsF
 {
-    QMarginsF m;
     Q_PROPERTY(qreal left READ left WRITE setLeft FINAL)
     Q_PROPERTY(qreal right READ right WRITE setRight FINAL)
     Q_PROPERTY(qreal top READ top WRITE setTop FINAL)
@@ -288,7 +275,8 @@ struct Q_QML_EXPORT QQmlMarginsFValueType
 
 public:
     QQmlMarginsFValueType() = default;
-    Q_INVOKABLE QQmlMarginsFValueType(const QMargins &margins) : m(margins) {}
+    Q_INVOKABLE QQmlMarginsFValueType(const QMarginsF &margins) : QMarginsF(margins) {}
+    Q_INVOKABLE QQmlMarginsFValueType(const QMargins &margins) : QMarginsF(margins) {}
     Q_INVOKABLE QString toString() const;
     qreal left() const;
     qreal right() const;
@@ -298,13 +286,10 @@ public:
     void setRight(qreal);
     void setTop(qreal);
     void setBottom(qreal);
-
-    operator QMarginsF() const { return m; }
 };
 
-struct Q_QML_EXPORT QQmlMarginsValueType
+struct Q_QML_EXPORT QQmlMarginsValueType : public QMargins
 {
-    QMargins m;
     Q_PROPERTY(int left READ left WRITE setLeft FINAL)
     Q_PROPERTY(int right READ right WRITE setRight FINAL)
     Q_PROPERTY(int top READ top WRITE setTop FINAL)
@@ -317,7 +302,8 @@ struct Q_QML_EXPORT QQmlMarginsValueType
 
 public:
     QQmlMarginsValueType() = default;
-    Q_INVOKABLE QQmlMarginsValueType(const QMarginsF &margins) : m(margins.toMargins()) {}
+    Q_INVOKABLE QQmlMarginsValueType(const QMargins &margins) : QMargins(margins) {}
+    Q_INVOKABLE QQmlMarginsValueType(const QMarginsF &margins) : QMargins(margins.toMargins()) {}
     Q_INVOKABLE QString toString() const;
     int left() const;
     int right() const;
@@ -327,8 +313,6 @@ public:
     void setRight(int);
     void setTop(int);
     void setBottom(int);
-
-    operator QMargins() const { return m; }
 };
 
 #if QT_CONFIG(easingcurve)
@@ -368,9 +352,8 @@ enum Type {
 Q_ENUM_NS(Type)
 };
 
-struct Q_QML_EXPORT QQmlEasingValueType
+struct Q_QML_EXPORT QQmlEasingValueType : public QEasingCurve
 {
-    QEasingCurve v;
     Q_GADGET
     QML_ANONYMOUS
     QML_FOREIGN(QEasingCurve)
@@ -384,6 +367,9 @@ struct Q_QML_EXPORT QQmlEasingValueType
     Q_PROPERTY(QList<qreal> bezierCurve READ bezierCurve WRITE setBezierCurve FINAL)
 
 public:
+    Q_INVOKABLE QQmlEasingValueType() = default;
+    Q_INVOKABLE QQmlEasingValueType(const QEasingCurve &easing) : QEasingCurve(easing) {}
+
     QQmlEasingEnums::Type type() const;
     qreal amplitude() const;
     qreal overshoot() const;
@@ -394,8 +380,6 @@ public:
     void setPeriod(qreal);
     void setBezierCurve(const QList<qreal> &);
     QList<qreal> bezierCurve() const;
-
-    operator QEasingCurve() const { return v; }
 };
 #endif
 
