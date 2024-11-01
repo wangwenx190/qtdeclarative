@@ -479,7 +479,7 @@ void QQmlEasingValueType::setPeriod(qreal period)
     v.setPeriod(period);
 }
 
-void QQmlEasingValueType::setBezierCurve(const QVariantList &customCurveVariant)
+void QQmlEasingValueType::setBezierCurve(const QList<qreal> &customCurveVariant)
 {
     if (customCurveVariant.isEmpty())
         return;
@@ -487,21 +487,14 @@ void QQmlEasingValueType::setBezierCurve(const QVariantList &customCurveVariant)
     if ((customCurveVariant.size() % 6) != 0)
         return;
 
-    auto convert = [](const QVariant &v, qreal &r) {
-        bool ok;
-        r = v.toReal(&ok);
-        return ok;
-    };
-
     QEasingCurve newEasingCurve(QEasingCurve::BezierSpline);
     for (int i = 0, ei = customCurveVariant.size(); i < ei; i += 6) {
-        qreal c1x, c1y, c2x, c2y, c3x, c3y;
-        if (!convert(customCurveVariant.at(i    ), c1x)) return;
-        if (!convert(customCurveVariant.at(i + 1), c1y)) return;
-        if (!convert(customCurveVariant.at(i + 2), c2x)) return;
-        if (!convert(customCurveVariant.at(i + 3), c2y)) return;
-        if (!convert(customCurveVariant.at(i + 4), c3x)) return;
-        if (!convert(customCurveVariant.at(i + 5), c3y)) return;
+        const qreal c1x = customCurveVariant.at(i    );
+        const qreal c1y = customCurveVariant.at(i + 1);
+        const qreal c2x = customCurveVariant.at(i + 2);
+        const qreal c2y = customCurveVariant.at(i + 3);
+        const qreal c3x = customCurveVariant.at(i + 4);
+        const qreal c3y = customCurveVariant.at(i + 5);
 
         const QPointF c1(c1x, c1y);
         const QPointF c2(c2x, c2y);
@@ -513,13 +506,13 @@ void QQmlEasingValueType::setBezierCurve(const QVariantList &customCurveVariant)
     v = newEasingCurve;
 }
 
-QVariantList QQmlEasingValueType::bezierCurve() const
+QList<qreal> QQmlEasingValueType::bezierCurve() const
 {
-    QVariantList rv;
+    QList<qreal> rv;
     const QVector<QPointF> points = v.toCubicSpline();
     rv.reserve(points.size() * 2);
     for (const auto &point : points)
-        rv << QVariant(point.x()) << QVariant(point.y());
+        rv << point.x() << point.y();
     return rv;
 }
 #endif // easingcurve

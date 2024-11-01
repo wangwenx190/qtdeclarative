@@ -381,7 +381,7 @@ struct Q_QML_EXPORT QQmlEasingValueType
     Q_PROPERTY(qreal amplitude READ amplitude WRITE setAmplitude FINAL)
     Q_PROPERTY(qreal overshoot READ overshoot WRITE setOvershoot FINAL)
     Q_PROPERTY(qreal period READ period WRITE setPeriod FINAL)
-    Q_PROPERTY(QVariantList bezierCurve READ bezierCurve WRITE setBezierCurve FINAL)
+    Q_PROPERTY(QList<qreal> bezierCurve READ bezierCurve WRITE setBezierCurve FINAL)
 
 public:
     QQmlEasingEnums::Type type() const;
@@ -392,8 +392,8 @@ public:
     void setAmplitude(qreal);
     void setOvershoot(qreal);
     void setPeriod(qreal);
-    void setBezierCurve(const QVariantList &);
-    QVariantList bezierCurve() const;
+    void setBezierCurve(const QList<qreal> &);
+    QList<qreal> bezierCurve() const;
 
     operator QEasingCurve() const { return v; }
 };
