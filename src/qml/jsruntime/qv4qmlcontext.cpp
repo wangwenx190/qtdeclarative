@@ -212,7 +212,7 @@ ReturnedValue QQmlContextWrapper::getPropertyAndBase(const QQmlContextWrapper *r
                     lookup->call = Lookup::Call::ContextGetterScript;
                     return lookup->contextGetter(v4, base);
                 }
-                QV4::ScopedObject scripts(scope, context->importedScripts().valueRef());
+                QV4::ScopedObject scripts(scope, context->importedScripts());
                 if (scripts)
                     return scripts->get(r.scriptIndex);
                 return QV4::Encode::null();
@@ -566,7 +566,7 @@ ReturnedValue QQmlContextWrapper::lookupScript(Lookup *l, ExecutionEngine *engin
     if (!context)
         return QV4::Encode::null();
 
-    QV4::ScopedObject scripts(scope, context->importedScripts().valueRef());
+    QV4::ScopedObject scripts(scope, context->importedScripts());
     if (!scripts)
         return QV4::Encode::null();
     return scripts->get(l->qmlContextScriptLookup.scriptIndex);
