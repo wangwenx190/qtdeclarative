@@ -30,9 +30,8 @@
 
 QT_BEGIN_NAMESPACE
 
-class Q_QUICK_EXPORT QQuickColorValueType
+class Q_QUICK_EXPORT QQuickColorValueType : public QColor
 {
-    QColor v;
     Q_PROPERTY(qreal r READ r WRITE setR FINAL)
     Q_PROPERTY(qreal g READ g WRITE setG FINAL)
     Q_PROPERTY(qreal b READ b WRITE setB FINAL)
@@ -55,13 +54,14 @@ public:
     static QVariant create(const QJSValue &params);
 
     Q_INVOKABLE QQuickColorValueType() = default;
+    Q_INVOKABLE QQuickColorValueType(const QColor &color) : QColor(color) {}
     Q_INVOKABLE QQuickColorValueType(const QString &string);
     Q_INVOKABLE QString toString() const;
 
-    Q_INVOKABLE QVariant alpha(qreal value) const;
-    Q_INVOKABLE QVariant lighter(qreal factor = 1.5) const;
-    Q_INVOKABLE QVariant darker(qreal factor = 2.0) const;
-    Q_INVOKABLE QVariant tint(QVariant factor) const;
+    Q_INVOKABLE QColor alpha(qreal value) const;
+    Q_INVOKABLE QColor lighter(qreal factor = 1.5) const;
+    Q_INVOKABLE QColor darker(qreal factor = 2.0) const;
+    Q_INVOKABLE QColor tint(const QColor &tintColor) const;
 
     qreal r() const;
     qreal g() const;
@@ -84,8 +84,6 @@ public:
     void setHslHue(qreal);
     void setHslSaturation(qreal);
     void setHslLightness(qreal);
-
-    operator QColor() const { return v; }
 };
 
 class Q_QUICK_EXPORT QQuickVector2DValueType

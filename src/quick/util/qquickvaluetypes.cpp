@@ -12,7 +12,7 @@
 QT_BEGIN_NAMESPACE
 
 QQuickColorValueType::QQuickColorValueType(const QString &string)
-    : v(QColor::fromString(string))
+    : QColor(QColor::fromString(string))
 {
 }
 
@@ -23,144 +23,161 @@ QVariant QQuickColorValueType::create(const QJSValue &params)
 
 QString QQuickColorValueType::toString() const
 {
-    return v.name(v.alpha() != 255 ? QColor::HexArgb : QColor::HexRgb);
+    return QColor::name(QColor::alpha() != 255 ? QColor::HexArgb : QColor::HexRgb);
 }
 
-QVariant QQuickColorValueType::lighter(qreal factor) const
+QColor QQuickColorValueType::lighter(qreal factor) const
 {
-    return QQml_colorProvider()->lighter(this->v, factor);
+    return QColor::lighter(int(qRound(factor*100.)));
 }
 
-QVariant QQuickColorValueType::darker(qreal factor) const
+QColor QQuickColorValueType::darker(qreal factor) const
 {
-    return QQml_colorProvider()->darker(this->v, factor);
+    return QColor::darker(int(qRound(factor*100.)));
 }
 
-QVariant QQuickColorValueType::alpha(qreal value) const
+QColor QQuickColorValueType::alpha(qreal value) const
 {
-    return QQml_colorProvider()->alpha(this->v, value);
+    QColor color = *this;
+    color.setAlphaF(value);
+    return color;
 }
 
-QVariant QQuickColorValueType::tint(QVariant tintColor) const
+QColor QQuickColorValueType::tint(const QColor &tintColor) const
 {
-    return QQml_colorProvider()->tint(this->v, tintColor);
+    int tintAlpha = tintColor.alpha();
+    if (tintAlpha == 0xFF)
+        return tintColor;
+    else if (tintAlpha == 0x00)
+        return *this;
+
+    // tint the base color and return the final color
+    const QColor baseColor = QColor::toRgb();
+    const qreal a = tintColor.alphaF();
+    const qreal inv_a = 1.0 - a;
+
+    const qreal r = tintColor.redF() * a + baseColor.redF() * inv_a;
+    const qreal g = tintColor.greenF() * a + baseColor.greenF() * inv_a;
+    const qreal b = tintColor.blueF() * a + baseColor.blueF() * inv_a;
+
+    return QColor::fromRgbF(r, g, b, a + inv_a * baseColor.alphaF());
 }
 
 qreal QQuickColorValueType::r() const
 {
-    return v.redF();
+    return QColor::redF();
 }
 
 qreal QQuickColorValueType::g() const
 {
-    return v.greenF();
+    return QColor::greenF();
 }
 
 qreal QQuickColorValueType::b() const
 {
-    return v.blueF();
+    return QColor::blueF();
 }
 
 qreal QQuickColorValueType::a() const
 {
-    return v.alphaF();
+    return QColor::alphaF();
 }
 
 qreal QQuickColorValueType::hsvHue() const
 {
-    return v.hsvHueF();
+    return QColor::hsvHueF();
 }
 
 qreal QQuickColorValueType::hsvSaturation() const
 {
-    return v.hsvSaturationF();
+    return QColor::hsvSaturationF();
 }
 
 qreal QQuickColorValueType::hsvValue() const
 {
-    return v.valueF();
+    return QColor::valueF();
 }
 
 qreal QQuickColorValueType::hslHue() const
 {
-    return v.hslHueF();
+    return QColor::hslHueF();
 }
 
 qreal QQuickColorValueType::hslSaturation() const
 {
-    return v.hslSaturationF();
+    return QColor::hslSaturationF();
 }
 
 qreal QQuickColorValueType::hslLightness() const
 {
-    return v.lightnessF();
+    return QColor::lightnessF();
 }
 
 bool QQuickColorValueType::isValid() const
 {
-    return v.isValid();
+    return QColor::isValid();
 }
 
 void QQuickColorValueType::setR(qreal r)
 {
-    v.setRedF(r);
+    QColor::setRedF(r);
 }
 
 void QQuickColorValueType::setG(qreal g)
 {
-    v.setGreenF(g);
+    QColor::setGreenF(g);
 }
 
 void QQuickColorValueType::setB(qreal b)
 {
-    v.setBlueF(b);
+    QColor::setBlueF(b);
 }
 
 void QQuickColorValueType::setA(qreal a)
 {
-    v.setAlphaF(a);
+    QColor::setAlphaF(a);
 }
 
 void QQuickColorValueType::setHsvHue(qreal hsvHue)
 {
     float hue, saturation, value, alpha;
-    v.getHsvF(&hue, &saturation, &value, &alpha);
-    v.setHsvF(hsvHue, saturation, value, alpha);
+    QColor::getHsvF(&hue, &saturation, &value, &alpha);
+    QColor::setHsvF(hsvHue, saturation, value, alpha);
 }
 
 void QQuickColorValueType::setHsvSaturation(qreal hsvSaturation)
 {
     float hue, saturation, value, alpha;
-    v.getHsvF(&hue, &saturation, &value, &alpha);
-    v.setHsvF(hue, hsvSaturation, value, alpha);
+    QColor::getHsvF(&hue, &saturation, &value, &alpha);
+    QColor::setHsvF(hue, hsvSaturation, value, alpha);
 }
 
 void QQuickColorValueType::setHsvValue(qreal hsvValue)
 {
     float hue, saturation, value, alpha;
-    v.getHsvF(&hue, &saturation, &value, &alpha);
-    v.setHsvF(hue, saturation, hsvValue, alpha);
+    QColor::getHsvF(&hue, &saturation, &value, &alpha);
+    QColor::setHsvF(hue, saturation, hsvValue, alpha);
 }
 
 void QQuickColorValueType::setHslHue(qreal hslHue)
 {
     float hue, saturation, lightness, alpha;
-    v.getHslF(&hue, &saturation, &lightness, &alpha);
-    v.setHslF(hslHue, saturation, lightness, alpha);
+    QColor::getHslF(&hue, &saturation, &lightness, &alpha);
+    QColor::setHslF(hslHue, saturation, lightness, alpha);
 }
 
 void QQuickColorValueType::setHslSaturation(qreal hslSaturation)
 {
     float hue, saturation, lightness, alpha;
-    v.getHslF(&hue, &saturation, &lightness, &alpha);
-    v.setHslF(hue, hslSaturation, lightness, alpha);
+    QColor::getHslF(&hue, &saturation, &lightness, &alpha);
+    QColor::setHslF(hue, hslSaturation, lightness, alpha);
 }
 
 void QQuickColorValueType::setHslLightness(qreal hslLightness)
 {
     float hue, saturation, lightness, alpha;
-    v.getHslF(&hue, &saturation, &lightness, &alpha);
-    v.setHslF(hue, saturation, hslLightness, alpha);
+    QColor::getHslF(&hue, &saturation, &lightness, &alpha);
+    QColor::setHslF(hue, saturation, hslLightness, alpha);
 }
 
 QVariant QQuickVector2DValueType::create(const QJSValue &params)
