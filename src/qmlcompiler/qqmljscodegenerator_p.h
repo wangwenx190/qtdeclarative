@@ -338,6 +338,10 @@ private:
             const QQmlJSScope::ConstPtr &required, const QQmlJSRegisterContent &actual,
             const QString &variable, const QString &errorMessage);
 
+    QString generateCallConstructor(
+            const QQmlJSMetaMethod &ctor, const QList<QQmlJSRegisterContent> &argumentTypes,
+            const QStringList &arguments, const QString &metaType, const QString &metaObject);
+
     QQmlJSRegisterContent originalType(const QQmlJSRegisterContent &tracked)
     {
         const QQmlJSRegisterContent restored = m_typeResolver->original(tracked);

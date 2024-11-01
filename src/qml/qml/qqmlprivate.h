@@ -652,7 +652,12 @@ namespace QQmlPrivate
 
         QVariant constructValueType(
                 QMetaType resultMetaType, const QMetaObject *resultMetaObject,
+                int ctorIndex, void **args) const;
+#if QT_QML_REMOVED_SINCE(6, 9)
+        QVariant constructValueType(
+                QMetaType resultMetaType, const QMetaObject *resultMetaObject,
                 int ctorIndex, void *ctorArg) const;
+#endif
 
         // Those are explicit arguments to the Date() ctor, not implicit coercions.
         QDateTime constructDateTime(double timestamp) const;

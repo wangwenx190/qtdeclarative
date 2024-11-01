@@ -1623,6 +1623,7 @@ void tst_QmlCppCodegen::enumLookup()
     QScopedPointer<QObject> o(c.create());
 
     QCOMPARE(o->property("ready").toBool(), true);
+    QCOMPARE(o->property("enumFromGadget2").toInt(), 3);
 }
 
 void tst_QmlCppCodegen::enumMarkedAsFlag()
@@ -4764,11 +4765,16 @@ void tst_QmlCppCodegen::structuredValueType()
 
     QCOMPARE(o->property("r").value<QRectF>(), QRectF(1, 2, 3, 4));
     QCOMPARE(o->property("r2").value<QRectF>(), QRectF(42, 0, 0, 0));
+    QCOMPARE(o->property("r3").value<QRectF>(), QRectF(4, 3, 2, 1));
+    QCOMPARE(o->property("r4").value<QRectF>(), QRectF(43, 0, 0, 0));
 
     WeatherModelUrl w;
     w.setStrings(QStringList({u"one"_s, u"two"_s, u"three"_s}));
 
     QCOMPARE(o->property("w").value<WeatherModelUrl>(), w);
+
+    w.setStrings(QStringList({u"three"_s, u"two"_s, u"one"_s}));
+    QCOMPARE(o->property("w2").value<WeatherModelUrl>(), w);
 }
 
 void tst_QmlCppCodegen::testIsnan()

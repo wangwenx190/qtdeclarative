@@ -1314,6 +1314,43 @@ bool QQmlJSCodeGenerator::generateContentPointerCheck(
     return needsVarContentConversion;
 }
 
+QString QQmlJSCodeGenerator::generateCallConstructor(
+        const QQmlJSMetaMethod &ctor, const QList<QQmlJSRegisterContent> &argumentTypes,
+        const QStringList &arguments, const QString &metaType, const QString &metaObject)
+{
+    const auto parameterTypes = ctor.parameters();
+    Q_ASSERT(parameterTypes.length() == argumentTypes.length());
+
+    // We need to store the converted arguments in a temporaries because they might not be lvalues.
+    QStringList argPointers;
+
+    QString result = u"[&](){\n"_s;
+    for (qsizetype i = 0, end = parameterTypes.length(); i < end; ++i) {
+        const QQmlJSRegisterContent argumentType = argumentTypes[i];
+        const QQmlJSScope::ConstPtr parameterType = parameterTypes[i].type();
+        const QString argument = arguments[i];
+        const QString arg = u"arg"_s + QString::number(i);
+
+        result += u"    auto "_s + arg + u" = "_s;
+        if (m_typeResolver->registerContains(argumentType, parameterType)) {
+            result += argument;
+            argPointers.append(contentPointer(argumentType, arg));
+        } else {
+            const QQmlJSRegisterContent parameterTypeConversion = conversionType(parameterType)
+                .storedIn(m_typeResolver->genericType(parameterType));
+            result += conversion(argumentType, parameterTypeConversion, argument);
+            argPointers.append(contentPointer(parameterTypeConversion, arg));
+        }
+        result += u";\n"_s;
+    }
+
+    result += u"    void *args[] = {"_s + argPointers.join(u',') + u"};\n"_s;
+    result += u"    return aotContext->constructValueType("_s + metaType + u", "_s + metaObject
+            + u", "_s + QString::number(int(ctor.constructorIndex())) + u", args);\n"_s;
+
+    return result + u"}()"_s;
+}
+
 QString QQmlJSCodeGenerator::resolveValueTypeContentPointer(
         const QQmlJSScope::ConstPtr &required, const QQmlJSRegisterContent &actual,
         const QString &variable, const QString &errorMessage)
@@ -2410,6 +2447,35 @@ void QQmlJSCodeGenerator::generate_Construct(int func, int argc, int argv)
         }
         return;
     }
+
+    const QQmlJSScope::ConstPtr originalContained = originalResult.containedType();
+    if (originalContained->isValueType() && originalResult.isMethodCall()) {
+        const QQmlJSMetaMethod ctor = originalResult.methodCall();
+        if (ctor.isJavaScriptFunction()) {
+            reject(u"calling JavaScript constructor "_s + ctor.methodName());
+            return;
+        }
+
+        QList<QQmlJSRegisterContent> argumentTypes;
+        QStringList arguments;
+        for (int i = 0; i < argc; ++i) {
+            argumentTypes.append(registerType(argv + i));
+            arguments.append(consumedRegisterVariable(argv + i));
+        }
+
+        const QQmlJSScope::ConstPtr extension = originalContained->extensionType().scope;
+        const QString result = generateCallConstructor(
+                ctor, argumentTypes, arguments, metaType(originalContained),
+                metaObject(extension ? extension : originalContained));
+
+        m_body += m_state.accumulatorVariableOut + u" = "_s
+                + conversion(originalResult.storedIn(
+                                     m_typeResolver->varType()), m_state.accumulatorOut(), result)
+                + u";\n"_s;
+
+        return;
+    }
+
 
     reject(u"Construct"_s);
 }
@@ -4251,31 +4317,9 @@ QString QQmlJSCodeGenerator::convertContained(const QQmlJSRegisterContent &from,
         return QString();
     } else if (const auto ctor = m_typeResolver->selectConstructor(
                 containedTo, containedFrom, &isExtension); ctor.isValid()) {
-        const auto argumentTypes = ctor.parameters();
-        const QQmlJSScope::ConstPtr argumentType = argumentTypes[0].type();
-
-        // We need to store the converted argument in a temporary
-        // because it might not be an lvalue.
-
-        QString input;
-        QString argPointer;
-
-        if (m_typeResolver->equals(argumentType, containedFrom)) {
-            input = variable;
-            argPointer = contentPointer(from, u"arg"_s);
-        } else {
-            const QQmlJSRegisterContent argument = conversionType(argumentType)
-                    .storedIn(m_typeResolver->genericType(argumentType));
-            input = conversion(from, argument, variable);
-            argPointer = contentPointer(argument, u"arg"_s);
-        }
-
-        return u"[&](){ auto arg = " + input
-                + u"; return aotContext->constructValueType("_s + metaType(containedTo)
-                + u", "_s + metaObject(
-                    isExtension ? containedTo->extensionType().scope : containedTo)
-                + u", "_s + QString::number(int(ctor.constructorIndex()))
-                + u", "_s + argPointer + u"); }()"_s;
+        return generateCallConstructor(
+                ctor, {from}, {variable}, metaType(containedTo),
+                metaObject(isExtension ? containedTo->extensionType().scope : containedTo));
     }
 
     const auto originalFrom = originalType(from);

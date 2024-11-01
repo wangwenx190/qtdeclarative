@@ -1547,9 +1547,14 @@ void QQmlJSTypePropagator::propagateCall(
     if (m_passManager)
         propagateCall_SAcheck(match, scope.containedType());
 
-    const QQmlJSScope::ConstPtr returnType = match.isJavaScriptFunction()
-            ? m_typeResolver->jsValueType()
-            : QQmlJSScope::ConstPtr(match.returnType());
+    QQmlJSScope::ConstPtr returnType;
+    if (match.isJavaScriptFunction())
+        returnType = m_typeResolver->jsValueType();
+    else if (match.isConstructor())
+        returnType = scope.containedType();
+    else
+        returnType = match.returnType();
+
     setAccumulator(m_typeResolver->returnType(match, returnType, scope));
     if (!m_state.accumulatorOut().isValid())
         addError(u"Cannot store return type of method %1()."_s.arg(match.methodName()));
@@ -2023,6 +2028,23 @@ void QQmlJSTypePropagator::generate_Construct_SCArray(
 void QQmlJSTypePropagator::generate_Construct(int func, int argc, int argv)
 {
     const QQmlJSRegisterContent type = m_state.registers[func].content;
+    if (m_typeResolver->registerContains(type,  m_typeResolver->metaObjectType())) {
+        const QQmlJSRegisterContent valueType = type.scopeType();
+        const QQmlJSScope::ConstPtr contained = type.scopeType().containedType();
+        if (contained->isValueType() && contained->isCreatable()) {
+            const auto extension = contained->extensionType();
+            if (extension.extensionSpecifier == QQmlJSScope::ExtensionType) {
+                propagateCall(
+                        extension.scope->ownMethods(extension.scope->internalName()),
+                        argc, argv, valueType);
+            } else {
+                propagateCall(
+                        contained->ownMethods(contained->internalName()), argc, argv, valueType);
+            }
+            return;
+        }
+    }
+
     if (!type.isMethod()) {
         m_state.setHasSideEffects(true);
         QQmlJSMetaMethod method;

@@ -566,7 +566,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::registerContentForName(
                 QQmlJSRegisterContent::MetaType, namedType);
     case QQmlJSScope::AccessSemantics::Sequence:
     case QQmlJSScope::AccessSemantics::Value:
-        if (canAddressValueTypes()) {
+        if (scopeType.isImportNamespace() || canAddressValueTypes()) {
             return QQmlJSRegisterContent::create(
                     metaObjectType(), QQmlJSRegisterContent::InvalidLookupIndex,
                     QQmlJSRegisterContent::MetaType, namedType);

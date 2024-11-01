@@ -116,4 +116,13 @@ void QQmlPrivate::AOTCompiledContext::initLoadGlobalLookup(uint index) const
     engine->handle()->amendException();
 }
 
+QVariant QQmlPrivate::AOTCompiledContext::constructValueType(
+        QMetaType resultMetaType, const QMetaObject *resultMetaObject,
+        int ctorIndex, void *ctorArg) const
+{
+    void *args[] = {ctorArg};
+    return QQmlValueTypeProvider::constructValueType(
+            resultMetaType, resultMetaObject, ctorIndex, args);
+}
+
 #endif

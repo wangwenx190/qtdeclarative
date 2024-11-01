@@ -1742,10 +1742,10 @@ void AOTCompiledContext::writeToConsole(
 
 QVariant AOTCompiledContext::constructValueType(
         QMetaType resultMetaType, const QMetaObject *resultMetaObject,
-        int ctorIndex, void *ctorArg) const
+        int ctorIndex, void **args) const
 {
     return QQmlValueTypeProvider::constructValueType(
-            resultMetaType, resultMetaObject, ctorIndex, ctorArg);
+            resultMetaType, resultMetaObject, ctorIndex, args);
 }
 
 QDateTime AOTCompiledContext::constructDateTime(double timestamp) const
