@@ -47,7 +47,7 @@ public:
         return result;
     }
 
-    void setPriority(Blob *, PendingImportPtr, int);
+    void setPriority(Blob *, const PendingImportPtr &, int);
 
 protected:
     void dataReceived(const SourceCodeData &) override;

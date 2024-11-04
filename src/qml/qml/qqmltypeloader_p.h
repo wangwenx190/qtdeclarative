@@ -82,9 +82,11 @@ public:
     protected:
         bool addImport(const QV4::CompiledData::Import *import, QQmlImports::ImportFlags,
                        QList<QQmlError> *errors);
-        bool addImport(PendingImportPtr import, QList<QQmlError> *errors);
+        bool addImport(const PendingImportPtr &import, QList<QQmlError> *errors);
 
-        bool fetchQmldir(const QUrl &url, PendingImportPtr import, int priority, QList<QQmlError> *errors);
+        bool fetchQmldir(
+                const QUrl &url, const PendingImportPtr &import, int priority,
+                QList<QQmlError> *errors);
         bool updateQmldir(const QQmlRefPointer<QQmlQmldirData> &data, const PendingImportPtr &import, QList<QQmlError> *errors);
 
     private:

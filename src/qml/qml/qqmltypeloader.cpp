@@ -472,11 +472,13 @@ QQmlTypeLoader::Blob::~Blob()
 {
 }
 
-bool QQmlTypeLoader::Blob::fetchQmldir(const QUrl &url, PendingImportPtr import, int priority, QList<QQmlError> *errors)
+bool QQmlTypeLoader::Blob::fetchQmldir(
+        const QUrl &url, const QQmlTypeLoader::Blob::PendingImportPtr &import, int priority,
+        QList<QQmlError> *errors)
 {
     QQmlRefPointer<QQmlQmldirData> data = typeLoader()->getQmldir(url);
 
-    data->setPriority(this, std::move(import), priority);
+    data->setPriority(this, import, priority);
 
     if (data->status() == Error) {
         // This qmldir must not exist - which is not an error
@@ -759,7 +761,7 @@ bool QQmlTypeLoader::Blob::addImport(const QV4::CompiledData::Import *import,
 }
 
 bool QQmlTypeLoader::Blob::addImport(
-        QQmlTypeLoader::Blob::PendingImportPtr import, QList<QQmlError> *errors)
+        const QQmlTypeLoader::Blob::PendingImportPtr &import, QList<QQmlError> *errors)
 {
     Q_ASSERT(errors);
 
@@ -905,7 +907,7 @@ QQmlMetaType::CacheMode QQmlTypeLoader::Blob::aotCacheMode() const
 
 bool QQmlTypeLoader::Blob::qmldirDataAvailable(const QQmlRefPointer<QQmlQmldirData> &data, QList<QQmlError> *errors)
 {
-    return data->processImports(this, [&](PendingImportPtr import) {
+    return data->processImports(this, [&](const PendingImportPtr &import) {
         return updateQmldir(data, import, errors);
     });
 }
