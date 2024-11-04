@@ -1228,6 +1228,10 @@ bool QQuickMouseArea::setPressed(Qt::MouseButton button, bool p, Qt::MouseEventS
 {
     Q_D(QQuickMouseArea);
 
+    // Don't allow entering pressed state while invisible
+    if (p && !d->effectiveVisible)
+        return false;
+
 #if QT_CONFIG(quick_draganddrop)
     bool dragged = d->drag && d->drag->active();
 #else
