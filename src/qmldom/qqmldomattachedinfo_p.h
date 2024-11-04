@@ -25,27 +25,6 @@ QT_BEGIN_NAMESPACE
 
 namespace QQmlJS {
 namespace Dom {
-struct AttachedInfoLookupResultBase
-{
-    Path lookupPath;
-    Path foundTreePath;
-};
-template<typename TreePtr>
-class AttachedInfoLookupResult: public AttachedInfoLookupResultBase
-{
-public:
-    TreePtr foundTree;
-
-    operator bool() { return bool(foundTree); }
-    template<typename T>
-    AttachedInfoLookupResult<std::shared_ptr<T>> as() const
-    {
-        AttachedInfoLookupResult<std::shared_ptr<T>> res;
-        res.AttachedInfoLookupResultBase::operator=(*this);
-        res.foundTree = std::static_pointer_cast<T>(foundTree);
-        return res;
-    }
-};
 
 class QMLDOM_EXPORT AttachedInfo : public OwningItem  {
     Q_GADGET
@@ -75,8 +54,6 @@ public:
 
     static Ptr ensure(const Ptr &self, const Path &path);
     static Ptr find(const Ptr &self, const Path &p);
-    static AttachedInfoLookupResult<Ptr> findAttachedInfo(const DomItem &item,
-                                                          QStringView treeFieldName);
 
     virtual AttachedInfo::Ptr instantiate(
             const AttachedInfo::Ptr &parent, const Path &p = Path()) const = 0;
@@ -123,12 +100,6 @@ public:
     static Ptr find(const Ptr &self, const Path &p)
     {
         return std::static_pointer_cast<AttachedInfoT>(AttachedInfo::find(self, p));
-    }
-
-    static AttachedInfoLookupResult<Ptr> findAttachedInfo(const DomItem &item,
-                                                          QStringView fieldName)
-    {
-        return AttachedInfo::findAttachedInfo(item, fieldName).template as<AttachedInfoT>();
     }
 
     static bool visitTree(const Ptr &base, function_ref<bool(const Path &, const Ptr &)> visitor,
@@ -197,7 +168,6 @@ public:
     }
 
     // returns the path looked up and the found tree when looking for the info attached to item
-    static AttachedInfoLookupResult<Tree> findAttachedInfo(const DomItem &item);
     static FileLocations::Tree treeOf(const DomItem &);
 
     static void updateFullLocation(const Tree &fLoc, SourceLocation loc);

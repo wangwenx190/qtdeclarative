@@ -2511,15 +2511,14 @@ private slots:
                 FileLocations::Tree childTree =
                         std::static_pointer_cast<AttachedInfoT<FileLocations>>(it.value());
                 if (!childItem) {
-                    const auto attachedInfo = FileLocations::findAttachedInfo(current.item);
-                    const DomItem treeItem = current.item.path(attachedInfo.foundTreePath);
+                    const auto itemFLoc = FileLocations::treeOf(current.item);
                     qDebug() << current.item.internalKindStr()
                              << "has incorrect FileLocations! Make sure that "
                                 "finalizeScriptExpression is called with the right arguments. It "
                                 "should print out some debugging information with the "
                                 "qt.qmldom.astcreator.debug logging rule.";
                     qDebug() << "Current FileLocations has keys:"
-                             << treeItem.field(Fields::subItems).keys()
+                             << itemFLoc->subItems().keys()
                              << "but current Item of type" << current.item.internalKindStr()
                              << "has fields: " << current.item.fields()
                              << "and keys: " << current.item.keys()

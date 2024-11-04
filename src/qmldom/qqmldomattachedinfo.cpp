@@ -53,27 +53,30 @@ FileLocations::Tree FileLocations::ensure(const FileLocations::Tree &base, const
 }
 
 /*!
-\internal
-Allows to query information about the FileLocations::Tree obtained from item, such as path of
-the Tree root in the Dom, the path of this item's Tree in the Dom, and so on.
-
-\note You can use \c{qDebug() << item.path(FileLocations::findAttachedInfo(item).foundTreePath)} or
-\c{item.path(FileLocations::findAttachedInfo(item).foundTreePath).toString()} to print out the Tree
-of item, for example, as Tree's cannot be printed when outside the Dom.
-*/
-AttachedInfoLookupResult<FileLocations::Tree>
-FileLocations::findAttachedInfo(const DomItem &item)
-{
-    return AttachedInfoT<FileLocations>::findAttachedInfo(item, Fields::fileLocationsTree);
-}
-
-/*!
    \internal
    Returns the tree corresponding to a DomItem.
  */
 FileLocations::Tree FileLocations::treeOf(const DomItem &item)
 {
-    return findAttachedInfo(item).foundTree;
+    Path p;
+    DomItem fLoc = item.field(Fields::fileLocationsTree);
+    if (!fLoc) {
+        // owner or container.owner should be a file, so this works, but we could simply use the
+        // canonical path, and PathType::Canonical instead...
+        DomItem o = item.owner();
+        p = item.pathFromOwner();
+        fLoc = o.field(Fields::fileLocationsTree);
+        while (!fLoc && o) {
+            DomItem c = o.container();
+            p = c.pathFromOwner().path(o.canonicalPath().last()).path(p);
+            o = c.owner();
+            fLoc = o.field(Fields::fileLocationsTree);
+        }
+    }
+    if (AttachedInfo::Ptr fLocPtr = fLoc.ownerAs<AttachedInfo>())
+        if (AttachedInfo::Ptr foundTree = AttachedInfo::find(fLocPtr, p))
+            return std::static_pointer_cast<AttachedInfoT<FileLocations>>(foundTree);
+    return {};
 }
 
 void FileLocations::updateFullLocation(const FileLocations::Tree &fLoc, SourceLocation loc)
@@ -200,36 +203,6 @@ AttachedInfo::Ptr AttachedInfo::find(const AttachedInfo::Ptr &self, const Path &
         res = res->m_subItems.value(rest.head());
         rest = rest.dropFront();
     }
-    return res;
-}
-
-AttachedInfoLookupResult<AttachedInfo::Ptr>
-AttachedInfo::findAttachedInfo(const DomItem &item, QStringView fieldName)
-{
-    Path p;
-    DomItem fLoc = item.field(fieldName);
-    if (!fLoc) {
-        // owner or container.owner should be a file, so this works, but we could simply use the
-        // canonical path, and PathType::Canonical instead...
-        DomItem o = item.owner();
-        p = item.pathFromOwner();
-        fLoc = o.field(fieldName);
-        while (!fLoc && o) {
-            DomItem c = o.container();
-            p = c.pathFromOwner().path(o.canonicalPath().last()).path(p);
-            o = c.owner();
-            fLoc = o.field(fieldName);
-        }
-    }
-    AttachedInfoLookupResult<AttachedInfo::Ptr> res;
-    res.lookupPath = p;
-    if (AttachedInfo::Ptr fLocPtr = fLoc.ownerAs<AttachedInfo>())
-        if (AttachedInfo::Ptr foundTree = AttachedInfo::find(fLocPtr, p))
-            res.foundTree = foundTree;
-
-    res.foundTreePath = fLoc.canonicalPath();
-    for (const Path &pEl : res.lookupPath)
-        res.foundTreePath = res.foundTreePath.field(Fields::subItems).key(pEl.toString());
     return res;
 }
 

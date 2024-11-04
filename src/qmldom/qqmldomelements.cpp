@@ -331,7 +331,7 @@ void Import::writeOut(const DomItem &self, OutWriter &ow) const
     // check for an empty line before the import, and preserve it
     int preNewlines = 0;
 
-    const FileLocations::Tree elLoc = FileLocations::findAttachedInfo(self).foundTree;
+    const FileLocations::Tree elLoc = FileLocations::treeOf(self);
 
     quint32 start = elLoc->info().fullRegion.offset;
     if (size_t(code.size()) >= start) {
@@ -743,10 +743,10 @@ QList<QPair<SourceLocation, DomItem>> QmlObject::orderOfAttributes(const DomItem
     };
 
     QList<QPair<SourceLocation, DomItem>> attribs;
-    AttachedInfoLookupResult<FileLocations::Tree> objLoc = FileLocations::findAttachedInfo(self);
+    const auto objLocPtr = FileLocations::treeOf(self);
     FileLocations::Tree componentLoc;
-    if (component && objLoc.foundTree)
-        componentLoc = objLoc.foundTree->parent()->parent();
+    if (component && objLocPtr)
+        componentLoc = objLocPtr->parent()->parent();
     auto addMMap = [&attribs, &startLoc](const DomItem &base, const FileLocations::Tree &baseLoc) {
         if (!base)
             return;
@@ -760,9 +760,9 @@ QList<QPair<SourceLocation, DomItem>> QmlObject::orderOfAttributes(const DomItem
             }
         }
     };
-    auto addMyMMap = [this, &objLoc, &self, &addMMap](QStringView fieldName) {
+    auto addMyMMap = [this, &objLocPtr, &self, &addMMap](QStringView fieldName) {
         DomItem base = this->field(self, fieldName);
-        addMMap(base, FileLocations::find(objLoc.foundTree, base.pathFromOwner().last()));
+        addMMap(base, FileLocations::find(objLocPtr, base.pathFromOwner().last()));
     };
     auto addSingleLevel = [&attribs, &startLoc](const DomItem &base,
                                                 const FileLocations::Tree &baseLoc) {
@@ -782,15 +782,13 @@ QList<QPair<SourceLocation, DomItem>> QmlObject::orderOfAttributes(const DomItem
     addMyMMap(Fields::bindings);
     addMyMMap(Fields::methods);
     DomItem children = field(self, Fields::children);
-    addSingleLevel(children,
-                   FileLocations::find(objLoc.foundTree, children.pathFromOwner().last()));
+    addSingleLevel(children, FileLocations::find(objLocPtr, children.pathFromOwner().last()));
     if (component) {
         DomItem subCs = component.field(Fields::subComponents);
         for (const DomItem &c : subCs.values()) {
-            AttachedInfoLookupResult<FileLocations::Tree> subLoc =
-                    FileLocations::findAttachedInfo(c);
-            Q_ASSERT(subLoc.foundTree);
-            attribs.append(std::make_pair(startLoc(subLoc.foundTree), c));
+            const auto subLocPtr = FileLocations::treeOf(c);
+            Q_ASSERT(subLocPtr);
+            attribs.append(std::make_pair(startLoc(subLocPtr), c));
         }
     }
     std::stable_sort(attribs.begin(), attribs.end(),
