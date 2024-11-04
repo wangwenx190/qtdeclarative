@@ -504,7 +504,7 @@ void QQuickQmlGenerator::generateAnimateColor(const QString &targetName,
 
         stream() << "target: " << targetName;
         stream() << "property: \"" << propertyName << "\"";
-        stream() << "to: \"" << keyFrame.second.name(QColor::HexArgb) + "\"";
+        stream() << "to: \"" << keyFrame.second.name(QColor::HexArgb) << '"';
         stream() << "duration: " << keyFrame.first;
 
         m_indentLevel--;
