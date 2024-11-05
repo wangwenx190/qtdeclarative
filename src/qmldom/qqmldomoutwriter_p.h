@@ -138,14 +138,7 @@ public:
         return lineWriter.addTextAddCallback(callback);
     }
     bool removeTextAddCallback(int i) { return lineWriter.removeTextAddCallback(i); }
-    DomItem restoreWrittenFileItem(const DomItem &fileItem);
 
-private:
-    DomItem writtenQmlFileItem(const DomItem &fileItem, const Path &filePath);
-    DomItem writtenJsFileItem(const DomItem &fileItem, const Path &filePath);
-    static void logScriptExprUpdateSkipped(
-            const DomItem &exprItem, const Path &exprPath,
-            const std::shared_ptr<ScriptExpression> &formattedExpr);
 };
 
 } // end namespace Dom

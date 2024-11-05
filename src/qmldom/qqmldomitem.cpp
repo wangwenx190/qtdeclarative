@@ -1363,11 +1363,10 @@ bool DomItem::writeOutForFile(OutWriter &ow, WriteOutChecks extraChecks) const
     ow.eof();
 
     auto currentFileItem = fileObject();
-    auto writtenFileItem = ow.restoreWrittenFileItem(currentFileItem);
     WriteOutCheckResult result = WriteOutCheckResult::Success;
     if (extraChecks & WriteOutCheck::All)
-        result = performWriteOutChecks(currentFileItem, writtenFileItem, ow, extraChecks);
-    return result == WriteOutCheckResult::Success ? bool(writtenFileItem) : false;
+        result = performWriteOutChecks(currentFileItem, currentFileItem, ow, extraChecks);
+    return result == WriteOutCheckResult::Success ? bool(currentFileItem) : false;
 }
 
 bool DomItem::writeOut(const QString &path, int nBackups, const LineWriterOptions &options, 

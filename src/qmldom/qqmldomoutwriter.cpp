@@ -265,66 +265,7 @@ OutWriter &OutWriter::writeRegion(FileLocationRegion region, QStringView toWrite
     regionEnd(region);
     return *this;
 }
-/*!
-   \internal
-    Restores written out FileItem using intermediate information saved during DOM traversal.
-    It enables verifying DOM consistency of the written item later.
 
-    At the moment of writing, intermediate information consisting only of UpdatedScriptExpression,
-    however this is subject for change. The process of restoration is the following:
-    1. Creating copy of the initial fileItem
-    2. Updating relevant data/subitems modified during the WriteOut
-    3. Returning an item containing updates.
- */
-DomItem OutWriter::restoreWrittenFileItem(const DomItem &fileItem)
-{
-    switch (fileItem.internalKind()) {
-    case DomType::QmlFile:
-        return writtenQmlFileItem(fileItem, fileItem.canonicalPath());
-    case DomType::JsFile:
-        return writtenJsFileItem(fileItem, fileItem.canonicalPath());
-    default:
-        qCWarning(writeOutLog) << fileItem.internalKind() << " is not supported";
-        return DomItem{};
-    }
-}
-
-DomItem OutWriter::writtenQmlFileItem(const DomItem &fileItem, const Path &)
-{
-    Q_ASSERT(fileItem.internalKind() == DomType::QmlFile);
-    auto mutableFile = fileItem.makeCopy(DomItem::CopyOption::EnvDisconnected);
-    return mutableFile.item();
-}
-
-DomItem OutWriter::writtenJsFileItem(const DomItem &fileItem, const Path &)
-{
-    Q_ASSERT(fileItem.internalKind() == DomType::JsFile);
-    auto mutableFile = fileItem.makeCopy(DomItem::CopyOption::EnvDisconnected);
-    return mutableFile.item();
-}
-
-void OutWriter::logScriptExprUpdateSkipped(
-        const DomItem &exprItem, const Path &exprPath,
-        const std::shared_ptr<ScriptExpression> &formattedExpr)
-{
-    qCWarning(writeOutLog).noquote() << "Skipped update of reformatted ScriptExpression with "
-                                        "code:\n---------------\n"
-                                     << formattedExpr->code() << "\n---------------\n preCode:" <<
-            [&formattedExpr](Sink s) { sinkEscaped(s, formattedExpr->preCode()); }
-                                     << "\n postCode: " <<
-            [&formattedExpr](Sink s) { sinkEscaped(s, formattedExpr->postCode()); }
-                                     << "\n as it failed standalone reparse with errors:" <<
-            [&exprItem, &exprPath, &formattedExpr](Sink s) {
-                exprItem.copy(formattedExpr, exprPath)
-                        .iterateErrors(
-                                [s](const DomItem &, const ErrorMessage &msg) {
-                                    s(u"\n  ");
-                                    msg.dump(s);
-                                    return true;
-                                },
-                                true);
-            } << "\n";
-}
 } // namespace Dom
 } // namespace QQmlJS
 QT_END_NAMESPACE
