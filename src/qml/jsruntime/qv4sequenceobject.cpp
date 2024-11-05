@@ -14,8 +14,6 @@
 #include <private/qqmltype_p_p.h>
 #include <private/qqmlvaluetypewrapper_p.h>
 
-#include <algorithm>
-
 QT_BEGIN_NAMESPACE
 
 Q_STATIC_LOGGING_CATEGORY(lcListValueConversion, "qt.qml.listvalueconversion")
