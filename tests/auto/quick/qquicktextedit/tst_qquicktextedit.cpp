@@ -3342,7 +3342,7 @@ void tst_qquicktextedit::textInput()
     QVERIFY(QQuickTest::showView(window, testFileUrl("inputMethodEvent.qml")));
     QQuickTextEdit *edit = qobject_cast<QQuickTextEdit *>(window.rootObject());
     QVERIFY(edit);
-    QVERIFY(edit->hasActiveFocus());
+    QTRY_VERIFY(edit->hasActiveFocus());
 
     // test that input method event is committed and change signal is emitted
     QSignalSpy spy(edit, SIGNAL(textChanged()));
