@@ -1233,74 +1233,36 @@ void DomItem::writeOutPost(OutWriter &ow) const
     ow.itemEnd(*this);
 }
 
-DomItem::WriteOutCheckResult DomItem::performWriteOutChecks(const DomItem &original, const DomItem &reformatted,
+DomItem::WriteOutCheckResult DomItem::performWriteOutChecks(const DomItem &reformatted,
                                                             OutWriter &ow,
                                                             WriteOutChecks extraChecks) const
 {
-    QStringList dumped;
-    auto maybeDump = [&ow, extraChecks, &dumped](const DomItem &obj, QStringView objName) {
-        QString objDumpPath;
-        if (extraChecks & WriteOutCheck::DumpOnFailure) {
-            objDumpPath = QDir(QDir::tempPath())
-                                  .filePath(objName.toString()
-                                            + QFileInfo(ow.lineWriter.fileName()).baseName()
-                                            + QLatin1String(".dump.json"));
-            obj.dump(objDumpPath);
-            dumped.append(objDumpPath);
-        }
-        return objDumpPath;
-    };
-    auto dumpedDumper = [&dumped](const Sink &s) {
-        if (dumped.isEmpty())
-            return;
-        s(u"\ndump: ");
-        for (const auto &dumpPath : dumped) {
-            s(u" ");
-            sinkEscaped(s, dumpPath);
-        }
-    };
-    auto compare = [&maybeDump, &dumpedDumper, this](const DomItem &obj1, QStringView obj1Name,
-                                                     const DomItem &obj2, QStringView obj2Name,
-                                                     const FieldFilter &filter) {
+    auto compare = [this](const DomItem &obj1, const DomItem &obj2, QStringView obj2Name,
+                          const FieldFilter &filter) {
         const auto diffList = domCompareStrList(obj1, obj2, filter, DomCompareStrList::AllDiffs);
         if (!diffList.isEmpty()) {
-            maybeDump(obj1, obj1Name);
-            maybeDump(obj2, obj2Name);
             qCWarning(writeOutLog).noquote().nospace()
                     << obj2Name << " writeOut of " << this->canonicalFilePath() << " has changes:\n"
-                    << diffList.join(QString()) << dumpedDumper;
+                    << diffList.join(QString());
             return false;
         }
         return true;
     };
-    auto checkStability = [&maybeDump, &dumpedDumper, &dumped, &ow,
-                           this](const QString &expected, const DomItem &obj, QStringView objName) {
+    auto checkStability = [&ow, this](const QString &expected, const DomItem &obj,
+                                      QStringView objName) {
         LineWriter lw2([](QStringView) {}, ow.lineWriter.fileName(), ow.lineWriter.options());
         OutWriter ow2(lw2);
         ow2.indentNextlines = true;
         obj.writeOut(ow2);
         ow2.eof();
         if (ow2.writtenStr != expected) {
-            DomItem fObj = this->fileObject();
-            maybeDump(fObj, u"initial");
-            maybeDump(obj, objName);
             qCWarning(writeOutLog).noquote().nospace()
                     << objName << " non stable writeOut of " << this->canonicalFilePath() << ":"
-                    << lineDiff(ow2.writtenStr, expected, 2) << dumpedDumper;
-            dumped.clear();
+                    << lineDiff(ow2.writtenStr, expected, 2);
             return false;
         }
         return true;
     };
-
-    if ((extraChecks & WriteOutCheck::UpdatedDomCompare)
-        && !compare(original, u"initial", reformatted, u"reformatted",
-                    FieldFilter::noLocationFilter()))
-        return WriteOutCheckResult::Failed;
-
-    if (extraChecks & WriteOutCheck::UpdatedDomStable) {
-        checkStability(ow.writtenStr, reformatted, u"reformatted");
-    }
 
     if (extraChecks
         & (WriteOutCheck::Reparse | WriteOutCheck::ReparseCompare | WriteOutCheck::ReparseStable)) {
@@ -1319,7 +1281,7 @@ DomItem::WriteOutCheckResult DomItem::performWriteOutChecks(const DomItem &origi
             if (extraChecks & (WriteOutCheck::ReparseCompare | WriteOutCheck::ReparseStable)) {
                 newEnvPtr->populateFromQmlFile(newFile);
                 if ((extraChecks & WriteOutCheck::ReparseCompare)
-                    && !compare(reformatted, u"reformatted", newFile, u"reparsed",
+                    && !compare(reformatted, newFile, u"reparsed",
                                 FieldFilter::compareNoCommentsFilter()))
                     return WriteOutCheckResult::Failed;
                 if ((extraChecks & WriteOutCheck::ReparseStable))
@@ -1365,7 +1327,7 @@ bool DomItem::writeOutForFile(OutWriter &ow, WriteOutChecks extraChecks) const
     auto currentFileItem = fileObject();
     WriteOutCheckResult result = WriteOutCheckResult::Success;
     if (extraChecks)
-        result = performWriteOutChecks(currentFileItem, currentFileItem, ow, extraChecks);
+        result = performWriteOutChecks(currentFileItem, ow, extraChecks);
     return result == WriteOutCheckResult::Success ? bool(currentFileItem) : false;
 }
 

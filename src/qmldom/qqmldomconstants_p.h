@@ -305,13 +305,9 @@ Q_ENUM_NS(FilterUpOptions)
 
 enum class WriteOutCheck {
     None = 0x0,
-    UpdatedDomCompare = 0x1,
-    UpdatedDomStable = 0x2,
     Reparse = 0x4,
     ReparseCompare = 0x8,
     ReparseStable = 0x10,
-    DumpOnFailure = 0x20,
-    All = 0x3F,
     Default = Reparse | ReparseCompare | ReparseStable
 };
 Q_ENUM_NS(WriteOutCheck)

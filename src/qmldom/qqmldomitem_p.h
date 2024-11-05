@@ -1284,7 +1284,7 @@ public:
 
 private:
     enum class WriteOutCheckResult { Success, Failed };
-    WriteOutCheckResult performWriteOutChecks(const DomItem &, const DomItem &, OutWriter &, WriteOutChecks) const;
+    WriteOutCheckResult performWriteOutChecks(const DomItem &, OutWriter &, WriteOutChecks) const;
     const DomBase *base() const;
 
     template<typename Env, typename Owner>
