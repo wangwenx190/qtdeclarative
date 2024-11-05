@@ -187,7 +187,8 @@ ReturnedValue Lookup::getterTwoClasses(Lookup *lookup, ExecutionEngine *engine, 
         case Call::Getter0MemberData:
             switch (second.call) {
             case Call::Getter0Inline:
-                setupObjectLookupTwoClasses(lookup, *lookup, second);
+                // NB: Reversed order, so that we can use the same lookup function as above.
+                setupObjectLookupTwoClasses(lookup, second, *lookup);
                 lookup->call = Call::Getter0InlineGetter0MemberData;
                 return result;
             case Call::Getter0MemberData:
