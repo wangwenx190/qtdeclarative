@@ -1364,7 +1364,7 @@ bool DomItem::writeOutForFile(OutWriter &ow, WriteOutChecks extraChecks) const
 
     auto currentFileItem = fileObject();
     WriteOutCheckResult result = WriteOutCheckResult::Success;
-    if (extraChecks & WriteOutCheck::All)
+    if (extraChecks)
         result = performWriteOutChecks(currentFileItem, currentFileItem, ow, extraChecks);
     return result == WriteOutCheckResult::Success ? bool(currentFileItem) : false;
 }
