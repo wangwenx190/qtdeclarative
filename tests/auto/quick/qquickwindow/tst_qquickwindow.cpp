@@ -557,6 +557,8 @@ private slots:
     void screenReusesQQuickScreenInfoInstance();
     void screenInfoInstanceIsDestroyedAfterAScreenChange();
 
+    void dataIsNotAList();
+
 private:
     QPointingDevice *touchDevice; // TODO make const after fixing QTBUG-107864
     const QPointingDevice *touchDeviceWithVelocity;
@@ -4226,6 +4228,35 @@ void tst_qquickwindow::screenInfoInstanceIsDestroyedAfterAScreenChange()
     emit window->screenChanged(nullptr);
 
     QCOMPARE(window->findChild<QQuickScreenInfo*>(), nullptr);
+}
+
+void tst_qquickwindow::dataIsNotAList()
+{
+    QQuickWindow window;
+    QObject child;
+    QQmlListProperty<QObject> data = window.property("data").value<QQmlListProperty<QObject>>();
+
+    QVERIFY(data.object);
+    QVERIFY(data.append);
+    QVERIFY(data.count);
+    QVERIFY(data.at);
+    QVERIFY(data.clear);
+    QVERIFY(data.removeLast);
+
+    // We must not synthesize the replace method on this property. QQuickItem doesn't support it.
+    QVERIFY(!data.replace);
+
+    QCOMPARE(data.count(&data), 0);
+    data.append(&data, &child);
+    QCOMPARE(data.count(&data), 1);
+    QCOMPARE(data.at(&data, 0), &child);
+    data.removeLast(&data);
+    QCOMPARE(data.count(&data), 0);
+    data.append(&data, &child);
+    QCOMPARE(data.count(&data), 1);
+    QCOMPARE(data.at(&data, 0), &child);
+    data.clear(&data);
+    QCOMPARE(data.count(&data), 0);
 }
 
 QTEST_MAIN(tst_qquickwindow)
