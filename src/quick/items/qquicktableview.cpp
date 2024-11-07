@@ -6662,7 +6662,7 @@ void QQuickTableView::edit(const QModelIndex &index)
     d->editModel->setModel(d->tableModel->model());
     d->editModel->setDelegate(attached->editDelegate());
 
-    const int cellIndex = d->modelIndexToCellIndex(index, false);
+    const int cellIndex = d->getEditCellIndex(index);
     QObject* object = d->editModel->object(cellIndex, QQmlIncubator::Synchronous);
     if (!object) {
         d->editIndex = QModelIndex();
@@ -6713,7 +6713,7 @@ void QQuickTableView::closeEditor()
     d->editItem = nullptr;
 
     cellItem->setZ(1);
-    const int cellIndex = d->modelIndexToCellIndex(d->editIndex, false);
+    const int cellIndex = d->getEditCellIndex(d->editIndex);
     d->setRequiredProperty(kRequiredProperty_editing, QVariant::fromValue(false), cellIndex, cellItem, false);
     // Remove the extra reference we sat on the cell item from edit()
     d->model->release(cellItem, QQmlInstanceModel::NotReusable);
@@ -7453,6 +7453,14 @@ int QQuickTableViewPrivate::visualColumnIndex(const int logicalIndex) const
     if (visualIndices[0].isEmpty() || logicalIndex < 0)
         return logicalIndex;
     return visualIndices[0].constData()[logicalIndex].index;
+}
+
+int QQuickTableViewPrivate::getEditCellIndex(const QModelIndex &index) const
+{
+    // With subclasses that use a proxy model (e.g. TreeView),
+    // always edit the cell at visual index.
+    const bool hasProxyModel = (modelImpl() != assignedModel);
+    return modelIndexToCellIndex(index, hasProxyModel);
 }
 
 // ----------------------------------------------
