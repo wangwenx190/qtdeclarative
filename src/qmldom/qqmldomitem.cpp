@@ -1272,8 +1272,6 @@ DomItem::WriteOutCheckResult DomItem::performWriteOutChecks(const DomItem &refor
             return WriteOutCheckResult::Failed;
 
         auto newFilePtr = std::make_shared<QmlFile>(canonicalFilePath(), ow.writtenStr);
-        if (!newFilePtr)
-            return WriteOutCheckResult::Failed;
         newEnvPtr->addQmlFile(newFilePtr, AddOption::Overwrite);
 
         DomItem newFile = newEnv.copy(newFilePtr, Path());
