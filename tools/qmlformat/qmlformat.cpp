@@ -156,6 +156,12 @@ QQmlFormatOptions buildCommandLineOptions(const QCoreApplication &app)
                                         QStringLiteral("How many spaces are used when indenting."),
                                         "width", "4"));
 
+    QCommandLineOption columnWidthOption(
+            { "W", "column-width" },
+            QStringLiteral("Breaks the line into multiple lines if exceedes the specified width."
+                           "Use -1 to disable line wrapping. (default)"),
+            "width", "-1");
+    parser.addOption(columnWidthOption);
     parser.addOption(QCommandLineOption({ "n", "normalize" },
                                         QStringLiteral("Reorders the attributes of the objects "
                                                        "according to the QML Coding Guidelines.")));
@@ -223,6 +229,16 @@ QQmlFormatOptions buildCommandLineOptions(const QCoreApplication &app)
     options.setNewline(QQmlFormatOptions::parseEndings(parser.value("newline"))); // TODO
     options.setFiles(files);
     options.setArguments(parser.positionalArguments());
+
+    if (parser.isSet(columnWidthOption)) {
+        bool isValidValue = false;
+        const int maxColumnWidth = parser.value(columnWidthOption).toInt(&isValidValue);
+        if (!isValidValue || maxColumnWidth < -1) {
+            options.addError("Error: Invalid value passed to -W. Must be an integer >= -1");
+            return options;
+        }
+        options.setMaxColumnWidth(maxColumnWidth);
+    }
     return options;
 #else
     return Options {};

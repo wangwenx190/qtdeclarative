@@ -70,6 +70,12 @@ void QQmlFormatOptions::applySettings(const QQmlFormatSettings &settings)
             setTabsEnabled(settings.value(QQmlFormatSettings::s_useTabsSetting).toBool());
     }
 
+    // if not set by command line, allow for max column width to be set by settings
+    if (m_options.maxLineLength == -1) {
+        if (settings.isSet(QQmlFormatSettings::s_maxColumnWidthSetting))
+            setMaxColumnWidth(settings.value(QQmlFormatSettings::s_maxColumnWidthSetting).toInt());
+    }
+
     if (settings.isSet(QQmlFormatSettings::s_normalizeSetting))
         setNormalizeEnabled(settings.value(QQmlFormatSettings::s_normalizeSetting).toBool());
 

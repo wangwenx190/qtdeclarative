@@ -76,6 +76,9 @@ public:
     int indentWidth() const { return m_options.formatOptions.indentSize; }
     void setIndentWidth(int width) { m_options.formatOptions.indentSize = width; }
 
+    int maxColumnWidth() const { return m_options.maxLineLength; }
+    void setMaxColumnWidth(int width) { m_options.maxLineLength = width; }
+
     QQmlJS::Dom::LineWriterOptions optionsForCode(const QString &code) const
     {
         QQmlJS::Dom::LineWriterOptions result = m_options;

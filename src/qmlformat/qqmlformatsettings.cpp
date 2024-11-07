@@ -7,6 +7,7 @@ QQmlFormatSettings::QQmlFormatSettings(const QString &toolName) : QQmlToolingSet
 {
     addOption(s_useTabsSetting);
     addOption(s_indentWidthSetting, 4);
+    addOption(s_maxColumnWidthSetting);
     addOption(s_normalizeSetting);
     addOption(s_newlineSetting, QStringLiteral("native"));
     addOption(s_objectsSpacingSetting);
