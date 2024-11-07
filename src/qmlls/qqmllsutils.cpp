@@ -1192,7 +1192,7 @@ propertyBindingFromReferrerScope(const QQmlJSScope::ConstPtr &referrerScope, con
 
     const auto getScope = [bindingIsAttached, binding]() -> QQmlJSScope::ConstPtr {
         if (bindingIsAttached)
-            return binding->attachingType();
+            return binding->attachedType();
 
         return binding->groupType();
     };

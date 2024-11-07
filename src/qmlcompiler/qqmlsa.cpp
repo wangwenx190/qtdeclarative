@@ -188,10 +188,23 @@ QString Binding::propertyName() const
     Returns the attached type if the content type of this binding is
     AttachedProperty, otherwise returns an invalid Element.
  */
+Element Binding::attachedType() const
+{
+    return QQmlJSScope::createQQmlSAElement(BindingPrivate::binding(*this).attachedType());
+}
+
+#if QT_DEPRECATED_SINCE(6, 9)
+/*!
+    Returns the attached type if the content type of this binding is
+    AttachedProperty, otherwise returns an invalid Element.
+
+    \deprecated [6.9] Use the better named attachedType() method.
+ */
 Element Binding::attachingType() const
 {
-    return QQmlJSScope::createQQmlSAElement(BindingPrivate::binding(*this).attachingType());
+    return attachedType();
 }
+#endif
 
 /*!
     Returns the location in the QML code where this binding is defined.
@@ -1173,7 +1186,7 @@ void PassManagerPrivate::addBindingSourceLocations(const Element &element, const
                                       prefix + binding.propertyName() + u'.');
             continue; // don't insert into m_bindingsByLocation
         case QQmlSA::BindingType::AttachedProperty:
-            addBindingSourceLocations(element, Element{ binding.attachingType() },
+            addBindingSourceLocations(element, Element{ binding.attachedType() },
                                       prefix + binding.propertyName() + u'.', true);
             continue; // don't insert into m_bindingsByLocation
         case QQmlSA::BindingType::Translation: {

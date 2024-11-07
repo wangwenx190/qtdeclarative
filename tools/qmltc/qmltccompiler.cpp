@@ -1465,7 +1465,7 @@ void QmltcCompiler::compileAttachedPropertyBinding(QmltcType &current,
     QQmlJSScope::ConstPtr propertyType = property.type();
 
     Q_ASSERT(accessor.name == u"this"_s); // doesn't have to hold, in fact
-    const auto attachedType = binding.attachingType();
+    const auto attachedType = binding.attachedType();
     Q_ASSERT(attachedType);
 
     const QString attachingTypeName = propertyName; // acts as an identifier

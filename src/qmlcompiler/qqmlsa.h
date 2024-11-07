@@ -82,7 +82,13 @@ public:
     BindingType bindingType() const;
     QString stringValue() const;
     QString propertyName() const;
+    Element attachedType() const;
+
+#if QT_DEPRECATED_SINCE(6, 9)
+    QT_DEPRECATED_X("Use attachedType()")
     Element attachingType() const;
+#endif
+
     QQmlSA::SourceLocation sourceLocation() const;
     double numberValue() const;
     ScriptBindingKind scriptKind() const;

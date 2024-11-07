@@ -430,7 +430,7 @@ void tst_qqmljsscope::attachedProperties()
             [&](QMultiHash<QString, QQmlJSMetaPropertyBinding> *bindings, qsizetype index) -> void {
         const auto &binding = keysBindings[index];
         QCOMPARE(binding.bindingType(), QQmlSA::BindingType::AttachedProperty);
-        auto keysScope = binding.attachingType();
+        auto keysScope = binding.attachedType();
         QVERIFY(keysScope);
         QCOMPARE(keysScope->accessSemantics(), QQmlJSScope::AccessSemantics::Reference);
         *bindings = keysScope->ownPropertyBindings();
@@ -755,7 +755,7 @@ void tst_qqmljsscope::resolvedNonUniqueScopes()
         auto topLevelBindings = root->propertyBindings(u"Component"_s);
         QCOMPARE(topLevelBindings.size(), 1);
         QCOMPARE(topLevelBindings[0].bindingType(), QQmlSA::BindingType::AttachedProperty);
-        auto componentScope = topLevelBindings[0].attachingType();
+        auto componentScope = topLevelBindings[0].attachedType();
         auto componentBindings = componentScope->ownPropertyBindings();
         QCOMPARE(componentBindings.size(), 2);
         auto onCompletedBinding = value(componentBindings, u"onCompleted"_s);

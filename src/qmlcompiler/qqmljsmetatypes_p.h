@@ -591,7 +591,7 @@ class Q_QMLCOMPILER_EXPORT QQmlJSMetaPropertyBinding
                 ```
                 tells us that "Type" has an AttachedProperty binding with
                 property name "Keys". The attaching object of that binding
-                (binding.attachingType()) has type "Keys" and a BoolLiteral
+                (binding.attachedType()) has type "Keys" and a BoolLiteral
                 binding with property name "enabled".
             */
             friend bool operator==(AttachedProperty a, AttachedProperty b)
@@ -841,7 +841,7 @@ public:
         return {};
     }
 
-    QSharedPointer<const QQmlJSScope> attachingType() const
+    QSharedPointer<const QQmlJSScope> attachedType() const
     {
         if (auto *attached = std::get_if<Content::AttachedProperty>(&m_bindingContent))
             return attached->value.lock();
