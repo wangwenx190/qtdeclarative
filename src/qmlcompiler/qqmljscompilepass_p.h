@@ -79,6 +79,7 @@ public:
         int changedRegisterIndex = InvalidRegister;
         bool hasSideEffects = false;
         bool isRename = false;
+        bool isShadowable = false;
     };
 
     using InstructionAnnotations = QFlatMap<int, InstructionAnnotation>;
@@ -247,6 +248,9 @@ public:
         bool isRename() const { return m_isRename; }
         void setIsRename(bool isRename) { m_isRename = isRename; }
 
+        bool isShadowable() const { return m_isShadowable; }
+        void setIsShadowable(bool isShadowable) { m_isShadowable = isShadowable; }
+
         int renameSourceRegisterIndex() const
         {
             Q_ASSERT(m_isRename);
@@ -260,6 +264,7 @@ public:
         int m_changedRegisterIndex = InvalidRegister;
         bool m_hasSideEffects = false;
         bool m_isRename = false;
+        bool m_isShadowable = false;
     };
 
     QQmlJSCompilePass(const QV4::Compiler::JSUnitGenerator *jsUnitGenerator,
@@ -363,6 +368,7 @@ protected:
         newState.markSideEffects(instruction->second.hasSideEffects);
         newState.setReadRegisters(instruction->second.readRegisters);
         newState.setIsRename(instruction->second.isRename);
+        newState.setIsShadowable(instruction->second.isShadowable);
 
         for (auto it = instruction->second.typeConversions.begin(),
              end = instruction->second.typeConversions.end(); it != end; ++it) {

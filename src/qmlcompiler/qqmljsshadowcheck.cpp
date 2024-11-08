@@ -190,6 +190,7 @@ QQmlJSShadowCheck::Shadowability QQmlJSShadowCheck::checkShadowing(
         const QQmlJSScope::ConstPtr varType = m_typeResolver->varType();
         const QQmlJSRegisterContent varContent = m_typeResolver->conversionType(varType);
         InstructionAnnotation &currentAnnotation = m_annotations[currentInstructionOffset()];
+        currentAnnotation.isShadowable = true;
 
         if (currentAnnotation.changedRegisterIndex != InvalidRegister) {
             m_typeResolver->adjustOriginalType(
@@ -203,6 +204,7 @@ QQmlJSShadowCheck::Shadowability QQmlJSShadowCheck::checkShadowing(
             if (it.key() != baseRegister)
                 it->second.content = m_typeResolver->convert(it->second.content, varContent);
         }
+
         return Shadowable;
     }
     default:

@@ -1738,13 +1738,11 @@ QString QQmlJSCodeGenerator::initAndCall(
         int argc, int argv, const QString &callMethodTemplate, const QString &initMethodTemplate,
         QString *outVar)
 {
-    QString types;
     QString args;
 
     if (m_state.changedRegisterIndex() == InvalidRegister ||
             m_typeResolver->registerContains(
                 m_state.accumulatorOut(), m_typeResolver->voidType())) {
-        types = u"QMetaType()"_s;
         args = u"nullptr"_s;
     } else {
         *outVar = u"callResult"_s;
@@ -1753,14 +1751,25 @@ QString QQmlJSCodeGenerator::initAndCall(
         m_body += u";\n";
 
         args = contentPointer(m_state.accumulatorOut(), *outVar);
-        types = contentType(m_state.accumulatorOut(), *outVar);
     }
 
     for (int i = 0; i < argc; ++i) {
         const QQmlJSRegisterContent content = registerType(argv + i);
         const QString var = registerVariable(argv + i);
         args += u", "_s + contentPointer(content, var);
-        types += u", "_s + contentType(content, var);
+    }
+
+    QString initMethod;
+
+    if (m_state.isShadowable()) {
+        initMethod = initMethodTemplate;
+    } else {
+        const QQmlJSMetaMethod method = m_state.accumulatorOut().methodCall();
+        Q_ASSERT(!method.isConstructor());
+
+        const QQmlJSMetaMethod::RelativeFunctionIndex relativeMethodIndex =
+                method.isJavaScriptFunction() ? method.jsFunctionIndex() : method.methodIndex();
+        initMethod = initMethodTemplate.arg(int(relativeMethodIndex));
     }
 
     return u"const auto doCall = [&]() {\n"_s
@@ -1768,8 +1777,7 @@ QString QQmlJSCodeGenerator::initAndCall(
             + u"    return aotContext->"_s + callMethodTemplate.arg(u"args"_s).arg(argc) + u";\n"
             + u"};\n"_s
             + u"const auto doInit = [&]() {\n"_s
-            + u"    QMetaType types[] = {" + types + u"};\n"_s
-            + u"    aotContext->"_s + initMethodTemplate.arg(u"types"_s).arg(argc) + u";\n"
+            + u"    aotContext->"_s + initMethod + u";\n"
             + u"};\n"_s;
 }
 
@@ -2282,10 +2290,14 @@ void QQmlJSCodeGenerator::generate_CallPropertyLookup(int index, int base, int a
 
     m_body += u"{\n"_s;
     QString outVar;
+
+    const QString initMethodTemplate = m_state.isShadowable()
+            ? u"initCallObjectPropertyLookupAsVariant(%1, %2)"_s
+            : u"initCallObjectPropertyLookup(%1, %2, %3)"_s;
+
     m_body += initAndCall(
             argc, argv, u"callObjectPropertyLookup(%1, %2, %3, %4)"_s.arg(index).arg(inputPointer),
-            u"initCallObjectPropertyLookup(%1, %2, %3, %4)"_s.arg(index).arg(inputPointer),
-            &outVar);
+            initMethodTemplate.arg(index).arg(inputPointer), &outVar);
 
     const QString lookup = u"doCall()"_s;
     const QString initialization = u"doInit()"_s;
@@ -2331,8 +2343,10 @@ void QQmlJSCodeGenerator::generate_CallQmlContextPropertyLookup(int index, int a
             return;
     }
 
-    if (m_state.accumulatorOut().isJavaScriptReturnValue())
+    if (m_state.accumulatorOut().isJavaScriptReturnValue()) {
         reject(u"call to untyped JavaScript function"_s);
+        return;
+    }
 
     AccumulatorConverter registers(this);
 
@@ -2340,7 +2354,7 @@ void QQmlJSCodeGenerator::generate_CallQmlContextPropertyLookup(int index, int a
     QString outVar;
     m_body += initAndCall(
             argc, argv, u"callQmlContextPropertyLookup(%1, %2, %3)"_s.arg(index),
-            u"initCallQmlContextPropertyLookup(%1, %2, %3)"_s.arg(index), &outVar);
+            u"initCallQmlContextPropertyLookup(%1, %2)"_s.arg(index), &outVar);
 
     const QString lookup = u"doCall()"_s;
     const QString initialization = u"doInit()"_s;

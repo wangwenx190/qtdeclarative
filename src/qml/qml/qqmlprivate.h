@@ -693,7 +693,7 @@ namespace QQmlPrivate
         // the exception should be propagated. If not, the original lookup can be tried again.
 
         bool callQmlContextPropertyLookup(uint index, void **args, int argc) const;
-        void initCallQmlContextPropertyLookup(uint index, const QMetaType *types, int argc) const;
+        void initCallQmlContextPropertyLookup(uint index, int relativeMethodIndex) const;
 
 #if QT_QML_REMOVED_SINCE(6, 9)
         bool callQmlContextPropertyLookup(
@@ -706,7 +706,8 @@ namespace QQmlPrivate
 
         bool callObjectPropertyLookup(uint index, QObject *object, void **args, int argc) const;
         void initCallObjectPropertyLookup(
-                uint index, QObject *object, const QMetaType *types, int argc) const;
+                uint index, QObject *object, int relativeMethodIndex) const;
+        void initCallObjectPropertyLookupAsVariant(uint index, QObject *object) const;
 
 #if QT_QML_REMOVED_SINCE(6, 9)
         bool callObjectPropertyLookup(

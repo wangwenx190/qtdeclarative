@@ -167,6 +167,7 @@ void QQmlJSTypeDescriptionReader::readDependencies(UiScriptBinding *ast)
 void QQmlJSTypeDescriptionReader::readComponent(UiObjectDefinition *ast)
 {
     m_currentCtorIndex = 0;
+    m_currentMethodIndex = 0;
     QQmlJSScope::Ptr scope = QQmlJSScope::create();
     QList<QQmlJSScope::Export> exports;
 
@@ -353,6 +354,12 @@ void QQmlJSTypeDescriptionReader::readSignalOrMethod(
                  tr("Method or signal is missing a name script binding."));
         return;
     }
+
+    // Signals, slots and method share one index space. Constructors are separate.
+    // We also assume that the order and therefore the indexing of all methods is retained from
+    // moc's JSON output.
+    if (!metaMethod.isConstructor())
+        metaMethod.setMethodIndex(QQmlJSMetaMethod::RelativeFunctionIndex(m_currentMethodIndex++));
 
     if (metaMethod.returnTypeName().isEmpty())
         metaMethod.setReturnTypeName(QLatin1String("void"));
