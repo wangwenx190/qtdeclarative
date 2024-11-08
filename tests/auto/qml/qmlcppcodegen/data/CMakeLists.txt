@@ -19,6 +19,7 @@ set(cpp_sources
     multiforeign.h
     objectwithmethod.h
     person.cpp person.h
+    qmlusing.h
     resettable.h
     sequenceToIterable.h
     sequencetypeexample.cpp sequencetypeexample.h
@@ -238,6 +239,7 @@ set(qml_files
     popContextAfterRet.qml
     prefixedMetaType.qml
     pressAndHoldButton.qml
+    qmlUsing.qml
     qtbug113150.qml
     qtfont.qml
     reduceWithNullThis.qml

@@ -1381,8 +1381,13 @@ static ObjectPropertyResult storeObjectAsVariant(
         return storeObjectProperty<true>(lookup, object, variant->data());
 
     QVariant converted(propType);
-    v4->metaTypeFromJS(v4->fromVariant(*variant), propType, converted.data());
-    return storeObjectProperty<true>(lookup, object, converted.data());
+    if (v4->metaTypeFromJS(v4->fromVariant(*variant), propType, converted.data())
+        || QMetaType::convert(
+                variant->metaType(), variant->constData(), propType, converted.data())) {
+        return storeObjectProperty<true>(lookup, object, converted.data());
+    }
+
+    return ObjectPropertyResult::NeedsInit;
 }
 
 static ObjectPropertyResult storeFallbackAsVariant(
@@ -1406,8 +1411,13 @@ static ObjectPropertyResult storeFallbackAsVariant(
         return storeFallbackProperty(lookup, object, variant->data());
 
     QVariant converted(propType);
-    v4->metaTypeFromJS(v4->fromVariant(*variant), propType, converted.data());
-    return storeFallbackProperty(lookup, object, converted.data());
+    if (v4->metaTypeFromJS(v4->fromVariant(*variant), propType, converted.data())
+            || QMetaType::convert(
+                variant->metaType(), variant->constData(), propType, converted.data())) {
+        return storeFallbackProperty(lookup, object, converted.data());
+    }
+
+    return ObjectPropertyResult::NeedsInit;
 }
 
 enum class ObjectLookupResult {
@@ -1457,8 +1467,6 @@ static ObjectLookupResult initObjectLookup(
             return ObjectLookupResult::Failure;
 
         const QMetaProperty property = metaObject->property(coreIndex);
-        if (!doVariantLookup && !isTypeCompatible(type, property.metaType()))
-            return ObjectLookupResult::Failure;
 
         lookup->releasePropertyCache();
         // & 1 to tell the gc that this is not heap allocated; see markObjects in qv4lookup_p.h
@@ -1472,9 +1480,6 @@ static ObjectLookupResult initObjectLookup(
                 : ObjectLookupResult::Fallback;
     }
 
-    if (!doVariantLookup && !isTypeCompatible(type, property->propType()))
-        return ObjectLookupResult::Failure;
-
     Q_ASSERT(ddata->propertyCache);
 
     QV4::setupQObjectLookup(lookup, ddata, property);
@@ -1484,19 +1489,17 @@ static ObjectLookupResult initObjectLookup(
             : ObjectLookupResult::Object;
 }
 
-static bool initValueLookup(QV4::Lookup *lookup, QV4::ExecutableCompilationUnit *compilationUnit,
-                            const QMetaObject *metaObject, QMetaType type)
+static void initValueLookup(
+        QV4::Lookup *lookup, QV4::ExecutableCompilationUnit *compilationUnit,
+        const QMetaObject *metaObject)
 {
     Q_ASSERT(metaObject);
     const QByteArray name = compilationUnit->runtimeStrings[lookup->nameIndex]->toQString().toUtf8();
     const int coreIndex = metaObject->indexOfProperty(name.constData());
     QMetaType lookupType = metaObject->property(coreIndex).metaType();
-    if (!isTypeCompatible(type, lookupType))
-        return false;
     lookup->qgadgetLookup.metaObject = quintptr(metaObject) + 1;
     lookup->qgadgetLookup.coreIndex = coreIndex;
     lookup->qgadgetLookup.metaType = lookupType.iface();
-    return true;
 }
 
 bool AOTCompiledContext::captureLookup(uint index, QObject *object) const
@@ -1637,8 +1640,10 @@ void AOTCompiledContext::storeNameSloppy(uint nameIndex, void *value, QMetaType 
         } else {
             QVariant var(propType);
             QV4::ExecutionEngine *v4 = engine->handle();
-            v4->metaTypeFromJS(v4->metaTypeToJS(type, value), propType, var.data());
-            storeResult = storeObjectProperty(&lookup, qmlScopeObject, var.data());
+            if (v4->metaTypeFromJS(v4->metaTypeToJS(type, value), propType, var.data())
+                    || QMetaType::convert(type, value, propType, var.data())) {
+                storeResult = storeObjectProperty(&lookup, qmlScopeObject, var.data());
+            }
         }
 
         lookup.qobjectLookup.propertyCache->release();
@@ -1657,8 +1662,10 @@ void AOTCompiledContext::storeNameSloppy(uint nameIndex, void *value, QMetaType 
         } else {
             QVariant var(propType);
             QV4::ExecutionEngine *v4 = engine->handle();
-            v4->metaTypeFromJS(v4->metaTypeToJS(type, value), propType, var.data());
-            storeResult = storeFallbackProperty(&lookup, qmlScopeObject, var.data());
+            if (v4->metaTypeFromJS(v4->metaTypeToJS(type, value), propType, var.data())
+                    || QMetaType::convert(type, value, propType, var.data())) {
+                storeResult = storeFallbackProperty(&lookup, qmlScopeObject, var.data());
+            }
         }
         break;
     }
@@ -2338,6 +2345,9 @@ bool AOTCompiledContext::writeBackScopeObjectPropertyLookup(uint index, void *so
 
 void AOTCompiledContext::initLoadScopeObjectPropertyLookup(uint index, QMetaType type) const
 {
+    // TODO: The only thing we need the type for is checking whether it's QVariant.
+    //       Replace it with an enum and simplify code generation.
+
     QV4::ExecutionEngine *v4 = engine->handle();
     QV4::Lookup *lookup = compilationUnit->runtimeLookups + index;
 
@@ -2587,6 +2597,9 @@ bool AOTCompiledContext::writeBackObjectLookup(uint index, QObject *object, void
 
 void AOTCompiledContext::initGetObjectLookup(uint index, QObject *object, QMetaType type) const
 {
+    // TODO: The only thing we need the type for is checking whether it's QVariant.
+    //       Replace it with an enum and simplify code generation.
+
     QV4::ExecutionEngine *v4 = engine->handle();
     if (v4->hasException) {
         v4->amendException();
@@ -2653,12 +2666,11 @@ bool AOTCompiledContext::writeBackValueLookup(uint index, void *value, void *sou
 void AOTCompiledContext::initGetValueLookup(
         uint index, const QMetaObject *metaObject, QMetaType type) const
 {
+    Q_UNUSED(type); // TODO: Remove the type argument and simplify code generation
     Q_ASSERT(!engine->hasError());
     QV4::Lookup *lookup = compilationUnit->runtimeLookups + index;
-    if (initValueLookup(lookup, compilationUnit, metaObject, type))
-        lookup->call = QV4::Lookup::Call::GetterValueTypeProperty;
-    else
-        engine->handle()->throwTypeError();
+    initValueLookup(lookup, compilationUnit, metaObject);
+    lookup->call = QV4::Lookup::Call::GetterValueTypeProperty;
 }
 
 bool AOTCompiledContext::getEnumLookup(uint index, void *target) const
@@ -2762,6 +2774,9 @@ bool AOTCompiledContext::setObjectLookup(uint index, QObject *object, void *valu
 
 void AOTCompiledContext::initSetObjectLookup(uint index, QObject *object, QMetaType type) const
 {
+    // TODO: The only thing we need the type for is checking whether it's QVariant.
+    //       Replace it with an enum and simplify code generation.
+
     QV4::ExecutionEngine *v4 = engine->handle();
     if (v4->hasException) {
         v4->amendException();
@@ -2804,15 +2819,14 @@ bool AOTCompiledContext::setValueLookup(
     return true;
 }
 
-void AOTCompiledContext::initSetValueLookup(uint index, const QMetaObject *metaObject,
-                                            QMetaType type) const
+void AOTCompiledContext::initSetValueLookup(
+        uint index, const QMetaObject *metaObject, QMetaType type) const
 {
+    Q_UNUSED(type); // TODO: Remove the type argument and simplify code generation
     Q_ASSERT(!engine->hasError());
     QV4::Lookup *lookup = compilationUnit->runtimeLookups + index;
-    if (initValueLookup(lookup, compilationUnit, metaObject, type))
-        lookup->call = QV4::Lookup::Call::SetterValueTypeProperty;
-    else
-        engine->handle()->throwTypeError();
+    initValueLookup(lookup, compilationUnit, metaObject);
+    lookup->call = QV4::Lookup::Call::SetterValueTypeProperty;
 }
 
 } // namespace QQmlPrivate
