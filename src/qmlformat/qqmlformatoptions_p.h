@@ -78,6 +78,7 @@ public:
 
     int maxColumnWidth() const { return m_options.maxLineLength; }
     void setMaxColumnWidth(int width) { m_options.maxLineLength = width; }
+    bool isMaxColumnWidthSet() const { return m_options.maxLineLength > 0; }
 
     QQmlJS::Dom::LineWriterOptions optionsForCode(const QString &code) const
     {

@@ -41,6 +41,7 @@ qt_internal_add_module(QmlDomPrivate
         qqmldomtop.cpp qqmldomtop_p.h
         qqmldomtypesreader.cpp qqmldomtypesreader_p.h
         qqmldomscriptelements_p.h qqmldomscriptelements.cpp
+        qqmldomlinewriterfactory_p.h
     DEFINES
         QMLDOM_LIBRARY
     PUBLIC_LIBRARIES

@@ -14,6 +14,7 @@
 #include <QtQmlDom/private/qqmldomexternalitems_p.h>
 #include <QtQmlDom/private/qqmldomtop_p.h>
 #include <QtQmlDom/private/qqmldomoutwriter_p.h>
+#include <QtQmlDom/private/qqmldomlinewriterfactory_p.h>
 
 #if QT_CONFIG(commandlineparser)
 #    include <QCommandLineParser>
@@ -92,9 +93,8 @@ static bool parseFile(const QString &filename, const QQmlFormatOptions &options)
     auto lwOptions = options.optionsForCode(code);
     WriteOutChecks checks = WriteOutCheck::Default;
     //Disable writeOutChecks for some usecases
-    if (options.forceEnabled() ||
-        code.size() > 32000 ||
-        fileItem.internalKind() == DomType::JsFile) {
+    if (options.forceEnabled() || options.isMaxColumnWidthSet() || code.size() > 32000
+        || fileItem.internalKind() == DomType::JsFile) {
         checks = WriteOutCheck::None;
     }
 
@@ -108,8 +108,9 @@ static bool parseFile(const QString &filename, const QQmlFormatOptions &options)
     } else {
         QFile out;
         if (out.open(stdout, QIODevice::WriteOnly)) {
-            LineWriter lw([&out](QStringView s) { out.write(s.toUtf8()); }, filename, lwOptions);
-            OutWriter ow(lw);
+            auto lw = createLineWriter([&out](QStringView s) { out.write(s.toUtf8()); }, filename,
+                                       lwOptions);
+            OutWriter ow(*lw);
             res = fileItem.writeOutForFile(ow, checks);
             ow.flush();
         } else {

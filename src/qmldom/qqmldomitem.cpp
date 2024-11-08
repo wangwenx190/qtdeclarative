@@ -17,6 +17,7 @@
 #include "qqmldomlinewriter_p.h"
 #include "qqmldom_utils_p.h"
 #include "qqmldomscriptelements_p.h"
+#include <qqmldomlinewriterfactory_p.h>
 
 #include <QtQml/private/qqmljslexer_p.h>
 #include <QtQml/private/qqmljsparser_p.h>
@@ -1338,8 +1339,8 @@ bool DomItem::writeOut(const QString &path, int nBackups, const LineWriterOption
     auto status = fw->write(
             path,
             [this, path, &options, extraChecks](QTextStream &ts) {
-                LineWriter lw([&ts](QStringView s) { ts << s; }, path, options);
-                OutWriter ow(lw);
+                auto lw = createLineWriter([&ts](QStringView s) { ts << s; }, path, options);
+                OutWriter ow(*lw);
                 return writeOutForFile(ow, extraChecks);
             },
             nBackups);
