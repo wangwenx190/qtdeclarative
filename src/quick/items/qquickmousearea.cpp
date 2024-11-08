@@ -827,6 +827,7 @@ void QQuickMouseArea::hoverEnterEvent(QHoverEvent *event)
         me.setPosition(d->lastPos);
         emit mouseYChanged(&me);
         me.setPosition(d->lastPos);
+        emit positionChanged(&me);
     }
 
     // A MouseArea should not block hover events
