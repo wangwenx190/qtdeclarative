@@ -125,4 +125,28 @@ QVariant QQmlPrivate::AOTCompiledContext::constructValueType(
             resultMetaType, resultMetaObject, ctorIndex, args);
 }
 
+bool QQmlPrivate::AOTCompiledContext::callGlobalLookup(
+        uint index, void **args, const QMetaType *types, int argc) const
+{
+    QV4::Lookup *lookup = compilationUnit->runtimeLookups + index;
+    QV4::Scope scope(engine->handle());
+    QV4::ScopedFunctionObject function(scope, lookup->globalGetter(scope.engine));
+    if (!function) {
+        scope.engine->throwTypeError(
+                QStringLiteral("Property '%1' of object [null] is not a function")
+                        .arg(compilationUnit->runtimeStrings[lookup->nameIndex]->toQString()));
+        return false;
+    }
+
+    function->call(nullptr, args, types, argc);
+    return true;
+}
+
+void QQmlPrivate::AOTCompiledContext::initCallGlobalLookup(uint index) const
+{
+    Q_UNUSED(index);
+    Q_ASSERT(engine->hasError());
+    engine->handle()->amendException();
+}
+
 #endif

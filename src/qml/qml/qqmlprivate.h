@@ -712,12 +712,10 @@ namespace QQmlPrivate
         bool callObjectPropertyLookup(
                 uint index, QObject *object, void **args, const QMetaType *types, int argc) const;
         void initCallObjectPropertyLookup(uint index) const;
-#endif
 
         bool callGlobalLookup(uint index, void **args, const QMetaType *types, int argc) const;
         void initCallGlobalLookup(uint index) const;
 
-#if QT_QML_REMOVED_SINCE(6, 9)
         bool loadGlobalLookup(uint index, void *target, QMetaType type) const;
         void initLoadGlobalLookup(uint index) const;
 #endif
