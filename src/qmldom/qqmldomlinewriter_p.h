@@ -82,7 +82,7 @@ public:
     enum class AttributesSequence { Normalize, Preserve };
     Q_ENUM(AttributesSequence)
 
-    int maxLineLength = -1;
+    int maxLineLength = -1; // -1 means no limit
     int strongMaxLineExtra = 20;
     int minContentLength = 10;
 #if defined (Q_OS_WIN)

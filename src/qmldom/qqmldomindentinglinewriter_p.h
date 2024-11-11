@@ -41,12 +41,15 @@ public:
     {
     }
     void reindentAndSplit(const QString &eol, bool eof = false) override;
+    void handleTrailingSpace();
     FormatPartialStatus &fStatus();
 
     void lineChanged() override { m_fStatusValid = false; }
     void willCommit() override;
     bool reindent() const { return m_reindent; }
     void setReindent(bool v) { m_reindent = v; }
+
+    void splitOnMaxLength(const QString &eol, bool eof);
 
 private:
     Q_DISABLE_COPY_MOVE(IndentingLineWriter)
