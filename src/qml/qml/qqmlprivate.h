@@ -775,6 +775,10 @@ namespace QQmlPrivate
 #if QT_QML_REMOVED_SINCE(6, 9)
         void initSetValueLookup(uint index, const QMetaObject *metaObject, QMetaType type) const;
 #endif
+
+        bool callValueLookup(uint index, void *target, void **args, int argc) const;
+        void initCallValueLookup(
+                uint index, const QMetaObject *metaObject, int relativeMethodIndex) const;
     };
 
     struct AOTCompiledFunction {

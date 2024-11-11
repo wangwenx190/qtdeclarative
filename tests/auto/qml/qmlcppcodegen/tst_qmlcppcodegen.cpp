@@ -4240,10 +4240,12 @@ void tst_QmlCppCodegen::qmlUsing()
     QCOMPARE(u->val().a(), 24);
     QCOMPARE(u->val().getB(), 25);
     QCOMPARE(u->property("valA").toInt(), 24);
+    QCOMPARE(u->property("valB").toInt(), 25);
     QCOMPARE(u->property("myA").toInt(), 7);
     QCOMPARE(u->property("myB").toInt(), 5);
     QCOMPARE(u->property("myA2").toInt(), 7);
     QCOMPARE(u->property("myB2").toInt(), 5);
+    QCOMPARE(u->setValCalls(), 0); // getters do not cause write back
 
     QCOMPARE(u->u(), 9u);
     QCOMPARE(u->val().u(), 26u);
@@ -4277,8 +4279,9 @@ void tst_QmlCppCodegen::qmlUsing()
     QCOMPARE(u->a(), 59);
     QCOMPARE(u->getB(), 60);
     QCOMPARE(u->val().a(), 55);
-    QCOMPARE(u->val().getB(), 25);
+    QCOMPARE(u->val().getB(), 56);
     QCOMPARE(u->property("valA").toInt(), 55);
+    QCOMPARE(u->property("valB").toInt(), 56); // Updated, because val changes
     QCOMPARE(u->property("myA").toInt(), 59);
     QCOMPARE(u->property("myB").toInt(), 5);  // Remains 5, due to lack of signaling
     QCOMPARE(u->property("myA2").toInt(), 59);
@@ -4290,6 +4293,7 @@ void tst_QmlCppCodegen::qmlUsing()
     QCOMPARE(u->property("myU").toUInt(), 63u);
     QCOMPARE(u->property("myU2").toUInt(), 63u);
 
+    QCOMPARE(u->setValCalls(), 3); // assignment to val.a and val.u, and call of val.setB()
 
     QMetaObject::invokeMethod(object.data(), "burn");
 

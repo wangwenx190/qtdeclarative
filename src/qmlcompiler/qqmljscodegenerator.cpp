@@ -2276,28 +2276,40 @@ void QQmlJSCodeGenerator::generate_CallPropertyLookup(int index, int base, int a
             return;
     }
 
-    if (m_state.accumulatorOut().isJavaScriptReturnValue())
+    if (m_state.accumulatorOut().isJavaScriptReturnValue()) {
         reject(u"call to untyped JavaScript function"_s);
-
-    if (!scope->isReferenceType()) {
-        // This is possible, once we establish the right kind of lookup for it
-        reject(u"call to property '%1' of %2"_s.arg(name, baseType.descriptiveName()));
+        return;
     }
-
-    const QString inputPointer = resolveQObjectPointer(
-            scope, baseType, registerVariable(base),
-            u"Cannot call method '%1' of %2"_s.arg(name));
 
     m_body += u"{\n"_s;
     QString outVar;
 
-    const QString initMethodTemplate = m_state.isShadowable()
-            ? u"initCallObjectPropertyLookupAsVariant(%1, %2)"_s
-            : u"initCallObjectPropertyLookup(%1, %2, %3)"_s;
+    if (scope->isReferenceType()) {
+        const QString inputPointer = resolveQObjectPointer(
+                scope, baseType, registerVariable(base),
+                u"Cannot call method '%1' of %2"_s.arg(name));
 
-    m_body += initAndCall(
-            argc, argv, u"callObjectPropertyLookup(%1, %2, %3, %4)"_s.arg(index).arg(inputPointer),
-            initMethodTemplate.arg(index).arg(inputPointer), &outVar);
+        const QString initMethodTemplate = m_state.isShadowable()
+                ? u"initCallObjectPropertyLookupAsVariant(%1, %2)"_s
+                : u"initCallObjectPropertyLookup(%1, %2, %3)"_s;
+
+        m_body += initAndCall(
+                argc, argv,
+                u"callObjectPropertyLookup(%1, %2, %3, %4)"_s.arg(index).arg(inputPointer),
+                initMethodTemplate.arg(index).arg(inputPointer), &outVar);
+    } else {
+        const QQmlJSScope::ConstPtr originalScope = m_typeResolver->originalType(scope);
+        const QString inputPointer = resolveValueTypeContentPointer(
+                originalScope, baseType, registerVariable(base),
+                u"Cannot call method '%1' of %2"_s.arg(name));
+
+        m_body += initAndCall(
+                argc, argv,
+                u"callValueLookup(%1, %2, %3, %4)"_s.arg(index).arg(inputPointer),
+                u"initCallValueLookup(%1, %2, %3)"_s
+                        .arg(index).arg(metaObject(originalScope)),
+                &outVar);
+    }
 
     const QString lookup = u"doCall()"_s;
     const QString initialization = u"doInit()"_s;
@@ -2306,6 +2318,13 @@ void QQmlJSCodeGenerator::generate_CallPropertyLookup(int index, int base, int a
     generateMoveOutVar(outVar);
 
     m_body += u"}\n"_s;
+
+    if (scope->isReferenceType())
+        return;
+
+    const QQmlJSMetaMethod method = m_state.accumulatorOut().methodCall();
+    if (!method.isConst())
+        generateWriteBack(base);
 }
 
 void QQmlJSCodeGenerator::generate_CallName(int name, int argc, int argv)

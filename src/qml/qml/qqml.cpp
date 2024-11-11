@@ -2805,6 +2805,43 @@ void AOTCompiledContext::initSetValueLookupAsVariant(
     initValueLookup<LookupType::Variant>(this, index, metaObject);
 }
 
+bool AOTCompiledContext::callValueLookup(uint index, void *target, void **args, int argc) const
+{
+    Q_UNUSED(argc);
+
+    QV4::Lookup *lookup = compilationUnit->runtimeLookups + index;
+    if (lookup->call != QV4::Lookup::Call::GetterValueTypeProperty)
+        return false;
+
+    Q_ASSERT(lookup->qgadgetLookup.isFunction);
+
+    const QMetaObject *metaObject
+            = reinterpret_cast<const QMetaObject *>(lookup->qgadgetLookup.metaObject - 1);
+
+    metaObject->d.static_metacall(
+            reinterpret_cast<QObject *>(target), QMetaObject::InvokeMetaMethod,
+            lookup->qgadgetLookup.coreIndex, args);
+
+    return true;
+}
+
+void AOTCompiledContext::initCallValueLookup(
+        uint index, const QMetaObject *metaObject, int relativeMethodIndex) const
+{
+    Q_ASSERT(!engine->hasError());
+    QV4::Lookup *lookup = compilationUnit->runtimeLookups + index;
+    Q_ASSERT(metaObject);
+
+    const int absoluteMethodIndex = relativeMethodIndex + metaObject->methodOffset();
+
+    const QMetaMethod method = metaObject->method(absoluteMethodIndex);
+    lookup->qgadgetLookup.metaObject = quintptr(metaObject) + 1;
+    lookup->qgadgetLookup.coreIndex = absoluteMethodIndex;
+    lookup->qgadgetLookup.metaType = method.returnMetaType().iface();
+    lookup->qgadgetLookup.isFunction = true;
+    lookup->call = QV4::Lookup::Call::GetterValueTypeProperty;
+}
+
 } // namespace QQmlPrivate
 
 QT_END_NAMESPACE
