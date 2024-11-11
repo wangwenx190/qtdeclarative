@@ -308,10 +308,14 @@ public:
 
     friend bool operator==(const QQmlJSMetaMethod &a, const QQmlJSMetaMethod &b)
     {
-        return a.m_name == b.m_name && a.m_returnType == b.m_returnType
-                && a.m_parameters == b.m_parameters && a.m_annotations == b.m_annotations
-                && a.m_methodType == b.m_methodType && a.m_methodAccess == b.m_methodAccess
-                && a.m_revision == b.m_revision && a.m_isConstructor == b.m_isConstructor;
+        return a.m_name == b.m_name && a.m_sourceLocation == b.m_sourceLocation
+                && a.m_returnType == b.m_returnType && a.m_parameters == b.m_parameters
+                && a.m_annotations == b.m_annotations && a.m_methodType == b.m_methodType
+                && a.m_methodAccess == b.m_methodAccess && a.m_revision == b.m_revision
+                && a.m_relativeFunctionIndex == b.m_relativeFunctionIndex
+                && a.m_isCloned == b.m_isCloned && a.m_isConstructor == b.m_isConstructor
+                && a.m_isJavaScriptFunction == b.m_isJavaScriptFunction
+                && a.m_isImplicitQmlPropertyChangeSignal == b.m_isImplicitQmlPropertyChangeSignal;
     }
 
     friend bool operator!=(const QQmlJSMetaMethod &a, const QQmlJSMetaMethod &b)
@@ -324,16 +328,18 @@ public:
         QtPrivate::QHashCombine combine;
 
         seed = combine(seed, method.m_name);
+        seed = combine(seed, method.m_sourceLocation);
         seed = combine(seed, method.m_returnType);
+        seed = combine(seed, method.m_parameters);
         seed = combine(seed, method.m_annotations);
         seed = combine(seed, method.m_methodType);
         seed = combine(seed, method.m_methodAccess);
         seed = combine(seed, method.m_revision);
+        seed = combine(seed, method.m_relativeFunctionIndex);
+        seed = combine(seed, method.m_isCloned);
         seed = combine(seed, method.m_isConstructor);
-
-        for (const auto &type : method.m_parameters) {
-            seed = combine(seed, type);
-        }
+        seed = combine(seed, method.m_isJavaScriptFunction);
+        seed = combine(seed, method.m_isImplicitQmlPropertyChangeSignal);
 
         return seed;
     }
