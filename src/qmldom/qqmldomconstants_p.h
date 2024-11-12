@@ -177,7 +177,7 @@ enum class DomType {
     // supporting objects
     LoadInfo, // owning, used inside DomEnvironment ### REVISIT: move out of hierarchy
     ErrorMessage, // wrapped
-    AttachedInfo, // owning
+    FileLocationsNode, // owning
 
     // Dom top level
     DomEnvironment, // a consistent view of modules, types, files, etc.

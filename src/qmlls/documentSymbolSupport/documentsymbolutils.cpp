@@ -389,7 +389,7 @@ const FieldFilter &DocumentSymbolVisitor::fieldsFilter()
                 { QString(), QString::fromUtf16(Fields::comments) },
                 { QString(), QString::fromUtf16(Fields::exports) },
                 { QString(), QString::fromUtf16(Fields::propertyInfos) },
-                { QLatin1String("AttachedInfo"), QString::fromUtf16(Fields::parent) },
+                { QLatin1String("FileLocationsNode"), QString::fromUtf16(Fields::parent) },
                 //^^^ FieldFilter::default
                 { QString(), QString::fromUtf16(Fields::errors) },
                 { QString(), QString::fromUtf16(Fields::imports) },

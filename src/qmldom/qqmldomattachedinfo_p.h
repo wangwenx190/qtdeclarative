@@ -36,7 +36,7 @@ struct Info
     QMap<FileLocationRegion, SourceLocation> regions;
 };
 
-using Tree = std::shared_ptr<AttachedInfo>;
+using Tree = std::shared_ptr<Node>;
 Tree createTree(const Path &basePath);
 Tree ensure(const Tree &base, const Path &basePath);
 Tree find(const Tree &self, const Path &p);
@@ -54,30 +54,25 @@ void updateFullLocation(const Tree &fLoc, SourceLocation loc);
 void addRegion(const Tree &fLoc, FileLocationRegion region, SourceLocation loc);
 QQmlJS::SourceLocation region(const Tree &fLoc, FileLocationRegion region);
 
-} // namespace FileLocations
-
-class QMLDOM_EXPORT AttachedInfo : public OwningItem,
-                                   public std::enable_shared_from_this<AttachedInfo>
+class QMLDOM_EXPORT Node : public OwningItem, public std::enable_shared_from_this<Node>
 {
 public:
-    constexpr static DomType kindValue = DomType::AttachedInfo;
-    using Ptr = std::shared_ptr<AttachedInfo>;
+    constexpr static DomType kindValue = DomType::FileLocationsNode;
+    using Ptr = std::shared_ptr<Node>;
 
     DomType kind() const override { return kindValue; }
     Path canonicalPath(const DomItem &self) const override { return self.m_ownerPath; }
     // mainly used for debugging, for example dumping qmlFile
     bool iterateDirectSubpaths(const DomItem &self, DirectVisitor visitor) const override;
 
-    AttachedInfo::Ptr makeCopy(const DomItem &self) const
+    Node::Ptr makeCopy(const DomItem &self) const
     {
-        return std::static_pointer_cast<AttachedInfo>(doCopy(self));
+        return std::static_pointer_cast<Node>(doCopy(self));
     }
 
-    AttachedInfo(const Ptr &parent = nullptr, const Path &p = Path()) : m_path(p), m_parent(parent)
-    {
-    }
+    Node(const Ptr &parent = nullptr, const Path &p = Path()) : m_path(p), m_parent(parent) { }
 
-    AttachedInfo(const AttachedInfo &o) = default;
+    Node(const Node &o) = default;
 
     Path path() const { return m_path; }
     Ptr parent() const { return m_parent.lock(); }
@@ -90,16 +85,17 @@ public:
 private:
     std::shared_ptr<OwningItem> doCopy(const DomItem &) const override
     {
-        return std::make_shared<AttachedInfo>(*this);
+        return std::make_shared<Node>(*this);
     }
 
 private:
     Path m_path;
-    std::weak_ptr<AttachedInfo> m_parent;
+    std::weak_ptr<Node> m_parent;
     QMap<Path, Ptr> m_subItems;
     FileLocations::Info m_info;
 };
 
+} // namespace FileLocations
 } // end namespace Dom
 } // end namespace QQmlJS
 

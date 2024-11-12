@@ -23,10 +23,9 @@ QT_BEGIN_NAMESPACE
 namespace QQmlJS {
 namespace Dom {
 namespace FileLocations {
-struct Info;
+class Node;
 }
 class AstComments;
-class AttachedInfo;
 class Binding;
 class Comment;
 class CommentedElement;

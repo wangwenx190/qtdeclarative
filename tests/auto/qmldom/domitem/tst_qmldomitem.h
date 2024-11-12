@@ -3531,9 +3531,9 @@ private slots:
 
         const auto tree = FileLocations::treeOf(file);
         QSet<QQmlJS::SourceLocation> locs;
-        auto visitor = [&](const Path &currentPath, const AttachedInfo::Ptr &attachedInfo){
+        auto visitor = [&](const Path &currentPath, const FileLocations::Tree &fLocPtr){
             Q_UNUSED(currentPath);
-            const auto regions = attachedInfo->info().regions;
+            const auto regions = fLocPtr->info().regions;
             if (regions.contains(region)) {
                locs << regions.value(region);
             }

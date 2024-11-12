@@ -2136,7 +2136,7 @@ MutableDomItem DomItem::makeCopy(DomItem::CopyOption option) const
     case DomType::ScriptExpression:
     case DomType::AstComments:
     case DomType::LoadInfo:
-    case DomType::AttachedInfo:
+    case DomType::FileLocationsNode:
     case DomType::DomEnvironment:
     case DomType::DomUniverse:
         qCWarning(domLog) << "DomItem::makeCopy " << internalKindStr()

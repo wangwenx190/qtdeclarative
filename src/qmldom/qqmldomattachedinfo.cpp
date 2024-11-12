@@ -15,14 +15,8 @@ using namespace Qt::StringLiterals;
 \namespace QQmlJS::Dom::FileLocations
 \brief Provides entities to maintain mappings between elements and their location in a file
 
-The location information is associated with the element it refers to via AttachedInfo
-There are free functions to simplify the handling of the tree of AttachedInfo.
-
-Attributes:
-\list
-\li fullRegion: A location guaranteed to include this element, its comments, and all its sub
-elements \li regions: a map with locations of regions of this element, the empty string is the
-default region of this element \endlist
+The location information is associated with the element it refers to via ::Node
+There are free functions to simplify the handling of the FileLocations tree.
 */
 namespace FileLocations {
 
@@ -54,7 +48,7 @@ bool Info::iterateDirectSubpaths(const DomItem &self, DirectVisitor visitor) con
 
 Tree createTree(const Path &basePath)
 {
-    return std::make_shared<AttachedInfo>(nullptr, basePath);
+    return std::make_shared<Node>(nullptr, basePath);
 }
 
 Tree ensure(const Tree &base, const Path &basePath)
@@ -126,7 +120,7 @@ Tree treeOf(const DomItem &item)
             fLoc = o.field(Fields::fileLocationsTree);
         }
     }
-    if (AttachedInfo::Ptr fLocPtr = fLoc.ownerAs<AttachedInfo>())
+    if (Node::Ptr fLocPtr = fLoc.ownerAs<Node>())
         return find(fLocPtr, p);
     return {};
 }
@@ -172,24 +166,23 @@ SourceLocation region(const Tree &fLoc, FileLocationRegion region)
 
     return SourceLocation{};
 }
-} // namespace FileLocations
 
 /*!
 \internal
-\class QQmlJS::Dom::AttachedInfo
-\brief Attached info creates a tree to attach extra info to DomItems
+\class QQmlJS::Dom::FileLocations::Node
+\brief Represents a Node of FileLocations tree
 
 Attributes:
 \list
-\li parent: parent AttachedInfo in tree (might be empty)
-\li subItems: subItems of the tree (path -> AttachedInfo)
-\li infoItem: the attached information
+\li parent: parent Node in tree (might be empty)
+\li subItems: subItems of the tree (path -> Node)
+\li infoItem: actual FileLocations::Info with regions
 \endlist
 
-\sa QQmlJs::Dom::AttachedInfo
+\sa QQmlJs::Dom::Node
 */
 
-bool AttachedInfo::iterateDirectSubpaths(const DomItem &self, DirectVisitor visitor) const
+bool Node::iterateDirectSubpaths(const DomItem &self, DirectVisitor visitor) const
 {
     bool cont = true;
     if (Ptr p = parent())
@@ -211,7 +204,7 @@ bool AttachedInfo::iterateDirectSubpaths(const DomItem &self, DirectVisitor visi
                         res.insert(p.toString());
                     return res;
                 },
-                QLatin1String("AttachedInfo")));
+                QLatin1String("Node")));
     });
     cont = cont && self.dvItemField(visitor, Fields::infoItem, [&self, this]() {
         return self.wrapField(Fields::infoItem, m_info);
@@ -219,14 +212,15 @@ bool AttachedInfo::iterateDirectSubpaths(const DomItem &self, DirectVisitor visi
     return cont;
 }
 
-AttachedInfo::Ptr AttachedInfo::insertOrReturnChildAt(const Path &path)
+Node::Ptr Node::insertOrReturnChildAt(const Path &path)
 {
-    if (AttachedInfo::Ptr subEl = m_subItems.value(path)) {
+    if (Node::Ptr subEl = m_subItems.value(path)) {
         return subEl;
     }
-    return m_subItems.insert(path, std::make_shared<AttachedInfo>(shared_from_this(), path))
-            .value();
+    return m_subItems.insert(path, std::make_shared<Node>(shared_from_this(), path)).value();
 }
+
+} // namespace FileLocations
 } // namespace Dom
 } // namespace QQmlJS
 QT_END_NAMESPACE
