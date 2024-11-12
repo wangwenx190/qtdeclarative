@@ -33,11 +33,12 @@ void QQmlDocumentSymbolSupport::process(QQmlDocumentSymbolSupport::RequestPointe
     const auto doc = m_codeModel->openDocumentByUrl(
             QQmlLSUtils::lspUriToQmlUrl(request->m_parameters.textDocument.uri));
     const auto qmlFileItem = doc.snapshot.validDoc.fileObject(QQmlJS::Dom::GoTo::MostLikely);
+    QList<QLspSpecification::DocumentSymbol> results;
+    ResponseScopeGuard guard(results, request->m_response);
     if (!qmlFileItem)
         return;
-    auto results = DocumentSymbolUtils::assembleSymbolsForQmlFile(qmlFileItem);
+    results = DocumentSymbolUtils::assembleSymbolsForQmlFile(qmlFileItem);
     DocumentSymbolUtils::reorganizeForOutlineView(results);
-    ResponseScopeGuard guard(results, request->m_response);
 }
 
 QT_END_NAMESPACE
