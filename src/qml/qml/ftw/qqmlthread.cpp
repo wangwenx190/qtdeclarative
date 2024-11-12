@@ -12,6 +12,7 @@
 #include <QtCore/qcoreapplication.h>
 
 #include <QtCore/private/qthread_p.h>
+#include <QtQml/private/qtqml-config_p.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -67,7 +68,7 @@ QQmlThreadPrivate::MainObject::MainObject(QQmlThreadPrivate *p)
 // Trigger mainEvent in main thread.  Must be called from thread.
 void QQmlThreadPrivate::triggerMainEvent()
 {
-#if QT_CONFIG(thread)
+#if QT_CONFIG(qml_type_loader_thread)
     Q_ASSERT(q->isThisThread());
 #endif
     QCoreApplication::postEvent(&m_mainObject, new QEvent(QEvent::User));
@@ -76,7 +77,7 @@ void QQmlThreadPrivate::triggerMainEvent()
 // Trigger even in thread.  Must be called from main thread.
 void QQmlThreadPrivate::triggerThreadEvent()
 {
-#if QT_CONFIG(thread)
+#if QT_CONFIG(qml_type_loader_thread)
     Q_ASSERT(!q->isThisThread());
 #endif
     QCoreApplication::postEvent(this, new QEvent(QEvent::User));
@@ -253,7 +254,7 @@ QThread *QQmlThread::thread() const
 
 void QQmlThread::internalCallMethodInThread(Message *message)
 {
-#if !QT_CONFIG(thread)
+#if !QT_CONFIG(qml_type_loader_thread)
     message->call(this);
     delete message;
     return;
@@ -297,7 +298,7 @@ void QQmlThread::internalCallMethodInThread(Message *message)
  */
 void QQmlThread::internalCallMethodInMain(Message *message)
 {
-#if !QT_CONFIG(thread)
+#if !QT_CONFIG(qml_type_loader_thread)
     message->call(this);
     delete message;
     return;
@@ -332,7 +333,7 @@ void QQmlThread::internalCallMethodInMain(Message *message)
 
 void QQmlThread::internalPostMethodToThread(Message *message)
 {
-#if !QT_CONFIG(thread)
+#if !QT_CONFIG(qml_type_loader_thread)
     internalPostMethodToMain(message);
     return;
 #endif
@@ -347,7 +348,7 @@ void QQmlThread::internalPostMethodToThread(Message *message)
 
 void QQmlThread::internalPostMethodToMain(Message *message)
 {
-#if QT_CONFIG(thread)
+#if QT_CONFIG(qml_type_loader_thread)
     Q_ASSERT(isThisThread());
 #endif
     d->lock();
@@ -371,7 +372,7 @@ void QQmlThread::internalPostMethodToMain(Message *message)
  */
 void QQmlThread::waitForNextMessage()
 {
-#if QT_CONFIG(thread)
+#if QT_CONFIG(qml_type_loader_thread)
     Q_ASSERT(!isThisThread());
 #endif
     Q_ASSERT(d->m_mainThreadWaiting == false);
