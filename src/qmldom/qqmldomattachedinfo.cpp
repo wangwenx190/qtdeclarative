@@ -1,9 +1,8 @@
 // Copyright (C) 2021 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 #include "qqmldom_fwd_p.h"
-#include "qqmldomlinewriter_p.h"
-#include "qqmldomelements_p.h"
 #include "qqmldompath_p.h"
+#include "qqmldomattachedinfo_p.h"
 
 QT_BEGIN_NAMESPACE
 namespace QQmlJS {
@@ -11,25 +10,35 @@ namespace Dom {
 
 using namespace Qt::StringLiterals;
 
-
 /*!
 \internal
-\class QQmlJS::Dom::FileLocations
-\brief Represents and maintains a mapping between elements and their location in a file
+\namespace QQmlJS::Dom::FileLocations
+\brief Provides entities to maintain mappings between elements and their location in a file
 
-The location information is attached to the element it refers to via AttachedInfo
-There are static methods to simplify the handling of the tree of AttachedInfo.
+The location information is associated with the element it refers to via AttachedInfo
+There are free functions to simplify the handling of the tree of AttachedInfo.
 
 Attributes:
 \list
-\li fullRegion: A location guaranteed to include this element, its comments, and all its sub elements
-\li regions: a map with locations of regions of this element, the empty string is the default region
-    of this element
-\endlist
-
-\sa QQmlJs::Dom::AttachedInfo
+\li fullRegion: A location guaranteed to include this element, its comments, and all its sub
+elements \li regions: a map with locations of regions of this element, the empty string is the
+default region of this element \endlist
 */
-bool FileLocations::iterateDirectSubpaths(const DomItem &self, DirectVisitor visitor) const
+namespace FileLocations {
+
+/*!
+\internal
+\namespace QQmlJS::Dom::FileLocations::Info
+\brief Contains region information about the item
+
+Attributes:
+\list
+\li fullRegion: A location guaranteed to include this element and all its sub elements
+\li regions: a map with locations of regions of this element, the empty string is the default region
+ of this element
+\endlist
+*/
+bool Info::iterateDirectSubpaths(const DomItem &self, DirectVisitor visitor) const
 {
     bool cont = true;
     cont = cont && self.dvValueLazyField(visitor, Fields::fullRegion, [this]() {
@@ -43,20 +52,26 @@ bool FileLocations::iterateDirectSubpaths(const DomItem &self, DirectVisitor vis
     return cont;
 }
 
-FileLocations::Tree FileLocations::createTree(const Path &basePath){
-    return AttachedInfoT<FileLocations>::createTree(basePath);
+Tree createTree(const Path &basePath)
+{
+    return AttachedInfoT<Info>::createTree(basePath);
 }
 
-FileLocations::Tree FileLocations::ensure(const FileLocations::Tree &base, const Path &basePath)
+Tree ensure(const Tree &base, const Path &basePath)
 {
-    return AttachedInfoT<FileLocations>::ensure(base, basePath);
+    return AttachedInfoT<Info>::ensure(base, basePath);
+}
+
+Tree find(const Tree &self, const Path &p)
+{
+    return AttachedInfoT<Info>::find(self, p);
 }
 
 /*!
    \internal
    Returns the tree corresponding to a DomItem.
  */
-FileLocations::Tree FileLocations::treeOf(const DomItem &item)
+Tree treeOf(const DomItem &item)
 {
     Path p;
     DomItem fLoc = item.field(Fields::fileLocationsTree);
@@ -75,15 +90,15 @@ FileLocations::Tree FileLocations::treeOf(const DomItem &item)
     }
     if (AttachedInfo::Ptr fLocPtr = fLoc.ownerAs<AttachedInfo>())
         if (AttachedInfo::Ptr foundTree = AttachedInfo::find(fLocPtr, p))
-            return std::static_pointer_cast<AttachedInfoT<FileLocations>>(foundTree);
+            return std::static_pointer_cast<AttachedInfoT<FileLocations::Info>>(foundTree);
     return {};
 }
 
-void FileLocations::updateFullLocation(const FileLocations::Tree &fLoc, SourceLocation loc)
+void updateFullLocation(const Tree &fLoc, SourceLocation loc)
 {
     Q_ASSERT(fLoc);
     if (loc != SourceLocation()) {
-        FileLocations::Tree p = fLoc;
+        Tree p = fLoc;
         while (p) {
             SourceLocation &l = p->info().fullRegion;
             if (loc.begin() < l.begin() || loc.end() > l.end()) {
@@ -100,15 +115,14 @@ void FileLocations::updateFullLocation(const FileLocations::Tree &fLoc, SourceLo
 // Adding a new region to file location regions might break down qmlformat because
 // comments might be linked to new region undesirably. We might need to add an
 // exception to AstRangesVisitor::shouldSkipRegion when confronted those cases.
-void FileLocations::addRegion(const FileLocations::Tree &fLoc, FileLocationRegion region,
-                              SourceLocation loc)
+void addRegion(const Tree &fLoc, FileLocationRegion region, SourceLocation loc)
 {
     Q_ASSERT(fLoc);
     fLoc->info().regions[region] = loc;
     updateFullLocation(fLoc, loc);
 }
 
-SourceLocation FileLocations::region(const FileLocations::Tree &fLoc, FileLocationRegion region)
+SourceLocation region(const Tree &fLoc, FileLocationRegion region)
 {
     Q_ASSERT(fLoc);
     const auto &regions = fLoc->info().regions;
@@ -121,6 +135,7 @@ SourceLocation FileLocations::region(const FileLocations::Tree &fLoc, FileLocati
 
     return SourceLocation{};
 }
+} // namespace FileLocations
 
 /*!
 \internal

@@ -676,7 +676,9 @@ public:
 
 template<typename Info>
 class AttachedInfoT;
-class FileLocations;
+namespace FileLocations {
+struct Info;
+}
 
 /*!
     \internal
@@ -696,7 +698,7 @@ struct ScriptElement : public DomElement
 
     using DomElement::DomElement;
     virtual void createFileLocations(
-            const std::shared_ptr<AttachedInfoT<FileLocations>> &fileLocationOfOwner) = 0;
+            const std::shared_ptr<AttachedInfoT<FileLocations::Info>> &fileLocationOfOwner) = 0;
 
     QQmlJSScope::ConstPtr semanticScope();
     void setSemanticScope(const QQmlJSScope::ConstPtr &scope);
@@ -1956,7 +1958,7 @@ constexpr bool domTypeIsObjWrap(DomType k)
     case DomType::Comment:
     case DomType::CommentedElement:
     case DomType::RegionComments:
-    case DomType::FileLocations:
+    case DomType::FileLocationsInfo:
         return true;
     default:
         return false;

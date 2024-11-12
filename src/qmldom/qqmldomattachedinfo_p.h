@@ -25,6 +25,31 @@ QT_BEGIN_NAMESPACE
 
 namespace QQmlJS {
 namespace Dom {
+namespace FileLocations {
+
+struct Info
+{
+    constexpr static DomType kindValue = DomType::FileLocationsInfo;
+    // mainly used for debugging, for example dumping qmlFile
+    bool iterateDirectSubpaths(const DomItem &self, DirectVisitor) const;
+
+    SourceLocation fullRegion;
+    QMap<FileLocationRegion, SourceLocation> regions;
+};
+
+using Tree = std::shared_ptr<AttachedInfoT<Info>>;
+Tree createTree(const Path &basePath);
+Tree ensure(const Tree &base, const Path &basePath);
+Tree find(const Tree &self, const Path &p);
+
+// returns the path looked up and the found tree when looking for the info attached to item
+Tree treeOf(const DomItem &);
+
+void updateFullLocation(const Tree &fLoc, SourceLocation loc);
+void addRegion(const Tree &fLoc, FileLocationRegion region, SourceLocation loc);
+QQmlJS::SourceLocation region(const Tree &fLoc, FileLocationRegion region);
+
+} // namespace FileLocations
 
 class QMLDOM_EXPORT AttachedInfo : public OwningItem  {
     Q_GADGET
@@ -150,33 +175,6 @@ protected:
 
 private:
     Info m_info;
-};
-
-class QMLDOM_EXPORT FileLocations {
-public:
-    using Tree = std::shared_ptr<AttachedInfoT<FileLocations>>;
-    constexpr static DomType kindValue = DomType::FileLocations;
-    DomType kind() const {  return kindValue; }
-    // mainly used for debugging, for example dumping qmlFile
-    bool iterateDirectSubpaths(const DomItem &self, DirectVisitor) const;
-
-    static Tree createTree(const Path &basePath);
-    static Tree ensure(const Tree &base, const Path &basePath);
-    static Tree find(const Tree &self, const Path &p)
-    {
-        return AttachedInfoT<FileLocations>::find(self, p);
-    }
-
-    // returns the path looked up and the found tree when looking for the info attached to item
-    static FileLocations::Tree treeOf(const DomItem &);
-
-    static void updateFullLocation(const Tree &fLoc, SourceLocation loc);
-    static void addRegion(const Tree &fLoc, FileLocationRegion region, SourceLocation loc);
-    static QQmlJS::SourceLocation region(const Tree &fLoc, FileLocationRegion region);
-
-public:
-    SourceLocation fullRegion;
-    QMap<FileLocationRegion, SourceLocation> regions;
 };
 
 } // end namespace Dom

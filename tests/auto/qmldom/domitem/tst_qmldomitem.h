@@ -2509,7 +2509,7 @@ private slots:
             for (auto it = subEls.begin(); it != subEls.end(); ++it) {
                 DomItem childItem = current.item.path(it.key());
                 FileLocations::Tree childTree =
-                        std::static_pointer_cast<AttachedInfoT<FileLocations>>(it.value());
+                        std::static_pointer_cast<AttachedInfoT<FileLocations::Info>>(it.value());
                 if (!childItem) {
                     const auto itemFLoc = FileLocations::treeOf(current.item);
                     qDebug() << current.item.internalKindStr()
@@ -3531,7 +3531,7 @@ private slots:
         envPtr->loadPendingDependencies();
 
         const auto tree = FileLocations::treeOf(file);
-        using AttachedInfo = AttachedInfoT<FileLocations>;
+        using AttachedInfo = AttachedInfoT<FileLocations::Info>;
         QSet<QQmlJS::SourceLocation> locs;
         auto visitor = [&](const Path &currentPath, const AttachedInfo::Ptr &attachedInfo){
             Q_UNUSED(currentPath);

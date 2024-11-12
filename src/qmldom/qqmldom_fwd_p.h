@@ -22,7 +22,9 @@ QT_BEGIN_NAMESPACE
 
 namespace QQmlJS {
 namespace Dom {
-
+namespace FileLocations {
+struct Info;
+}
 class AstComments;
 class AttachedInfo;
 class Binding;
@@ -41,7 +43,6 @@ class Export;
 class ExternalItemInfoBase;
 class ExternalItemPairBase;
 class ExternalOwningItem;
-class FileLocations;
 enum FileLocationRegion : int;
 class FileWriter;
 class GlobalComponent;

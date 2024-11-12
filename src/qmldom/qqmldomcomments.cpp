@@ -396,7 +396,7 @@ void AstRangesVisitor::addItemRanges(
         auto subMaps = itemLocations->subItems();
         for (auto it = subMaps.begin(), end = subMaps.end(); it != end; ++it) {
             addItemRanges(item.path(it.key()),
-                          std::static_pointer_cast<AttachedInfoT<FileLocations>>(it.value()),
+                          std::static_pointer_cast<AttachedInfoT<FileLocations::Info>>(it.value()),
                           currentP.path(it.key()));
         }
     }

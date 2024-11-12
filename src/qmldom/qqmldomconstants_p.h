@@ -158,8 +158,8 @@ enum class DomType {
     RegionComments, // DomItems have attached RegionComments; can attach comments to fine grained
                     // "regions" in a DomItem; like the default keyword of a property definition
     AstComments, // hash-table from AST node to commented element
-    FileLocations, // mapping from DomItem to file location ### REVISIT: try to move out of
-                   // hierarchy?
+    FileLocationsInfo, // mapping from DomItem to file location ### REVISIT: try to move out of
+                       // hierarchy?
 
     // convenience collecting types
     PropertyInfo, // not a DOM Item, just a convenience class
