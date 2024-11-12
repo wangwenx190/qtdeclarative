@@ -14,4 +14,5 @@ Tooling.Member {
     property bool isJavaScriptFunction: false
     property bool isCloned: false
     property bool isTypeConstant: false
+    property bool isMethodConstant: false
 }

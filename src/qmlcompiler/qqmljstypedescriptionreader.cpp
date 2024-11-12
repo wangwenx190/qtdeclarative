@@ -337,11 +337,13 @@ void QQmlJSTypeDescriptionReader::readSignalOrMethod(
                                                         ? QQmlJSMetaParameter::Const
                                                         : QQmlJSMetaParameter::NonConst);
                 metaMethod.setReturnValue(metaReturnType);
+            } else if (name == QLatin1String("isMethodConstant")) {
+                metaMethod.setIsConst(readBoolBinding(script));
             } else {
                 addWarning(script->firstSourceLocation(),
                            tr("Expected only name, type, revision, isPointer, isTypeConstant, "
-                              "isList, isCloned, isConstructor, and isJavaScriptFunction "
-                              "in script bindings."));
+                              "isList, isCloned, isConstructor, isMethodConstant, and "
+                              "isJavaScriptFunction in script bindings."));
             }
         } else {
             addWarning(member->firstSourceLocation(),

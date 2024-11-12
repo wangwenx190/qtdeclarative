@@ -277,6 +277,9 @@ public:
         m_isImplicitQmlPropertyChangeSignal = isPropertyChangeSignal;
     }
 
+    bool isConst() const {  return m_isConst; }
+    void setIsConst(bool isConst) { m_isConst = isConst; }
+
     bool isValid() const { return !m_name.isEmpty(); }
 
     const QVector<QQmlJSAnnotation>& annotations() const { return m_annotations; }
@@ -327,7 +330,8 @@ public:
                 && a.m_relativeFunctionIndex == b.m_relativeFunctionIndex
                 && a.m_isCloned == b.m_isCloned && a.m_isConstructor == b.m_isConstructor
                 && a.m_isJavaScriptFunction == b.m_isJavaScriptFunction
-                && a.m_isImplicitQmlPropertyChangeSignal == b.m_isImplicitQmlPropertyChangeSignal;
+                && a.m_isImplicitQmlPropertyChangeSignal == b.m_isImplicitQmlPropertyChangeSignal
+                && a.m_isConst == b.m_isConst;
     }
 
     friend bool operator!=(const QQmlJSMetaMethod &a, const QQmlJSMetaMethod &b)
@@ -352,6 +356,7 @@ public:
         seed = combine(seed, method.m_isConstructor);
         seed = combine(seed, method.m_isJavaScriptFunction);
         seed = combine(seed, method.m_isImplicitQmlPropertyChangeSignal);
+        seed = combine(seed, method.m_isConst);
 
         return seed;
     }
@@ -373,6 +378,7 @@ private:
     bool m_isConstructor = false;
     bool m_isJavaScriptFunction = false;
     bool m_isImplicitQmlPropertyChangeSignal = false;
+    bool m_isConst = false;
 };
 
 class QQmlJSMetaProperty

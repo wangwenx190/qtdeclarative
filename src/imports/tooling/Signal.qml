@@ -9,4 +9,5 @@ Tooling.Member {
     property int revision: 0
     property string type
     property bool isCloned: false
+    property bool isMethodConstant: false
 }

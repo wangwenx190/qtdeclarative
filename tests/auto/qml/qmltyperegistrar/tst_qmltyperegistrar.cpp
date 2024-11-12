@@ -85,7 +85,7 @@ void tst_qmltyperegistrar::superAndForeignTypes()
     QVERIFY(qmltypesData.contains("prototype: \"SizeEnums\""));
     QVERIFY(qmltypesData.contains("Property { name: \"height\"; type: \"int\"; read: \"height\"; write: \"setHeight\"; index: 0; isFinal: true }"));
     QVERIFY(qmltypesData.contains("Property { name: \"width\"; type: \"int\"; read: \"width\"; write: \"setWidth\"; index: 0; isFinal: true }"));
-    QVERIFY(qmltypesData.contains("Method { name: \"sizeToString\"; type: \"QString\" }"));
+    QVERIFY(qmltypesData.contains("Method { name: \"sizeToString\"; type: \"QString\"; isMethodConstant: true }"));
     QCOMPARE(qmltypesData.count("extension: \"SizeValueType\""), 1);
 }
 
