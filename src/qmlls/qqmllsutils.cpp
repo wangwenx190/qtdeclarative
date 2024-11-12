@@ -361,7 +361,7 @@ QList<ItemLocation> itemsFromTextLocation(const DomItem &file, int line, int cha
 
         auto subEls = iLoc.fileLocation->subItems();
         for (auto it = subEls.begin(); it != subEls.end(); ++it) {
-            auto subLoc = std::static_pointer_cast<AttachedInfoT<FileLocations::Info>>(it.value());
+            auto subLoc = it.value();
             Q_ASSERT(subLoc);
 
             if (containsTarget(subLoc->info().fullRegion, comparisonOption)) {

@@ -54,17 +54,55 @@ bool Info::iterateDirectSubpaths(const DomItem &self, DirectVisitor visitor) con
 
 Tree createTree(const Path &basePath)
 {
-    return AttachedInfoT<Info>::createTree(basePath);
+    return std::make_shared<AttachedInfo>(nullptr, basePath);
 }
 
 Tree ensure(const Tree &base, const Path &basePath)
 {
-    return AttachedInfoT<Info>::ensure(base, basePath);
+    Path relative = basePath;
+    Tree res = base;
+    for (const auto &p : std::as_const(relative)) {
+        res = res->insertOrReturnChildAt(p);
+    }
+    return res;
 }
 
 Tree find(const Tree &self, const Path &p)
 {
-    return AttachedInfoT<Info>::find(self, p);
+    Path rest = p;
+    Tree res = self;
+    while (rest) {
+        if (!res)
+            break;
+        res = res->subItems().value(rest.head());
+        rest = rest.dropFront();
+    }
+    return res;
+}
+
+bool visitTree(const Tree &base, function_ref<bool(const Path &, const Tree &)> visitor,
+               const Path &basePath)
+{
+    if (base) {
+        Path pNow = basePath.path(base->path());
+        if (!visitor(pNow, base)) {
+            return false;
+        }
+        for (const auto &childNode : base->subItems()) {
+            if (!visitTree(childNode, visitor, pNow))
+                return false;
+        }
+    }
+    return true;
+}
+
+QString canonicalPathForTesting(const Tree &base)
+{
+    QString result;
+    for (auto *it = base.get(); it; it = it->parent().get()) {
+        result.prepend(it->path().toString());
+    }
+    return result;
 }
 
 /*!
@@ -89,8 +127,7 @@ Tree treeOf(const DomItem &item)
         }
     }
     if (AttachedInfo::Ptr fLocPtr = fLoc.ownerAs<AttachedInfo>())
-        if (AttachedInfo::Ptr foundTree = AttachedInfo::find(fLocPtr, p))
-            return std::static_pointer_cast<AttachedInfoT<FileLocations::Info>>(foundTree);
+        return find(fLocPtr, p);
     return {};
 }
 
@@ -142,9 +179,6 @@ SourceLocation region(const Tree &fLoc, FileLocationRegion region)
 \class QQmlJS::Dom::AttachedInfo
 \brief Attached info creates a tree to attach extra info to DomItems
 
-Normally one uses the template AttachedInfoT<SpecificInfoToAttach>
-
-static methods
 Attributes:
 \list
 \li parent: parent AttachedInfo in tree (might be empty)
@@ -180,47 +214,19 @@ bool AttachedInfo::iterateDirectSubpaths(const DomItem &self, DirectVisitor visi
                 QLatin1String("AttachedInfo")));
     });
     cont = cont && self.dvItemField(visitor, Fields::infoItem, [&self, this]() {
-        return infoItem(self);
+        return self.wrapField(Fields::infoItem, m_info);
     });
     return cont;
 }
 
-/*!
-  \brief
-  Returns that the AttachedInfo corresponding to the given path, creating it if it does not exists.
-
-  The path might be either a relative path or a canonical path, as specified by the PathType
-*/
-AttachedInfo::Ptr AttachedInfo::ensure(const AttachedInfo::Ptr &self, const Path &path)
+AttachedInfo::Ptr AttachedInfo::insertOrReturnChildAt(const Path &path)
 {
-    Q_ASSERT(self);
-    Path relative = path;
-    Ptr res = self;
-    for (const auto &p : std::as_const(relative)) {
-        if (AttachedInfo::Ptr subEl = res->m_subItems.value(p)) {
-            res = subEl;
-        } else {
-            AttachedInfo::Ptr newEl = res->instantiate(res, p);
-            res->m_subItems.insert(p, newEl);
-            res = newEl;
-        }
+    if (AttachedInfo::Ptr subEl = m_subItems.value(path)) {
+        return subEl;
     }
-    return res;
+    return m_subItems.insert(path, std::make_shared<AttachedInfo>(shared_from_this(), path))
+            .value();
 }
-
-AttachedInfo::Ptr AttachedInfo::find(const AttachedInfo::Ptr &self, const Path &p)
-{
-    Path rest = p;
-    AttachedInfo::Ptr res = self;
-    while (rest) {
-        if (!res)
-            break;
-        res = res->m_subItems.value(rest.head());
-        rest = rest.dropFront();
-    }
-    return res;
-}
-
 } // namespace Dom
 } // namespace QQmlJS
 QT_END_NAMESPACE

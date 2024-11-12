@@ -232,8 +232,8 @@ QQmlDomAstCreator::finalizeScriptExpression(const ScriptElementVariant &element,
     Q_ASSERT(e);
 
     qCDebug(creatorLog) << "Finalizing script expression with path:"
-                        << ownerFileLocations->canonicalPathForTesting().append(
-                                   pathFromOwner.toString());
+                        << FileLocations::canonicalPathForTesting(ownerFileLocations)
+                                   .append(pathFromOwner.toString());
     e->updatePathFromOwner(pathFromOwner);
     e->createFileLocations(ownerFileLocations);
     return element;

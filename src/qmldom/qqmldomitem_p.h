@@ -674,8 +674,6 @@ public:
     Path referredObjectPath;
 };
 
-template<typename Info>
-class AttachedInfoT;
 namespace FileLocations {
 struct Info;
 }
@@ -697,8 +695,7 @@ struct ScriptElement : public DomElement
     using PointerType = std::shared_ptr<T>;
 
     using DomElement::DomElement;
-    virtual void createFileLocations(
-            const std::shared_ptr<AttachedInfoT<FileLocations::Info>> &fileLocationOfOwner) = 0;
+    virtual void createFileLocations(const std::shared_ptr<AttachedInfo> &fileLocationOfOwner) = 0;
 
     QQmlJSScope::ConstPtr semanticScope();
     void setSemanticScope(const QQmlJSScope::ConstPtr &scope);

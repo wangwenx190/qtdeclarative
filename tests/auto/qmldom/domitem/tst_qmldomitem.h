@@ -2508,8 +2508,7 @@ private slots:
             auto subEls = current.tree->subItems();
             for (auto it = subEls.begin(); it != subEls.end(); ++it) {
                 DomItem childItem = current.item.path(it.key());
-                FileLocations::Tree childTree =
-                        std::static_pointer_cast<AttachedInfoT<FileLocations::Info>>(it.value());
+                FileLocations::Tree childTree = it.value();
                 if (!childItem) {
                     const auto itemFLoc = FileLocations::treeOf(current.item);
                     qDebug() << current.item.internalKindStr()
@@ -2545,7 +2544,7 @@ private slots:
             QVERIFY(canonical.length() > 0);
             if (canonical.length() > 0)
                 QCOMPARE(canonical.toString(),
-                         FileLocations::treeOf(item)->canonicalPathForTesting());
+                         FileLocations::canonicalPathForTesting(FileLocations::treeOf(item)));
         };
 
         /*
@@ -3531,7 +3530,6 @@ private slots:
         envPtr->loadPendingDependencies();
 
         const auto tree = FileLocations::treeOf(file);
-        using AttachedInfo = AttachedInfoT<FileLocations::Info>;
         QSet<QQmlJS::SourceLocation> locs;
         auto visitor = [&](const Path &currentPath, const AttachedInfo::Ptr &attachedInfo){
             Q_UNUSED(currentPath);
@@ -3541,7 +3539,7 @@ private slots:
             }
             return true;
         };
-        AttachedInfo::visitTree(tree, visitor, Path());
+        FileLocations::visitTree(tree, visitor, Path());
         [&] {
             QVERIFY(locs.contains(expectedLocs));
         }();
