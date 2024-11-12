@@ -10,7 +10,6 @@
 #include "qqmldomtop_p.h"
 #include "qqmldomerrormessage_p.h"
 #include "qqmldomastdumper_p.h"
-#include "qqmldomattachedinfo_p.h"
 #include "qqmldomastcreator_p.h"
 #include "qqmldom_utils_p.h"
 

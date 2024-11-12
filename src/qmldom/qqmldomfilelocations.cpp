@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 #include "qqmldom_fwd_p.h"
 #include "qqmldompath_p.h"
-#include "qqmldomattachedinfo_p.h"
+#include "qqmldomfilelocations_p.h"
 
 QT_BEGIN_NAMESPACE
 namespace QQmlJS {
@@ -225,4 +225,4 @@ Node::Ptr Node::insertOrReturnChildAt(const Path &path)
 } // namespace QQmlJS
 QT_END_NAMESPACE
 
-#include "moc_qqmldomattachedinfo_p.cpp"
+#include "moc_qqmldomfilelocations_p.cpp"

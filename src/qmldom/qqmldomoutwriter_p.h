@@ -17,7 +17,7 @@
 
 #include "qqmldom_global.h"
 #include "qqmldom_fwd_p.h"
-#include "qqmldomattachedinfo_p.h"
+#include "qqmldomfilelocations_p.h"
 #include "qqmldomlinewriter_p.h"
 #include "qqmldomcomments_p.h"
 

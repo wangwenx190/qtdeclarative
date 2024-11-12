@@ -18,7 +18,7 @@
 #include "qqmldom_fwd_p.h"
 #include "qqmldomconstants_p.h"
 #include "qqmldomitem_p.h"
-#include "qqmldomattachedinfo_p.h"
+#include "qqmldomfilelocations_p.h"
 
 #include <QtQml/private/qqmljsast_p.h>
 #include <QtQml/private/qqmljsengine_p.h>

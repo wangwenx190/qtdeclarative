@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qqmldomoutwriter_p.h"
-#include "qqmldomattachedinfo_p.h"
 #include "qqmldomlinewriter_p.h"
 #include "qqmldomitem_p.h"
 #include "qqmldomcomments_p.h"

@@ -7,7 +7,6 @@
 #include "qqmldomelements_p.h"
 #include "qqmldomexternalitems_p.h"
 #include "qqmldomastdumper_p.h"
-#include "qqmldomattachedinfo_p.h"
 
 #include <QtQml/private/qqmljsastvisitor_p.h>
 #include <QtQml/private/qqmljsast_p.h>

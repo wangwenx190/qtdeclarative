@@ -17,7 +17,7 @@
 
 #include "qqmldomitem_p.h"
 #include "qqmldomelements_p.h"
-#include "qqmldomattachedinfo_p.h"
+#include "qqmldomfilelocations_p.h"
 #include "qqmldompath_p.h"
 #include <algorithm>
 #include <limits>
