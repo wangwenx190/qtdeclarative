@@ -149,4 +149,40 @@ void QQmlPrivate::AOTCompiledContext::initCallGlobalLookup(uint index) const
     engine->handle()->amendException();
 }
 
+void QQmlPrivate::AOTCompiledContext::initLoadScopeObjectPropertyLookup(
+        uint index, QMetaType type) const
+{
+    Q_UNUSED(type);
+    return initLoadScopeObjectPropertyLookup(index);
+}
+
+void QQmlPrivate::AOTCompiledContext::initGetObjectLookup(
+        uint index, QObject *object, QMetaType type) const
+{
+    return type == QMetaType::fromType<QVariant>()
+            ? initGetObjectLookupAsVariant(index, object)
+            : initGetObjectLookup(index, object);
+}
+
+void QQmlPrivate::AOTCompiledContext::initSetObjectLookup(
+        uint index, QObject *object, QMetaType type) const
+{
+    return type == QMetaType::fromType<QVariant>()
+            ? initSetObjectLookupAsVariant(index, object)
+            : initSetObjectLookup(index, object);
+}
+
+void QQmlPrivate::AOTCompiledContext::initGetValueLookup(
+        uint index, const QMetaObject *metaObject, QMetaType type) const {
+    Q_UNUSED(type);
+    initGetValueLookup(index, metaObject);
+}
+
+void QQmlPrivate::AOTCompiledContext::initSetValueLookup(
+        uint index, const QMetaObject *metaObject, QMetaType type) const
+{
+    Q_UNUSED(type);
+    initSetValueLookup(index, metaObject);
+}
+
 #endif

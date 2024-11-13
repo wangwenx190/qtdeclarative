@@ -1436,12 +1436,10 @@ enum class ObjectLookupResult {
     Failure,
     Object,
     Fallback,
-    ObjectAsVariant,
-    FallbackAsVariant,
 };
 
 static ObjectLookupResult initObjectLookup(
-        const AOTCompiledContext *aotContext, QV4::Lookup *lookup, QObject *object, QMetaType type)
+        const AOTCompiledContext *aotContext, QV4::Lookup *lookup, QObject *object)
 {
     QV4::Scope scope(aotContext->engine->handle());
     QV4::PropertyKey id = scope.engine->identifierTable->asPropertyKey(
@@ -1467,7 +1465,6 @@ static ObjectLookupResult initObjectLookup(
                     name.getPointer(), object, aotContext->qmlContext);
     }
 
-    const bool doVariantLookup = type == QMetaType::fromType<QVariant>();
     if (!property) {
         const QMetaObject *metaObject = object->metaObject();
         if (!metaObject)
@@ -1487,19 +1484,44 @@ static ObjectLookupResult initObjectLookup(
         lookup->qobjectFallbackLookup.notifyIndex =
                 QMetaObjectPrivate::signalIndex(property.notifySignal());
         lookup->qobjectFallbackLookup.isConstant = property.isConstant() ? 1 : 0;
-        return doVariantLookup
-                ? ObjectLookupResult::FallbackAsVariant
-                : ObjectLookupResult::Fallback;
+        return ObjectLookupResult::Fallback;
     }
 
     Q_ASSERT(ddata->propertyCache);
 
     QV4::setupQObjectLookup(lookup, ddata, property);
 
-    return doVariantLookup
-            ? ObjectLookupResult::ObjectAsVariant
-            : ObjectLookupResult::Object;
+    return ObjectLookupResult::Object;
 }
+
+enum class ObjectLookupType { Concrete, Variant};
+template<QV4::Lookup::Call ObjectCall, QV4::Lookup::Call FallbackCall, ObjectLookupType Type>
+void initObjectLookup(const AOTCompiledContext *aotContext, uint index, QObject *object)
+{
+    QV4::ExecutionEngine *v4 = aotContext->engine->handle();
+    if (v4->hasException) {
+        v4->amendException();
+        return;
+    }
+
+    QV4::Lookup *lookup = aotContext->compilationUnit->runtimeLookups + index;
+    switch (initObjectLookup(aotContext, lookup, object)) {
+    case ObjectLookupResult::Object:
+        lookup->call = ObjectCall;
+        lookup->asVariant = (Type == ObjectLookupType::Variant);
+        break;
+    case ObjectLookupResult::Fallback:
+        lookup->call = FallbackCall;
+        lookup->asVariant = (Type == ObjectLookupType::Variant);
+        break;
+    case ObjectLookupResult::Failure:
+        v4->throwTypeError();
+        break;
+    }
+
+    return;
+}
+
 
 static void initValueLookup(
         QV4::Lookup *lookup, QV4::ExecutableCompilationUnit *compilationUnit,
@@ -1641,8 +1663,7 @@ void AOTCompiledContext::storeNameSloppy(uint nameIndex, void *value, QMetaType 
     lookup.nameIndex = nameIndex;
     lookup.forCall = false;
     ObjectPropertyResult storeResult = ObjectPropertyResult::NeedsInit;
-    switch (initObjectLookup(this, &lookup, qmlScopeObject, QMetaType::fromType<LookupNotInitialized>())) {
-    case ObjectLookupResult::ObjectAsVariant:
+    switch (initObjectLookup(this, &lookup, qmlScopeObject)) {
     case ObjectLookupResult::Object: {
         const QMetaType propType = lookup.qobjectLookup.propertyData->propType();
         if (isTypeCompatible(type, propType)) {
@@ -1661,7 +1682,6 @@ void AOTCompiledContext::storeNameSloppy(uint nameIndex, void *value, QMetaType 
         lookup.qobjectLookup.propertyCache->release();
         break;
     }
-    case ObjectLookupResult::FallbackAsVariant:
     case ObjectLookupResult::Fallback: {
         const QMetaObject *metaObject
                 = reinterpret_cast<const QMetaObject *>(lookup.qobjectFallbackLookup.metaObject - 1);
@@ -2226,32 +2246,14 @@ bool AOTCompiledContext::writeBackScopeObjectPropertyLookup(uint index, void *so
     Q_UNREACHABLE_RETURN(false);
 }
 
-void AOTCompiledContext::initLoadScopeObjectPropertyLookup(uint index, QMetaType type) const
+
+
+void AOTCompiledContext::initLoadScopeObjectPropertyLookup(uint index) const
 {
-    // TODO: The only thing we need the type for is checking whether it's QVariant.
-    //       Replace it with an enum and simplify code generation.
-
-    QV4::ExecutionEngine *v4 = engine->handle();
-    QV4::Lookup *lookup = compilationUnit->runtimeLookups + index;
-
-    if (v4->hasException) {
-        v4->amendException();
-        return;
-    }
-
-    switch (initObjectLookup(this, lookup, qmlScopeObject, type)) {
-    case ObjectLookupResult::ObjectAsVariant:
-    case ObjectLookupResult::Object:
-        lookup->call = QV4::Lookup::Call::ContextGetterScopeObjectProperty;
-        break;
-    case ObjectLookupResult::FallbackAsVariant:
-    case ObjectLookupResult::Fallback:
-        lookup->call = QV4::Lookup::Call::ContextGetterScopeObjectPropertyFallback;
-        break;
-    case ObjectLookupResult::Failure:
-        v4->throwTypeError();
-        break;
-    }
+    initObjectLookup<
+            QV4::Lookup::Call::ContextGetterScopeObjectProperty,
+            QV4::Lookup::Call::ContextGetterScopeObjectPropertyFallback,
+            ObjectLookupType::Concrete>(this, index, qmlScopeObject);
 }
 
 bool AOTCompiledContext::loadSingletonLookup(uint index, void *target) const
@@ -2478,34 +2480,20 @@ bool AOTCompiledContext::writeBackObjectLookup(uint index, QObject *object, void
     Q_UNREACHABLE_RETURN(false);
 }
 
-void AOTCompiledContext::initGetObjectLookup(uint index, QObject *object, QMetaType type) const
+void AOTCompiledContext::initGetObjectLookup(uint index, QObject *object) const
 {
-    // TODO: The only thing we need the type for is checking whether it's QVariant.
-    //       Replace it with an enum and simplify code generation.
+    initObjectLookup<
+            QV4::Lookup::Call::GetterQObjectProperty,
+            QV4::Lookup::Call::GetterQObjectPropertyFallback,
+            ObjectLookupType::Concrete>(this, index, object);
+}
 
-    QV4::ExecutionEngine *v4 = engine->handle();
-    if (v4->hasException) {
-        v4->amendException();
-    } else {
-        QV4::Lookup *lookup = compilationUnit->runtimeLookups + index;
-        switch (initObjectLookup(this, lookup, object, type)) {
-        case ObjectLookupResult::ObjectAsVariant:
-            lookup->asVariant = true;
-            Q_FALLTHROUGH();
-        case ObjectLookupResult::Object:
-            lookup->call = QV4::Lookup::Call::GetterQObjectProperty;
-            break;
-        case ObjectLookupResult::FallbackAsVariant:
-            lookup->asVariant = true;
-            Q_FALLTHROUGH();
-        case ObjectLookupResult::Fallback:
-            lookup->call = QV4::Lookup::Call::GetterQObjectPropertyFallback;
-            break;
-        case ObjectLookupResult::Failure:
-            engine->handle()->throwTypeError();
-            break;
-        }
-    }
+void AOTCompiledContext::initGetObjectLookupAsVariant(uint index, QObject *object) const
+{
+    initObjectLookup<
+            QV4::Lookup::Call::GetterQObjectProperty,
+            QV4::Lookup::Call::GetterQObjectPropertyFallback,
+            ObjectLookupType::Variant>(this, index, object);
 }
 
 bool AOTCompiledContext::getValueLookup(uint index, void *value, void *target) const
@@ -2546,10 +2534,8 @@ bool AOTCompiledContext::writeBackValueLookup(uint index, void *value, void *sou
     return true;
 }
 
-void AOTCompiledContext::initGetValueLookup(
-        uint index, const QMetaObject *metaObject, QMetaType type) const
+void AOTCompiledContext::initGetValueLookup(uint index, const QMetaObject *metaObject) const
 {
-    Q_UNUSED(type); // TODO: Remove the type argument and simplify code generation
     Q_ASSERT(!engine->hasError());
     QV4::Lookup *lookup = compilationUnit->runtimeLookups + index;
     initValueLookup(lookup, compilationUnit, metaObject);
@@ -2655,34 +2641,20 @@ bool AOTCompiledContext::setObjectLookup(uint index, QObject *object, void *valu
     Q_UNREACHABLE_RETURN(false);
 }
 
-void AOTCompiledContext::initSetObjectLookup(uint index, QObject *object, QMetaType type) const
+void AOTCompiledContext::initSetObjectLookup(uint index, QObject *object) const
 {
-    // TODO: The only thing we need the type for is checking whether it's QVariant.
-    //       Replace it with an enum and simplify code generation.
+    initObjectLookup<
+            QV4::Lookup::Call::SetterQObjectProperty,
+            QV4::Lookup::Call::SetterQObjectPropertyFallback,
+            ObjectLookupType::Concrete>(this, index, object);
+}
 
-    QV4::ExecutionEngine *v4 = engine->handle();
-    if (v4->hasException) {
-        v4->amendException();
-    } else {
-        QV4::Lookup *lookup = compilationUnit->runtimeLookups + index;
-        switch (initObjectLookup(this, lookup, object, type)) {
-        case ObjectLookupResult::ObjectAsVariant:
-            lookup->asVariant = true;
-            Q_FALLTHROUGH();
-        case ObjectLookupResult::Object:
-            lookup->call = QV4::Lookup::Call::SetterQObjectProperty;
-            break;
-        case ObjectLookupResult::FallbackAsVariant:
-            lookup->asVariant = true;
-            Q_FALLTHROUGH();
-        case ObjectLookupResult::Fallback:
-            lookup->call = QV4::Lookup::Call::SetterQObjectPropertyFallback;
-            break;
-        case ObjectLookupResult::Failure:
-            engine->handle()->throwTypeError();
-            break;
-        }
-    }
+void AOTCompiledContext::initSetObjectLookupAsVariant(uint index, QObject *object) const
+{
+    initObjectLookup<
+            QV4::Lookup::Call::SetterQObjectProperty,
+            QV4::Lookup::Call::SetterQObjectPropertyFallback,
+            ObjectLookupType::Variant>(this, index, object);
 }
 
 bool AOTCompiledContext::setValueLookup(
@@ -2702,10 +2674,8 @@ bool AOTCompiledContext::setValueLookup(
     return true;
 }
 
-void AOTCompiledContext::initSetValueLookup(
-        uint index, const QMetaObject *metaObject, QMetaType type) const
+void AOTCompiledContext::initSetValueLookup(uint index, const QMetaObject *metaObject) const
 {
-    Q_UNUSED(type); // TODO: Remove the type argument and simplify code generation
     Q_ASSERT(!engine->hasError());
     QV4::Lookup *lookup = compilationUnit->runtimeLookups + index;
     initValueLookup(lookup, compilationUnit, metaObject);

@@ -43,6 +43,7 @@ public:
         QQmlJSRegisterContent content;
         bool canMove = false;
         bool affectedBySideEffects = false;
+        bool isShadowable = false;
 
     private:
         friend bool operator==(const VirtualRegister &a, const VirtualRegister &b)
@@ -356,6 +357,8 @@ protected:
             newState.registers[oldState.changedRegisterIndex()].affectedBySideEffects = false;
             newState.registers[oldState.changedRegisterIndex()].content
                     = oldState.changedRegister();
+            newState.registers[oldState.changedRegisterIndex()].isShadowable
+                    = oldState.isShadowable();
         }
 
         // Side effects are applied at the end of an instruction: An instruction with side

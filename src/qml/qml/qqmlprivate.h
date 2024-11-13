@@ -726,7 +726,10 @@ namespace QQmlPrivate
 
         bool loadScopeObjectPropertyLookup(uint index, void *target) const;
         bool writeBackScopeObjectPropertyLookup(uint index, void *source) const;
+        void initLoadScopeObjectPropertyLookup(uint index) const;
+#if QT_QML_REMOVED_SINCE(6, 9)
         void initLoadScopeObjectPropertyLookup(uint index, QMetaType type) const;
+#endif
 
         bool loadSingletonLookup(uint index, void *target) const;
         void initLoadSingletonLookup(uint index, uint importNamespace) const;
@@ -739,11 +742,18 @@ namespace QQmlPrivate
 
         bool getObjectLookup(uint index, QObject *object, void *target) const;
         bool writeBackObjectLookup(uint index, QObject *object, void *source) const;
+        void initGetObjectLookup(uint index, QObject *object) const;
+        void initGetObjectLookupAsVariant(uint index, QObject *object) const;
+#if QT_QML_REMOVED_SINCE(6, 9)
         void initGetObjectLookup(uint index, QObject *object, QMetaType type) const;
+#endif
 
         bool getValueLookup(uint index, void *value, void *target) const;
         bool writeBackValueLookup(uint index, void *value, void *source) const;
+        void initGetValueLookup(uint index, const QMetaObject *metaObject) const;
+#if QT_QML_REMOVED_SINCE(6, 9)
         void initGetValueLookup(uint index, const QMetaObject *metaObject, QMetaType type) const;
+#endif
 
         bool getEnumLookup(uint index, void *target) const;
 #if QT_QML_REMOVED_SINCE(6, 6)
@@ -753,10 +763,17 @@ namespace QQmlPrivate
                                const char *enumerator, const char *enumValue) const;
 
         bool setObjectLookup(uint index, QObject *object, void *value) const;
+        void initSetObjectLookup(uint index, QObject *object) const;
+        void initSetObjectLookupAsVariant(uint index, QObject *object) const;
+#if QT_QML_REMOVED_SINCE(6, 9)
         void initSetObjectLookup(uint index, QObject *object, QMetaType type) const;
+#endif
 
         bool setValueLookup(uint index, void *target, void *value) const;
+        void initSetValueLookup(uint index, const QMetaObject *metaObject) const;
+#if QT_QML_REMOVED_SINCE(6, 9)
         void initSetValueLookup(uint index, const QMetaObject *metaObject, QMetaType type) const;
+#endif
     };
 
     struct AOTCompiledFunction {

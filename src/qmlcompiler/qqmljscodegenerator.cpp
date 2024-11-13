@@ -722,15 +722,11 @@ void QQmlJSCodeGenerator::generate_LoadQmlContextPropertyLookup(int index)
     const bool isProperty = m_state.accumulatorOut().isProperty();
     const QQmlJSScope::ConstPtr stored = m_state.accumulatorOut().storedType();
     if (isProperty) {
-        const auto lookupType = contentType(m_state.accumulatorOut(), m_state.accumulatorVariableOut);
-
         const QString lookup = u"aotContext->loadScopeObjectPropertyLookup("_s
                 + indexString + u", "_s
                 + contentPointer(m_state.accumulatorOut(), m_state.accumulatorVariableOut) + u')';
-        const QString initialization
-                = u"aotContext->initLoadScopeObjectPropertyLookup("_s
-                + indexString + u", "_s
-                + lookupType + u')';
+        const QString initialization = u"aotContext->initLoadScopeObjectPropertyLookup("_s
+                + indexString + u')';
         const QString preparation = getLookupPreparation(
                     m_state.accumulatorOut(), m_state.accumulatorVariableOut, index);
 
@@ -1167,10 +1163,8 @@ void QQmlJSCodeGenerator::generateWriteBack(int registerIndex)
             const QString lookup = u"aotContext->writeBackScopeObjectPropertyLookup("_s
                     + writeBackIndexString
                     + u", "_s + contentPointer(writeBack, writeBackRegister) + u')';
-            const QString initialization
-                    = u"aotContext->initLoadScopeObjectPropertyLookup("_s
-                    + writeBackIndexString
-                    + u", "_s + contentType(writeBack, writeBackRegister) + u')';
+            const QString initialization = u"aotContext->initLoadScopeObjectPropertyLookup("_s
+                    + writeBackIndexString + u')';
             generateLookup(lookup, initialization);
             break;
         }
@@ -1204,10 +1198,12 @@ void QQmlJSCodeGenerator::generateWriteBack(int registerIndex)
                         + writeBackIndexString
                         + u", "_s + outerRegister
                         + u", "_s + contentPointer(writeBack, writeBackRegister) + u')';
-                const QString initialization = u"aotContext->initGetObjectLookup("_s
-                        + writeBackIndexString
-                        + u", "_s + outerRegister
-                        + u", "_s + contentType(writeBack, writeBackRegister) + u')';
+
+                const QString initialization = (m_state.registers[registerIndex].isShadowable
+                                        ? u"aotContext->initGetObjectLookupAsVariant("_s
+                                        : u"aotContext->initGetObjectLookup("_s)
+                        + writeBackIndexString + u", "_s + outerRegister + u')';
+
                 generateLookup(lookup, initialization);
             } else {
                 const QString valuePointer = contentPointer(outerContent, outerRegister);
@@ -1217,8 +1213,7 @@ void QQmlJSCodeGenerator::generateWriteBack(int registerIndex)
                         + u", "_s + contentPointer(writeBack, writeBackRegister) + u')';
                 const QString initialization = u"aotContext->initGetValueLookup("_s
                         + writeBackIndexString
-                        + u", "_s + metaObject(writeBack.scopeType().containedType())
-                        + u", "_s + contentType(writeBack, writeBackRegister) + u')';
+                        + u", "_s + metaObject(writeBack.scopeType().containedType()) + u')';
                 generateLookup(lookup, initialization);
             }
             break;
@@ -1493,10 +1488,10 @@ void QQmlJSCodeGenerator::generate_GetLookupHelper(int index)
         const QString lookup = u"aotContext->getObjectLookup("_s + indexString
                 + u", "_s + inputPointer + u", "_s
                 + contentPointer(m_state.accumulatorOut(), m_state.accumulatorVariableOut) + u')';
-        const QString initialization = u"aotContext->initGetObjectLookup("_s
-                + indexString + u", "_s + inputPointer
-                + u", "_s + contentType(m_state.accumulatorOut(), m_state.accumulatorVariableOut)
-                + u')';
+        const QString initialization = (m_state.isShadowable()
+                                                ? u"aotContext->initGetObjectLookupAsVariant("_s
+                                                : u"aotContext->initGetObjectLookup("_s)
+                + indexString + u", "_s + inputPointer + u')';
         const QString preparation = getLookupPreparation(
                     m_state.accumulatorOut(), m_state.accumulatorVariableOut, index);
         generateLookup(lookup, initialization, preparation);
@@ -1544,8 +1539,7 @@ void QQmlJSCodeGenerator::generate_GetLookupHelper(int index)
                 + u')';
         const QString initialization = u"aotContext->initGetValueLookup("_s
                 + indexString + u", "_s
-                + metaObject(scope.containedType()) + u", "_s
-                + contentType(m_state.accumulatorOut(), m_state.accumulatorVariableOut) + u')';
+                + metaObject(scope.containedType()) + u')';
         const QString preparation = getLookupPreparation(
                     m_state.accumulatorOut(), m_state.accumulatorVariableOut, index);
         generateLookup(lookup, initialization, preparation);
@@ -1628,20 +1622,14 @@ void QQmlJSCodeGenerator::generate_SetLookup(int index, int baseReg)
     const QString object = registerVariable(baseReg);
     m_body += u"{\n"_s;
     QString variableIn;
-    QString variableInType;
-    QString argType;
     if (!m_typeResolver->registerContains(
                 m_state.accumulatorIn(), property.containedType())) {
         m_body += u"auto converted = "_s
                 + conversion(m_state.accumulatorIn(), property, consumedAccumulatorVariableIn())
                 + u";\n"_s;
         variableIn = contentPointer(property, u"converted"_s);
-        variableInType = contentType(property, u"converted"_s);
-        argType = contentType(property, u"converted"_s);
     } else {
         variableIn = contentPointer(property, m_state.accumulatorVariableIn);
-        variableInType = contentType(property, m_state.accumulatorVariableIn);
-        argType = variableInType;
     }
 
     switch (originalScope->accessSemantics()) {
@@ -1652,8 +1640,14 @@ void QQmlJSCodeGenerator::generate_SetLookup(int index, int baseReg)
 
         const QString lookup = u"aotContext->setObjectLookup("_s + indexString
                 + u", "_s + basePointer + u", "_s + variableIn + u')';
-        const QString initialization = u"aotContext->initSetObjectLookup("_s
-                + indexString + u", "_s + basePointer + u", "_s + argType + u')';
+
+        // We use the asVariant lookup also for non-shadowable properties if the input can hold
+        // undefined since that may be a reset. See QQmlJSTypePropagator::generate_StoreProperty().
+        const QString initialization
+                = (m_typeResolver->registerContains(property, m_typeResolver->varType())
+                                                ? u"aotContext->initSetObjectLookupAsVariant("_s
+                                                : u"aotContext->initSetObjectLookup("_s)
+                + indexString + u", "_s + basePointer + u')';
         generateLookup(lookup, initialization);
         break;
     }
@@ -1691,8 +1685,7 @@ void QQmlJSCodeGenerator::generate_SetLookup(int index, int baseReg)
                 + u", "_s + baseContentPointer
                 + u", "_s + variableIn + u')';
         const QString initialization = u"aotContext->initSetValueLookup("_s
-                + indexString + u", "_s + metaObject(originalScope)
-                + u", "_s + argType + u')';
+                + indexString + u", "_s + metaObject(originalScope) + u')';
 
         generateLookup(lookup, initialization);
         generateWriteBack(baseReg);
