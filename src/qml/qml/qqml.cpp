@@ -1297,73 +1297,85 @@ static ObjectPropertyResult resetFallbackProperty(
     });
 }
 
-static bool isTypeCompatible(QMetaType lookupType, QMetaType propertyType)
+static bool isEnumUnderlyingType(QMetaType enumType, QMetaType numberType)
 {
-    if (lookupType == QMetaType::fromType<LookupNotInitialized>()) {
-        // If lookup is not initialized, then the calling code depends on the lookup
-        // to be set up in order to query the type, via lookupResultMetaType.
-        // We cannot verify the type in this case.
-    } else if ((lookupType.flags() & QMetaType::IsQmlList)
-               && (propertyType.flags() & QMetaType::IsQmlList)) {
+    // You can pass the underlying type of an enum.
+    // We don't want to check for the actual underlying type because
+    // moc and qmltyperegistrar are not very precise about it. Especially
+    // the long and longlong types can be ambiguous.
+
+    const bool isUnsigned = enumType.flags() & QMetaType::IsUnsignedEnumeration;
+    switch (enumType.sizeOf()) {
+    case 1:
+        return isUnsigned
+                ? numberType == QMetaType::fromType<quint8>()
+                : numberType == QMetaType::fromType<qint8>();
+    case 2:
+        return isUnsigned
+                ? numberType == QMetaType::fromType<ushort>()
+                : numberType == QMetaType::fromType<short>();
+    case 4:
+        // The default type, if moc doesn't know the actual enum type, is int.
+        // However, the compiler can still decide to encode the enum in uint.
+        // Therefore, we also accept int for uint enums.
+        // TODO: This is technically UB.
+        return isUnsigned
+                ? (numberType == QMetaType::fromType<int>()
+                   || numberType == QMetaType::fromType<uint>())
+                : numberType == QMetaType::fromType<int>();
+    case 8:
+        return isUnsigned
+                ? numberType == QMetaType::fromType<qulonglong>()
+                : numberType == QMetaType::fromType<qlonglong>();
+    }
+
+    return false;
+}
+
+static bool canHoldVoid(QMetaType type)
+{
+    // We cannot directly store void, but we can put it into QVariant or QJSPrimitiveValue
+    return !type.isValid()
+            || type == QMetaType::fromType<QVariant>()
+            || type == QMetaType::fromType<QJSPrimitiveValue>();
+}
+
+static bool isTypeCompatible(QMetaType source, QMetaType target)
+{
+    if (source == target)
+        return true;
+
+    if ((source.flags() & QMetaType::IsQmlList)
+               && (target.flags() & QMetaType::IsQmlList)) {
         // We want to check the value types here, but we cannot easily do it.
         // Internally those are all QObject* lists, though.
-    } else if (lookupType.flags() & QMetaType::PointerToQObject) {
-        // We accept any base class as type, too
-
-        const QMetaObject *typeMetaObject = lookupType.metaObject();
-        const QMetaObject *foundMetaObject = propertyType.metaObject();
-        if (!foundMetaObject)
-            foundMetaObject = QQmlMetaType::metaObjectForType(propertyType).metaObject();
-
-        while (foundMetaObject && foundMetaObject != typeMetaObject)
-            foundMetaObject = foundMetaObject->superClass();
-
-        if (!foundMetaObject)
-            return false;
-    } else if (propertyType.flags() & QMetaType::IsEnumeration) {
-        if (propertyType == lookupType)
-            return true;
-
-        // You can pass the underlying type of an enum.
-        // We don't want to check for the actual underlying type because
-        // moc and qmltyperegistrar are not very precise about it. Especially
-        // the long and longlong types can be ambiguous.
-
-        const bool isUnsigned = propertyType.flags() & QMetaType::IsUnsignedEnumeration;
-        switch (propertyType.sizeOf()) {
-        case 1:
-            return isUnsigned
-                    ? lookupType == QMetaType::fromType<quint8>()
-                    : lookupType == QMetaType::fromType<qint8>();
-        case 2:
-            return isUnsigned
-                    ? lookupType == QMetaType::fromType<ushort>()
-                    : lookupType == QMetaType::fromType<short>();
-        case 4:
-            // The default type, if moc doesn't know the actual enum type, is int.
-            // However, the compiler can still decide to encode the enum in uint.
-            // Therefore, we also accept int for uint enums.
-            // TODO: This is technically UB.
-            return isUnsigned
-                    ? (lookupType == QMetaType::fromType<int>()
-                       || lookupType == QMetaType::fromType<uint>())
-                    : lookupType == QMetaType::fromType<int>();
-        case 8:
-            return isUnsigned
-                    ? lookupType == QMetaType::fromType<qulonglong>()
-                    : lookupType == QMetaType::fromType<qlonglong>();
-        }
-
-        return false;
-    } else if (!propertyType.isValid()) {
-        // We cannot directly store void, but we can put it into QVariant or QJSPrimitiveValue
-        return !lookupType.isValid()
-                || lookupType == QMetaType::fromType<QVariant>()
-                || lookupType == QMetaType::fromType<QJSPrimitiveValue>();
-    } else if (propertyType != lookupType) {
-        return false;
+        return true;
     }
-    return true;
+
+    if (target.flags() & QMetaType::PointerToQObject) {
+        // We accept any derived class, too
+
+        const QMetaObject *targetMetaObject = target.metaObject();
+        const QMetaObject *sourceMetaObject = source.metaObject();
+        if (!sourceMetaObject)
+            sourceMetaObject = QQmlMetaType::metaObjectForType(source).metaObject();
+
+        while (sourceMetaObject && sourceMetaObject != targetMetaObject)
+            sourceMetaObject = sourceMetaObject->superClass();
+
+        return sourceMetaObject != nullptr;
+    }
+
+    if (target.flags() & QMetaType::IsEnumeration)
+        return isEnumUnderlyingType(target, source);
+
+    if (source.flags() & QMetaType::IsEnumeration)
+        return isEnumUnderlyingType(source, target);
+
+    if (!source.isValid())
+        return canHoldVoid(target);
+
+    return false;
 }
 
 static ObjectPropertyResult storeObjectAsVariant(
