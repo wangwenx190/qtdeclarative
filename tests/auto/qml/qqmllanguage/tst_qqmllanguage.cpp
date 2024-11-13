@@ -473,6 +473,17 @@ private slots:
 
     void onlyInlineComponent();
 
+    void variantAssociationConversion();
+    void propertiesCanBeStoredAndRetrievedInAVariantAssociationObject();
+    void propertiesCanBeDeletedFromAVariantAssociationObject();
+    void variantAssociationObjectCanIdentifyItsOwnProperties();
+    void variantAssociationObjectSupportsForIn();
+    void changesToAVariantAssociationObjectInASequenceAreRetained();
+    void variantAssociationBasicReadBack();
+    void variantAssociationObjectCanSwitchBetweenAQVariantMapAndHash();
+    void recursiveVariantAssociation();
+    void variantAssociationDetachesOnBeingAssignedToAVarProperty();
+
 private:
     QQmlEngine engine;
     QStringList defaultImportPathList;
@@ -9076,6 +9087,209 @@ void tst_qqmllanguage::onlyInlineComponent()
     QVERIFY(!o.isNull());
 
     QCOMPARE(o->objectName(), QLatin1String("yes"));
+}
+
+void tst_qqmllanguage::variantAssociationConversion() {
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("variantAssociationConversion.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+
+    auto *variantAssociationProvider = qobject_cast<VariantAssociationProvider *>(o.data());
+    QVERIFY(variantAssociationProvider);
+
+    QCOMPARE(
+        variantAssociationProvider->getMap()["first"].toString(),
+        variantAssociationProvider->property("foo").toString()
+    );
+    QCOMPARE(
+        variantAssociationProvider->getMap()["second"].toList(),
+        variantAssociationProvider->property("baz").toList()
+    );
+
+    const QObject *attachedInMap =
+        qvariant_cast<QObject *>(variantAssociationProvider->getMap()["third"]);
+    QVERIFY(attachedInMap);
+    QCOMPARE(
+        attachedInMap->metaObject(),
+        &QQmlComponentAttached::staticMetaObject
+    );
+
+    QCOMPARE(
+        variantAssociationProvider->getHash()["first"].toString(),
+        variantAssociationProvider->property("foo").toString()
+    );
+    QCOMPARE(
+        variantAssociationProvider->getHash()["second"].toList(),
+        variantAssociationProvider->property("baz").toList()
+    );
+
+    const QObject *attachedInHash =
+        qvariant_cast<QObject *>(variantAssociationProvider->getHash()["third"]);
+    QVERIFY(attachedInHash);
+    QCOMPARE(
+        attachedInHash->metaObject(),
+        &QQmlComponentAttached::staticMetaObject
+    );
+}
+
+void tst_qqmllanguage::propertiesCanBeStoredAndRetrievedInAVariantAssociationObject() {
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("propertiesCanBeStoredAndRetrievedInAVariantAssociationObject.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+
+    auto *variantAssociationProvider = qobject_cast<VariantAssociationProvider *>(o.data());
+    QVERIFY(variantAssociationProvider);
+
+    QCOMPARE(variantAssociationProvider->property("variantMapSymbolProperty").toString(),
+             "foo@bar.com");
+    QCOMPARE(variantAssociationProvider->property("variantMapArrayIndexProperty").toInt(), 1);
+
+    QCOMPARE(variantAssociationProvider->property("variantHashSymbolProperty").toString(),
+             "foo@bar.com");
+    QCOMPARE(variantAssociationProvider->property("variantHashArrayIndexProperty").toInt(), 1);
+}
+
+void tst_qqmllanguage::propertiesCanBeDeletedFromAVariantAssociationObject() {
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("propertiesCanBeDeletedFromAVariantAssociationObject.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+
+    auto *variantAssociationProvider = qobject_cast<VariantAssociationProvider *>(o.data());
+    QVERIFY(variantAssociationProvider);
+
+    QCOMPARE(variantAssociationProvider->property("variantMapEmailBeforeDelete").toString(),
+             "foo@bar.com");
+    QVERIFY(variantAssociationProvider->property("variantMapEmailAfterDelete").isNull());
+    QVERIFY(variantAssociationProvider->property("mapDeleteReturnedTrue").toBool());
+
+    QCOMPARE(variantAssociationProvider->property("variantHashEmailBeforeDelete").toString(),
+             "foo@bar.com");
+    QVERIFY(variantAssociationProvider->property("variantHashEmailAfterDelete").isNull());
+    QVERIFY(variantAssociationProvider->property("hashDeleteReturnedTrue").toBool());
+
+    QVERIFY(!variantAssociationProvider->property("deleteOfNonExistingThrew").toBool());
+}
+
+void tst_qqmllanguage::variantAssociationObjectCanIdentifyItsOwnProperties() {
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("variantAssociationObjectCanIdentifyItsOwnProperties.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+
+    auto *variantAssociationProvider = qobject_cast<VariantAssociationProvider *>(o.data());
+    QVERIFY(variantAssociationProvider);
+
+    QVERIFY(!variantAssociationProvider->property("variantMapHadPropertyFromParent").toBool());
+    QVERIFY(!variantAssociationProvider->property("variantMapHadMissingOwnProperty").toBool());
+    QVERIFY(variantAssociationProvider->property("variantMapHadOwnProperty").toBool());
+
+    QVERIFY(!variantAssociationProvider->property("variantHashHadPropertyFromParent").toBool());
+    QVERIFY(!variantAssociationProvider->property("variantHashHadMissingOwnProperty").toBool());
+    QVERIFY(variantAssociationProvider->property("variantHashHadOwnProperty").toBool());
+}
+
+void tst_qqmllanguage::variantAssociationObjectSupportsForIn() {
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("variantAssociationObjectSupportsForIn.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+
+    auto *variantAssociationProvider = qobject_cast<VariantAssociationProvider *>(o.data());
+    QVERIFY(variantAssociationProvider);
+
+    QCOMPARE(
+        variantAssociationProvider->property("variantMapKeys").toStringList(),
+        (QStringList{"1", "email", "foo"})
+    );
+
+    QCOMPARE(
+        variantAssociationProvider->property("variantHashKeys").toStringList(),
+        (QStringList{"1", "email", "foo"})
+    );
+}
+
+void tst_qqmllanguage::changesToAVariantAssociationObjectInASequenceAreRetained() {
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("changesToAVariantAssociationObjectInASequenceAreRetained.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+
+    auto *variantAssociationProvider = qobject_cast<VariantAssociationProvider *>(o.data());
+    QVERIFY(variantAssociationProvider);
+
+    QCOMPARE(variantAssociationProvider->property("emailBeforeChange").toString(), "Alice Smith");
+    QCOMPARE(variantAssociationProvider->property("emailAfterChange").toString(), "This Email Should Mutate");
+}
+
+void tst_qqmllanguage::variantAssociationBasicReadBack() {
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("variantAssociationBasicReadBack.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+
+    auto *variantAssociationProvider = qobject_cast<VariantAssociationProvider *>(o.data());
+    QVERIFY(variantAssociationProvider);
+
+    QCOMPARE(variantAssociationProvider->property("mapEmail").toString(), "map@map.map");
+    QCOMPARE(variantAssociationProvider->property("hashEmail").toString(), "hash@hash.hash");
+}
+
+void tst_qqmllanguage::variantAssociationObjectCanSwitchBetweenAQVariantMapAndHash() {
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("variantAssociationObjectCanSwitchBetweenAQVariantMapAndHash.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+
+    auto *variantAssociationProvider = qobject_cast<VariantAssociationProvider *>(o.data());
+    QVERIFY(variantAssociationProvider);
+
+    QCOMPARE(variantAssociationProvider->property("emailAfterMapToHashSwitch").toString(), "hash@hash.hash");
+    QCOMPARE(variantAssociationProvider->property("emailAfterHashToMapSwitch").toString(), "switchedmap@map.map");
+}
+
+void tst_qqmllanguage::recursiveVariantAssociation() {
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("recursiveVariantAssociation.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+
+    auto *variantAssociationProvider = qobject_cast<VariantAssociationProvider *>(o.data());
+    QVERIFY(variantAssociationProvider);
+
+    QList<QVariant> list = variantAssociationProvider->getMap()["theList"].toList();
+    QCOMPARE(list.size(), 1);
+
+    QVariantHash theHash = list[0].toHash();
+    QCOMPARE(theHash["email"].toString(), "hash@hash.hash");
+
+    QList<QVariant> theOtherList = theHash["foo"].toList();
+    QCOMPARE(theOtherList.size(), 3);
+    QCOMPARE(theOtherList[0].toInt(), 1);
+    QCOMPARE(theOtherList[1].toInt(), 200);
+    QCOMPARE(theOtherList[2].toInt(), 3);
+}
+
+void tst_qqmllanguage::variantAssociationDetachesOnBeingAssignedToAVarProperty() {
+    QQmlEngine engine;
+    QQmlComponent c(&engine, testFileUrl("variantAssociationDetachesOnBeingAssignedToAVarProperty.qml"));
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+
+    auto *variantAssociationProvider = qobject_cast<VariantAssociationProvider *>(o.data());
+    QVERIFY(variantAssociationProvider);
+
+    QCOMPARE(variantAssociationProvider->getMap()["email"].toString(), "map@map.map");
+    QCOMPARE(
+        variantAssociationProvider->property("varPropertyMap").toMap()["email"].toString(),
+        "something");
+
+    QCOMPARE(variantAssociationProvider->getHash()["email"].toString(), "hash@hash.hash");
+    QCOMPARE(
+        variantAssociationProvider->property("varPropertyHash").toHash()["email"].toString(),
+        "something");
 }
 
 QTEST_MAIN(tst_qqmllanguage)

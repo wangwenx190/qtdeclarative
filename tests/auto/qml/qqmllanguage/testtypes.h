@@ -3058,4 +3058,40 @@ private:
     std::vector<std::vector<int>> m_list;
 };
 
+class VariantAssociationProvider : public QObject {
+
+    Q_OBJECT
+    Q_PROPERTY(QVariantMap variantMap READ getMap WRITE setMap)
+    Q_PROPERTY(QVariantHash variantHash READ getHash WRITE setHash)
+
+    QML_ELEMENT
+
+    QVariantMap m_variantMap;
+    QVariantHash m_variantHash;
+
+public:
+    VariantAssociationProvider(QObject* parent = nullptr) : QObject(parent)
+    {}
+
+    QVariantMap getMap() { return m_variantMap; }
+    void setMap(const QVariantMap& map) { m_variantMap = map; }
+
+    QVariantHash getHash() { return m_variantHash; }
+    void setHash(const QVariantHash& hash) { m_variantHash = hash; }
+
+    Q_INVOKABLE QVariantList getListOfMap() const {
+        return QVariantList{
+            QVariantMap{},
+            QVariantMap{ { "email", "Alice Smith"} }
+        };
+    }
+
+    Q_INVOKABLE QVariantList getListOfHash() const {
+        return QVariantList{
+            QVariantHash{},
+            QVariantHash{ { "email", "Alice Smith"} }
+        };
+    }
+};
+
 #endif // TESTTYPES_H

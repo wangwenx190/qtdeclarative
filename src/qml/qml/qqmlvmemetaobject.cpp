@@ -12,6 +12,7 @@
 
 #include <private/qv4object_p.h>
 #include <private/qv4variantobject_p.h>
+#include <private/qv4variantassociationobject_p.h>
 #include <private/qv4functionobject_p.h>
 #include <private/qv4scopedvalue_p.h>
 #include <private/qv4jscall_p.h>
@@ -1280,8 +1281,12 @@ void QQmlVMEMetaObject::writeVarProperty(int id, const QV4::Value &value)
         md->set(engine, id, QV4::ReferenceObject::detached(wrapper->d()));
     } else if (const QV4::DateObject *date = value.as<QV4::DateObject>()) {
         md->set(engine, id, QV4::ReferenceObject::detached(date->d()));
+    } else if (const QV4::VariantAssociationObject *association = value.as<QV4::VariantAssociationObject>()) {
+        md->set(engine, id, QV4::ReferenceObject::detached(association->d()));
     } else {
-        // TODO: We should have a virtualDetach if that list gets longer.
+        // TODO: We should have a virtualDetach to reduce the
+        // boilerplate and avoid having to add new cases when a new
+        // reference object is added.
         Q_ASSERT(!value.as<QV4::ReferenceObject>());
         md->set(engine, id, value);
     }

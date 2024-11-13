@@ -207,6 +207,7 @@ public:
         URIErrorProto,
         PromiseProto,
         VariantProto,
+        VariantAssociationProto,
         SequenceProto,
         SharedArrayBufferProto,
         ArrayBufferProto,
@@ -329,6 +330,7 @@ public:
     Object *uRIErrorPrototype() const { return reinterpret_cast<Object *>(jsObjects + URIErrorProto); }
     Object *promisePrototype() const { return reinterpret_cast<Object *>(jsObjects + PromiseProto); }
     Object *variantPrototype() const { return reinterpret_cast<Object *>(jsObjects + VariantProto); }
+    Object *variantAssociationPrototype() const { return reinterpret_cast<Object *>(jsObjects + VariantAssociationProto); }
     Object *sequencePrototype() const { return reinterpret_cast<Object *>(jsObjects + SequenceProto); }
 
     Object *sharedArrayBufferPrototype() const { return reinterpret_cast<Object *>(jsObjects + SharedArrayBufferProto); }

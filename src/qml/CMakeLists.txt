@@ -219,6 +219,7 @@ qt_internal_add_qml_module(Qml
         jsruntime/qv4typedarray.cpp jsruntime/qv4typedarray_p.h
         jsruntime/qv4urlobject.cpp jsruntime/qv4urlobject_p.h
         jsruntime/qv4value.cpp jsruntime/qv4value_p.h
+        jsruntime/qv4variantassociationobject.cpp jsruntime/qv4variantassociationobject_p.h
         jsruntime/qv4variantobject.cpp jsruntime/qv4variantobject_p.h
         jsruntime/qv4vme_moth.cpp jsruntime/qv4vme_moth_p.h
         jsruntime/qv4vtable_p.h

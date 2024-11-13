@@ -59,6 +59,7 @@
 #include "qv4atomics_p.h"
 #include "qv4urlobject_p.h"
 #include "qv4variantobject_p.h"
+#include "qv4variantassociationobject_p.h"
 #include "qv4sequenceobject_p.h"
 #include "qv4qobjectwrapper_p.h"
 #include "qv4qmetaobjectwrapper_p.h"
@@ -323,6 +324,8 @@ void ExecutionEngine::initializeStaticMembers()
 
     if (!QMetaType::hasRegisteredConverterFunction<QJSValue, QVariantMap>())
         QMetaType::registerConverter<QJSValue, QVariantMap>(convertJSValueToVariantType<QVariantMap>);
+    if (!QMetaType::hasRegisteredConverterFunction<QJSValue, QVariantHash>())
+        QMetaType::registerConverter<QJSValue, QVariantHash>(convertJSValueToVariantType<QVariantHash>);
     if (!QMetaType::hasRegisteredConverterFunction<QJSValue, QVariantList>())
         QMetaType::registerConverter<QJSValue, QVariantList>(convertJSValueToVariantType<QVariantList>);
     if (!QMetaType::hasRegisteredConverterFunction<QJSValue, QStringList>())
@@ -624,6 +627,9 @@ ExecutionEngine::ExecutionEngine(QJSEngine *jsEngine)
 
     jsObjects[VariantProto] = memoryManager->allocate<VariantPrototype>();
     Q_ASSERT(variantPrototype()->getPrototypeOf() == objectPrototype()->d());
+
+    jsObjects[VariantAssociationProto] = memoryManager->allocate<VariantAssociationPrototype>();
+    Q_ASSERT(variantAssociationPrototype()->getPrototypeOf() == objectPrototype()->d());
 
     ic = newInternalClass(SequencePrototype::staticVTable(), SequencePrototype::defaultPrototype(this));
     jsObjects[SequenceProto] = ScopedValue(scope, memoryManager->allocObject<SequencePrototype>(ic->d()));
@@ -1521,11 +1527,6 @@ static QObject *qtObjectFromJS(const QV4::Value &value);
 static QVariant objectToVariant(const QV4::Object *o, V4ObjectSet *visitedObjects = nullptr,
                                 JSToQVariantConversionBehavior behavior = JSToQVariantConversionBehavior::Safish);
 static bool convertToNativeQObject(const QV4::Value &value, QMetaType targetType, void **result);
-static QV4::ReturnedValue variantMapToJS(QV4::ExecutionEngine *v4, const QVariantMap &vmap);
-static QV4::ReturnedValue variantToJS(QV4::ExecutionEngine *v4, const QVariant &value)
-{
-    return v4->metaTypeToJS(value.metaType(), value.constData());
-}
 
 static QVariant toVariant(const QV4::Value &value, QMetaType metaType, JSToQVariantConversionBehavior conversionBehavior,
         V4ObjectSet *visitedObjects)
@@ -1578,6 +1579,10 @@ static QVariant toVariant(const QV4::Value &value, QMetaType metaType, JSToQVari
 
             // Otherwise produce the "natural" type of the sequence.
             return QV4::SequencePrototype::toVariant(s);
+        } else if (auto association = object->as<QV4::VariantAssociationObject>()) {
+            if (conversionBehavior == JSToQVariantConversionBehavior::Never)
+                return QVariant::fromValue(QJSValuePrivate::fromReturnedValue(association->asReturnedValue()));
+            return association->d()->toVariant();
         }
     }
 
@@ -1847,7 +1852,15 @@ QV4::ReturnedValue ExecutionEngine::fromData(
             case QMetaType::QVariantList:
                 return createSequence(QMetaSequence::fromContainer<QVariantList>());
             case QMetaType::QVariantMap:
-                return variantMapToJS(this, *reinterpret_cast<const QVariantMap *>(ptr));
+                return VariantAssociationPrototype::fromQVariantMap(
+                    this,
+                    *reinterpret_cast<const QVariantMap *>(ptr),
+                    container, property, Heap::ReferenceObject::Flags(flags));
+            case QMetaType::QVariantHash:
+                return VariantAssociationPrototype::fromQVariantHash(
+                    this,
+                    *reinterpret_cast<const QVariantHash *>(ptr),
+                    container, property, Heap::ReferenceObject::Flags(flags));
             case QMetaType::QJsonValue:
                 return QV4::JsonObject::fromJsonValue(this, *reinterpret_cast<const QJsonValue *>(ptr));
             case QMetaType::QJsonObject:
@@ -1971,29 +1984,6 @@ QVariantMap ExecutionEngine::variantMapFromJS(const Object *o)
     V4ObjectSet visitedObjects;
     visitedObjects.insert(o->d());
     return objectToVariantMap(o, &visitedObjects, JSToQVariantConversionBehavior::Safish);
-}
-
-// Converts a QVariantMap to JS.
-// The result is a new Object object with property names being
-// the keys of the QVariantMap, and values being the values of
-// the QVariantMap converted to JS, recursively.
-static QV4::ReturnedValue variantMapToJS(QV4::ExecutionEngine *v4, const QVariantMap &vmap)
-{
-    QV4::Scope scope(v4);
-    QV4::ScopedObject o(scope, v4->newObject());
-    QV4::ScopedString s(scope);
-    QV4::ScopedPropertyKey key(scope);
-    QV4::ScopedValue v(scope);
-    for (QVariantMap::const_iterator it = vmap.constBegin(), cend = vmap.constEnd(); it != cend; ++it) {
-        s = v4->newIdentifier(it.key());
-        key = s->propertyKey();
-        v = variantToJS(v4, it.value());
-        if (key->isArrayIndex())
-            o->arraySet(key->asArrayIndex(), v);
-        else
-            o->insertMember(s, v);
-    }
-    return o.asReturnedValue();
 }
 
 // Converts the meta-type defined by the given type and data to JS.

@@ -228,6 +228,12 @@ static ReturnedValue loadProperty(
         return scope.engine->fromData(
                 propMetaType, &v, wrapper, property.coreIndex(), referenceFlags(v4, property));
     }
+    case QMetaType::QVariantHash: {
+        QVariantHash v;
+        property.readProperty(object, &v);
+        return scope.engine->fromData(
+                propMetaType, &v, wrapper, property.coreIndex(), referenceFlags(v4, property));
+    }
     case QMetaType::QJsonValue: {
         QJsonValue v;
         property.readProperty(object, &v);
