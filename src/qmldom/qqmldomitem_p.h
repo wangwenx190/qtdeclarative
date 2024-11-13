@@ -1073,8 +1073,6 @@ public:
     quintptr id() const;
     Path pathFromOwner() const;
     QString canonicalFilePath() const;
-    DomItem fileLocationsTree() const;
-    DomItem fileLocations() const;
     MutableDomItem makeCopy(CopyOption option = CopyOption::EnvConnected) const;
     bool commitToBase(const std::shared_ptr<DomEnvironment> &validPtr = nullptr) const;
     DomItem refreshed() const { return top().path(canonicalPath()); }
@@ -1728,7 +1726,6 @@ public:
         return item().writeOut(path, nBackups, opt, fw);
     }
 
-    MutableDomItem fileLocations() { return MutableDomItem(item().fileLocations()); }
     MutableDomItem makeCopy(CopyOption option = CopyOption::EnvConnected)
     {
         return item().makeCopy(option);

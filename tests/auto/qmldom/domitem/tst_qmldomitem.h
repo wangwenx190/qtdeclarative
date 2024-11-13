@@ -2842,28 +2842,43 @@ private slots:
                          .replace("\r", "\n"),
                  u" // after helloWorld binding\n"_s);
 
-        const auto fileLocations = FileLocations::findAttachedInfo(binding);
-        const DomItem bindingFileLocation =
-                rootQmlObject.path(fileLocations.foundTreePath).field(Fields::infoItem);
-
         // test if FileLocation Tree map works correctly with DomItem interface
-        QCOMPARE(bindingFileLocation.field(Fields::fullRegion).value(),
-                 bindingFileLocation.field(Fields::regions)
+        const auto fileLocationsPtr = FileLocations::treeOf(binding);
+        QVERIFY(fileLocationsPtr);
+        const DomItem bindingFileLocationItem =
+                rootQmlObject.top().wrap({},fileLocationsPtr).field(Fields::infoItem);
+        const auto bindingFileLocationInfo = fileLocationsPtr->info();
+
+        QCOMPARE(bindingFileLocationItem.field(Fields::fullRegion).value(),
+                 bindingFileLocationItem.field(Fields::regions)
                          .key(fileLocationRegionName(FileLocationRegion::MainRegion))
                          .value());
-
-        QCOMPARE(bindingFileLocation.field(Fields::fullRegion).value(),
-                 sourceLocationToQCborValue(fileLocations.foundTree->info().fullRegion));
-
-        QCOMPARE(bindingFileLocation.field(Fields::regions)
+        QCOMPARE(bindingFileLocationItem.field(Fields::fullRegion).value(),
+                 sourceLocationToQCborValue(bindingFileLocationInfo.fullRegion));
+        QCOMPARE(bindingFileLocationItem.field(Fields::regions)
                          .key(fileLocationRegionName(FileLocationRegion::MainRegion))
                          .value(),
-                 sourceLocationToQCborValue(fileLocations.foundTree->info().regions[MainRegion]));
-
-        QCOMPARE(bindingFileLocation.field(Fields::regions)
+                 sourceLocationToQCborValue(bindingFileLocationInfo.regions[MainRegion]));
+        QCOMPARE(bindingFileLocationItem.field(Fields::regions)
                          .key(fileLocationRegionName(FileLocationRegion::ColonTokenRegion))
                          .value(),
-                 sourceLocationToQCborValue(fileLocations.foundTree->info().regions[ColonTokenRegion]));
+                 sourceLocationToQCborValue(bindingFileLocationInfo.regions[ColonTokenRegion]));
+
+        QCOMPARE(bindingFileLocationItem.field(Fields::fullRegion).value(),
+                 sourceLocationToQCborValue(bindingFileLocationInfo.fullRegion));
+    }
+
+    // This test exists to document the usage of DOM API on fileLocations for debug purposes
+    void fileLocationsDebugDump() {
+        using namespace Qt::StringLiterals;
+        const QString filePath = baseDir + u"/Base.qml"_s;
+        auto qmlFile = parse(filePath, qmltypeDirs).fileObject(GoTo::MostLikely);
+        QString fileDump;
+        qmlFile.dump([&fileDump](QStringView v) { fileDump.append(v); });
+        QVERIFY(fileDump.contains("fileLocationsTree"));
+        QVERIFY(fileDump.contains("infoItem"));
+        QVERIFY(fileDump.contains("fullRegion"));
+        QVERIFY(fileDump.contains("regions"));
     }
 
     // add qml files here that should not crash the dom construction
@@ -3631,7 +3646,7 @@ private slots:
 private:
     void checkFunctionKeyword(const DomItem &item) const
     {
-        auto fileLocationRegions = FileLocations::fileLocationsOf(item)->regions;
+        auto fileLocationRegions = FileLocations::treeOf(item)->info().regions;
         QVERIFY(fileLocationRegions.contains(FileLocationRegion::FunctionKeywordRegion));
         QCOMPARE(fileLocationRegions[FileLocationRegion::FunctionKeywordRegion].length,
                  std::char_traits<char>::length("function"));
@@ -4141,15 +4156,15 @@ private slots:
         QVERIFY(component);
         QCOMPARE(component.internalKind(), DomType::ScriptTemplateLiteral);
 
-        auto fileLocations = FileLocations::fileLocationsOf(component);
+        auto fileLocations = FileLocations::treeOf(component)->info();
 
-        const auto left = fileLocations->regions[FileLocationRegion::LeftBacktickTokenRegion];
+        const auto left = fileLocations.regions[FileLocationRegion::LeftBacktickTokenRegion];
         QCOMPARE(left, expectedLeftBacktick);
 
-        const auto right = fileLocations->regions[FileLocationRegion::RightBacktickTokenRegion];
+        const auto right = fileLocations.regions[FileLocationRegion::RightBacktickTokenRegion];
         QCOMPARE(right, expectedRightBacktick);
 
-        QCOMPARE(fileLocations->regions.size(), 3); // left and right "`" and "main" region
+        QCOMPARE(fileLocations.regions.size(), 3); // left and right "`" and "main" region
     }
     void templateLiteralExpressionParts_data()
     {
@@ -4202,15 +4217,15 @@ private slots:
         QVERIFY(component);
         QCOMPARE(component.internalKind(), DomType::ScriptTemplateExpressionPart);
 
-        auto fileLocations = FileLocations::fileLocationsOf(component);
+        auto fileLocations = FileLocations::treeOf(component)->info();
 
-        const auto left = fileLocations->regions[FileLocationRegion::DollarLeftBraceTokenRegion];
+        const auto left = fileLocations.regions[FileLocationRegion::DollarLeftBraceTokenRegion];
         QCOMPARE(left, expectedDollarLeftBrace);
 
-        const auto right = fileLocations->regions[FileLocationRegion::RightBraceRegion];
+        const auto right = fileLocations.regions[FileLocationRegion::RightBraceRegion];
         QCOMPARE(right, expectedRightBrace);
 
-        QCOMPARE(fileLocations->regions.size(), 3); // "${", "}" and "main" region
+        QCOMPARE(fileLocations.regions.size(), 3); // "${", "}" and "main" region
     }
 
     void templateLiteralStringParts_data()
@@ -4266,16 +4281,16 @@ private slots:
         QVERIFY(component);
         QCOMPARE(component.internalKind(), DomType::ScriptTemplateStringPart);
 
-        auto fileLocations = FileLocations::fileLocationsOf(component);
+        auto fileLocations = FileLocations::treeOf(component)->info();
 
-        const auto location = fileLocations->regions[FileLocationRegion::MainRegion];
+        const auto location = fileLocations.regions[FileLocationRegion::MainRegion];
         qDebug() << location.startLine;
         qDebug() << location.startColumn;
         qDebug() << location.offset;
         qDebug() << location.length;
         QCOMPARE(location, expectedLocation);
 
-        QCOMPARE(fileLocations->regions.size(), 1); // "main" region
+        QCOMPARE(fileLocations.regions.size(), 1); // "main" region
     }
 
     void newExpression()
@@ -4587,61 +4602,37 @@ private slots:
     void commentsFileLocations()
     {
         const QString testFile = baseDir + u"/Comments.qml"_s;
-        const DomItem fileLocations = rootQmlObjectFromFile(testFile, qmltypeDirs).fileObject().fileLocationsTree();
-        const DomItem commentsForItem = fileLocations
-                .field(Fields::subItems).key(u".components")
-                .field(Fields::subItems).key(u"[\"\"]")
-                .field(Fields::subItems).key(u"[0]")
-                .field(Fields::subItems).key(u".objects")
-                .field(Fields::subItems).key(u"[0]")
-                .field(Fields::subItems).key(u".children")
-                .field(Fields::subItems).key(u"[0]")
-                .field(Fields::subItems).key(u".comments")
-                .field(Fields::subItems).key(u".regionComments")
-                .field(Fields::subItems);
+        const auto fileLocations = FileLocations::treeOf(rootQmlObjectFromFile(testFile, qmltypeDirs).fileObject());
+        const auto commentsPath = Path::fromString(u".components[\"\"][0].objects[0].children[0].comments.regionComments");
+        const auto commentsForItem = FileLocations::find(fileLocations, commentsPath);
 
         QVERIFY(commentsForItem);
         {
             // Hello World! comment
-            const FileLocations *preComment = commentsForItem
-                    .key(u"[\"IdentifierRegion\"]")
-                    .field(Fields::subItems)
-                    .key(u".preComments")
-                    .field(Fields::subItems)
-                    .key(u"[0]")
-                    .field(Fields::infoItem)
-                    .as<FileLocations>();
-            QVERIFY(preComment);
-            QCOMPARE(preComment->fullRegion.startLine, 4);
-            QCOMPARE(preComment->fullRegion.startColumn, 5);
+            const auto preCommentPath = Path::fromString(u"[\"IdentifierRegion\"].preComments[0]");
+            const auto preCommentFLocPtr = FileLocations::find(commentsForItem, preCommentPath);
+
+            QVERIFY(preCommentFLocPtr);
+            QCOMPARE(preCommentFLocPtr->info().fullRegion.startLine, 4);
+            QCOMPARE(preCommentFLocPtr->info().fullRegion.startColumn, 5);
         }
         {
             // Goodbye World! comment
-            const FileLocations *postComment = commentsForItem
-                    .key(u"[\"MainRegion\"]")
-                    .field(Fields::subItems)
-                    .key(u".postComments")
-                    .field(Fields::subItems)
-                    .key(u"[0]")
-                    .field(Fields::infoItem)
-                    .as<FileLocations>();
-            QVERIFY(postComment);
-            QCOMPARE(postComment->fullRegion.startLine, 6);
-            QCOMPARE(postComment->fullRegion.startColumn, 5);
+            const auto postCommentPath = Path::fromString(u"[\"MainRegion\"].postComments[0]");
+            const auto postCommentFLocPtr = FileLocations::find(commentsForItem, postCommentPath);
+
+            QVERIFY(postCommentFLocPtr);
+            QCOMPARE(postCommentFLocPtr->info().fullRegion.startLine, 6);
+            QCOMPARE(postCommentFLocPtr->info().fullRegion.startColumn, 5);
         }
         {
             // multi line comment
-            const FileLocations *postComment = commentsForItem
-                    .key(u"[\"MainRegion\"]")
-                    .field(Fields::subItems)
-                    .key(u".postComments")
-                    .field(Fields::subItems)
-                    .key(u"[1]")
-                    .field(Fields::infoItem)
-                    .as<FileLocations>();
-            QVERIFY(postComment);
-            QCOMPARE(postComment->fullRegion.startLine, 7);
-            QCOMPARE(postComment->fullRegion.startColumn, 5);
+            const auto postCommentPath = Path::fromString(u"[\"MainRegion\"].postComments[1]");
+            const auto postCommentFLocPtr = FileLocations::find(commentsForItem, postCommentPath);
+
+            QVERIFY(postCommentFLocPtr);
+            QCOMPARE(postCommentFLocPtr->info().fullRegion.startLine, 7);
+            QCOMPARE(postCommentFLocPtr->info().fullRegion.startColumn, 5);
         }
     }
 

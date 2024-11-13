@@ -195,8 +195,6 @@ FieldFilter FieldFilter::compareNoCommentsFilter()
         { QString(), QLatin1String("preCode") },
         { QString(), QLatin1String("postCode") },
         { QString(), QLatin1String("comments") },
-        { QString(), QLatin1String("preCommentLocations") },
-        { QString(), QLatin1String("postCommentLocations") },
         { QString(), QLatin1String("astComments") },
         { QString(), QLatin1String("location") }
     };

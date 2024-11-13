@@ -2070,22 +2070,6 @@ QString DomItem::canonicalFilePath() const
     return visitEl([this](auto &&e) { return e->canonicalFilePath(*this); });
 }
 
-DomItem DomItem::fileLocationsTree() const
-{
-    if (DomItem l = field(Fields::fileLocationsTree))
-        return l;
-    auto res = FileLocations::findAttachedInfo(*this);
-    if (res && res.foundTreePath) {
-        return copy(res.foundTree, res.foundTreePath);
-    }
-    return DomItem();
-}
-
-DomItem DomItem::fileLocations() const
-{
-    return fileLocationsTree().field(Fields::infoItem);
-}
-
 MutableDomItem DomItem::makeCopy(DomItem::CopyOption option) const
 {
     if (m_kind == DomType::Empty)

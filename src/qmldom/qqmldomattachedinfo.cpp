@@ -25,8 +25,6 @@ Attributes:
 \li fullRegion: A location guaranteed to include this element, its comments, and all its sub elements
 \li regions: a map with locations of regions of this element, the empty string is the default region
     of this element
-\li preCommentLocations: locations of the comments before this element
-\li postCommentLocations: locations of the comments after this element
 \endlist
 
 \sa QQmlJs::Dom::AttachedInfo
@@ -42,20 +40,6 @@ bool FileLocations::iterateDirectSubpaths(const DomItem &self, DirectVisitor vis
         auto map = Map::fromFileRegionMap(pathFromOwner, regions);
         return self.subMapItem(map);
     });
-    cont = cont
-            && self.dvItemField(visitor, Fields::preCommentLocations, [this, &self]() -> DomItem {
-                   const Path pathFromOwner =
-                           self.pathFromOwner().field(Fields::preCommentLocations);
-                   auto map = Map::fromFileRegionListMap(pathFromOwner, preCommentLocations);
-                   return self.subMapItem(map);
-               });
-    cont = cont
-            && self.dvItemField(visitor, Fields::postCommentLocations, [this, &self]() -> DomItem {
-                   const Path pathFromOwner =
-                           self.pathFromOwner().field(Fields::postCommentLocations);
-                   auto map = Map::fromFileRegionListMap(pathFromOwner, postCommentLocations);
-                   return self.subMapItem(map);
-               });
     return cont;
 }
 
@@ -63,10 +47,9 @@ FileLocations::Tree FileLocations::createTree(const Path &basePath){
     return AttachedInfoT<FileLocations>::createTree(basePath);
 }
 
-FileLocations::Tree FileLocations::ensure(
-        const FileLocations::Tree &base, const Path &basePath, AttachedInfo::PathType pType)
+FileLocations::Tree FileLocations::ensure(const FileLocations::Tree &base, const Path &basePath)
 {
-    return AttachedInfoT<FileLocations>::ensure(base, basePath, pType);
+    return AttachedInfoT<FileLocations>::ensure(base, basePath);
 }
 
 /*!
@@ -91,17 +74,6 @@ FileLocations::findAttachedInfo(const DomItem &item)
 FileLocations::Tree FileLocations::treeOf(const DomItem &item)
 {
     return findAttachedInfo(item).foundTree;
-}
-
-/*!
-   \internal
-   Returns the filelocation Info corresponding to a DomItem.
- */
-const FileLocations *FileLocations::fileLocationsOf(const DomItem &item)
-{
-    if (const FileLocations::Tree &t = treeOf(item))
-        return &(t->info());
-    return nullptr;
 }
 
 void FileLocations::updateFullLocation(const FileLocations::Tree &fLoc, SourceLocation loc)
@@ -195,35 +167,16 @@ bool AttachedInfo::iterateDirectSubpaths(const DomItem &self, DirectVisitor visi
     return cont;
 }
 
-AttachedInfo::AttachedInfo(const AttachedInfo &o):
-    OwningItem(o),
-    m_parent(o.m_parent)
-{
-}
-
 /*!
   \brief
   Returns that the AttachedInfo corresponding to the given path, creating it if it does not exists.
 
   The path might be either a relative path or a canonical path, as specified by the PathType
 */
-AttachedInfo::Ptr AttachedInfo::ensure(
-        const AttachedInfo::Ptr &self, const Path &path, AttachedInfo::PathType pType){
-    Path relative;
-    switch (pType) {
-    case PathType::Canonical: {
-        if (!path)
-            return nullptr;
-        Q_ASSERT(self);
-        Path removed = path.mid(0, self->path().length());
-        Q_ASSERT(removed == self->path());
-        relative = path.mid(self->path().length());
-    } break;
-    case PathType::Relative:
-        Q_ASSERT(self);
-        relative = path;
-        break;
-    }
+AttachedInfo::Ptr AttachedInfo::ensure(const AttachedInfo::Ptr &self, const Path &path)
+{
+    Q_ASSERT(self);
+    Path relative = path;
     Ptr res = self;
     for (const auto &p : std::as_const(relative)) {
         if (AttachedInfo::Ptr subEl = res->m_subItems.value(p)) {
@@ -237,20 +190,9 @@ AttachedInfo::Ptr AttachedInfo::ensure(
     return res;
 }
 
-AttachedInfo::Ptr AttachedInfo::find(
-        const AttachedInfo::Ptr &self, const Path &p, AttachedInfo::PathType pType)
+AttachedInfo::Ptr AttachedInfo::find(const AttachedInfo::Ptr &self, const Path &p)
 {
-    Path rest;
-    if (pType == PathType::Canonical) {
-        if (!self) return nullptr;
-        Path removed = p.mid(0, self->path().length());
-        if (removed != self->path())
-            return nullptr;
-        rest = p.dropFront(self->path().length());
-    } else {
-        rest = p;
-    }
-
+    Path rest = p;
     AttachedInfo::Ptr res = self;
     while (rest) {
         if (!res)
@@ -282,12 +224,10 @@ AttachedInfo::findAttachedInfo(const DomItem &item, QStringView fieldName)
     AttachedInfoLookupResult<AttachedInfo::Ptr> res;
     res.lookupPath = p;
     if (AttachedInfo::Ptr fLocPtr = fLoc.ownerAs<AttachedInfo>())
-        if (AttachedInfo::Ptr foundTree =
-                    AttachedInfo::find(fLocPtr, p, AttachedInfo::PathType::Relative))
+        if (AttachedInfo::Ptr foundTree = AttachedInfo::find(fLocPtr, p))
             res.foundTree = foundTree;
-    res.rootTreePath = fLoc.canonicalPath();
 
-    res.foundTreePath = res.rootTreePath;
+    res.foundTreePath = fLoc.canonicalPath();
     for (const Path &pEl : res.lookupPath)
         res.foundTreePath = res.foundTreePath.field(Fields::subItems).key(pEl.toString());
     return res;

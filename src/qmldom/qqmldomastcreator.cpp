@@ -241,7 +241,7 @@ QQmlDomAstCreator::finalizeScriptExpression(const ScriptElementVariant &element,
 
 FileLocations::Tree QQmlDomAstCreator::createMap(const FileLocations::Tree &base, const Path &p, AST::Node *n)
 {
-    FileLocations::Tree res = FileLocations::ensure(base, p, AttachedInfo::PathType::Relative);
+    FileLocations::Tree res = FileLocations::ensure(base, p);
     if (n)
         FileLocations::addRegion(res, MainRegion, combineLocations(n));
     return res;
@@ -510,8 +510,7 @@ bool QQmlDomAstCreator::visit(AST::UiPublicMember *el)
                 param.typeAnnotationStyle = MethodParameter::TypeAnnotationStyle::Prefix;
             mInfo.parameters.append(param);
             auto argLocs = FileLocations::ensure(nodeStack.last().fileLocations,
-                                                 Path::Field(Fields::parameters).index(idx),
-                                                 AttachedInfo::PathType::Relative);
+                                                 Path::Field(Fields::parameters).index(idx));
             FileLocations::addRegion(argLocs, MainRegion, combineLocations(args));
             FileLocations::addRegion(argLocs, IdentifierRegion, args->identifierToken);
             if (args->type)
@@ -585,8 +584,7 @@ bool QQmlDomAstCreator::visit(AST::UiPublicMember *el)
                                                                   AddOption::KeepExisting, &bPtr);
             FileLocations::Tree bLoc = createMap(DomType::Binding, bPathFromOwner, el->statement);
             FileLocations::addRegion(bLoc, ColonTokenRegion, el->colonToken);
-            FileLocations::Tree valueLoc = FileLocations::ensure(bLoc, Path::Field(Fields::value),
-                                                                 AttachedInfo::PathType::Relative);
+            FileLocations::Tree valueLoc = FileLocations::ensure(bLoc, Path::Field(Fields::value));
             FileLocations::addRegion(valueLoc, MainRegion, combineLocations(el->statement));
             // push it also: its needed in endVisit to add the scriptNode to it
             // do not use pushEl to avoid recreating the already created "bLoc" Map
@@ -796,8 +794,7 @@ bool QQmlDomAstCreator::visit(AST::FunctionDeclaration *fDef)
     FileLocations::Tree &fLoc = nodeStack.last().fileLocations;
     if (fDef->identifierToken.isValid())
         FileLocations::addRegion(fLoc, IdentifierRegion, fDef->identifierToken);
-    auto bodyTree = FileLocations::ensure(fLoc, Path::Field(Fields::body),
-                                          AttachedInfo::PathType::Relative);
+    auto bodyTree = FileLocations::ensure(fLoc, Path::Field(Fields::body));
     FileLocations::addRegion(bodyTree, MainRegion, bodyLoc);
     if (fDef->functionToken.isValid())
         FileLocations::addRegion(fLoc, FunctionKeywordRegion, fDef->functionToken);
@@ -841,8 +838,7 @@ bool QQmlDomAstCreator::visit(AST::FunctionDeclaration *fDef)
         index_type idx = index_type(mInfo.parameters.size());
         mInfo.parameters.append(param);
         auto argLocs = FileLocations::ensure(nodeStack.last().fileLocations,
-                                             Path::Field(Fields::parameters).index(idx),
-                                             AttachedInfo::PathType::Relative);
+                                             Path::Field(Fields::parameters).index(idx));
         FileLocations::addRegion(argLocs, MainRegion, combineLocations(args));
         if (args->element->identifierToken.isValid())
             FileLocations::addRegion(argLocs, IdentifierRegion, args->element->identifierToken);
@@ -894,8 +890,7 @@ void QQmlDomAstCreator::endVisit(AST::FunctionDeclaration *fDef)
 
     if (fDef->typeAnnotation) {
         auto argLoc = FileLocations::ensure(nodeStack.last().fileLocations,
-                                            Path().field(Fields::returnType),
-                                            AttachedInfo::PathType::Relative);
+                                            Path().field(Fields::returnType));
         const Path pathToReturnType = Path().field(Fields::scriptElement);
 
         Q_SCRIPTELEMENT_EXIT_IF(!stackHasScriptVariant());
@@ -912,8 +907,7 @@ void QQmlDomAstCreator::endVisit(AST::FunctionDeclaration *fDef)
         for (size_t idx = size - 1; idx < size; --idx) {
             auto argLoc = FileLocations::ensure(
                     nodeStack.last().fileLocations,
-                    Path().field(Fields::parameters).index(idx).field(Fields::value),
-                    AttachedInfo::PathType::Relative);
+                    Path().field(Fields::parameters).index(idx).field(Fields::value));
             const Path pathToArgument = Path().field(Fields::scriptElement);
 
             ScriptElementVariant variant = parameterQList[idx];
@@ -978,8 +972,7 @@ bool QQmlDomAstCreator::visit(AST::UiObjectDefinition *el)
         }
         Path pathFromContainingObject = sPathFromOwner.mid(currentNodeEl().path.length());
         FileLocations::Tree fLoc =
-                FileLocations::ensure(currentNodeEl().fileLocations, pathFromContainingObject,
-                                      AttachedInfo::PathType::Relative);
+                FileLocations::ensure(currentNodeEl().fileLocations, pathFromContainingObject);
         FileLocations::addRegion(fLoc, IdentifierRegion,
                                  el->qualifiedTypeNameId->identifierToken);
     }

@@ -53,8 +53,7 @@ public:
 
     void createFileLocations(const FileLocations::Tree &base) override
     {
-        FileLocations::Tree res =
-                FileLocations::ensure(base, pathFromOwner(), AttachedInfo::PathType::Relative);
+        FileLocations::Tree res = FileLocations::ensure(base, pathFromOwner());
         for (auto location: m_locations) {
             FileLocations::addRegion(res, location.first, location.second);
         }

@@ -744,9 +744,8 @@ void CommentCollector::collectComments(
 
                 // update file locations with the comment region
                 const auto base = FileLocations::treeOf(currentItem);
-                const auto fileLocations =
-                        FileLocations::ensure(base, Path::Field(Fields::comments).path(commentPath),
-                                              AttachedInfo::PathType::Relative);
+                const auto fileLocations = FileLocations::ensure(
+                        base, Path::Field(Fields::comments).path(commentPath));
 
                 FileLocations::addRegion(fileLocations, MainRegion,
                                          comment.info().sourceLocation());
