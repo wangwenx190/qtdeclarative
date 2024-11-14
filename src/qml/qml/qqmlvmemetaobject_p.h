@@ -108,7 +108,11 @@ public:
 
     static QQmlInterceptorMetaObject *get(QObject *obj);
 
+#if QT_VERSION >= QT_VERSION_CHECK(7, 0, 0)
+    const QMetaObject *toDynamicMetaObject(QObject *o) const override;
+#else
     QMetaObject *toDynamicMetaObject(QObject *o) override;
+#endif
 
     // Used by auto-tests for inspection
     QQmlPropertyCache::ConstPtr propertyCache() const { return cache; }

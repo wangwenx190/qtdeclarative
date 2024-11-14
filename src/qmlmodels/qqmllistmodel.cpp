@@ -1570,11 +1570,15 @@ ModelNodeMetaObject::~ModelNodeMetaObject()
 {
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(7, 0, 0)
+const QMetaObject *ModelNodeMetaObject::toDynamicMetaObject(QObject *object) const
+#else
 QMetaObject *ModelNodeMetaObject::toDynamicMetaObject(QObject *object)
+#endif
 {
     if (!m_initialized) {
         m_initialized = true;
-        initialize();
+        const_cast<ModelNodeMetaObject *>(this)->initialize();
     }
     return QQmlOpenMetaObject::toDynamicMetaObject(object);
 }

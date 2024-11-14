@@ -2156,10 +2156,17 @@ public:
         QDynamicMetaObjectData::objectDestroyed(object);
     }
 
+#if QT_VERSION >= QT_VERSION_CHECK(7, 0, 0)
+    const QMetaObject *toDynamicMetaObject(QObject *) const override
+    {
+        return &MetaCallInterceptor::staticMetaObject;
+    }
+#else
     QMetaObject *toDynamicMetaObject(QObject *) override
     {
         return const_cast<QMetaObject *>(&MetaCallInterceptor::staticMetaObject);
     }
+#endif
 
     int metaCall(QObject *o, QMetaObject::Call call, int idx, void **argv) override
     {

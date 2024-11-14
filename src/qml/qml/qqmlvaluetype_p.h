@@ -49,7 +49,11 @@ public:
     const QMetaObject *staticMetaObject() const { return m_staticMetaObject; }
 
     // ---- dynamic meta object data interface
+#if QT_VERSION >= QT_VERSION_CHECK(7, 0, 0)
+    const QMetaObject *toDynamicMetaObject(QObject *) const override;
+#else
     QMetaObject *toDynamicMetaObject(QObject *) override;
+#endif
     void objectDestroyed(QObject *) override;
     int metaCall(QObject *obj, QMetaObject::Call type, int _id, void **argv) override;
     // ----
@@ -57,6 +61,7 @@ public:
 private:
     QMetaType m_metaType;
     const QMetaObject *m_staticMetaObject = nullptr;
+    QT7_ONLY(mutable const)
     QMetaObject *m_dynamicMetaObject = nullptr;
 };
 

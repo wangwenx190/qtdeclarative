@@ -91,7 +91,11 @@ const QQmlValueType *QQmlGadgetPtrWrapper::valueType() const
     return static_cast<const QQmlValueType *>(d->metaObject);
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(7, 0, 0)
+const QMetaObject *QQmlValueType::toDynamicMetaObject(QObject *) const
+#else
 QMetaObject *QQmlValueType::toDynamicMetaObject(QObject *)
+#endif
 {
     if (!m_dynamicMetaObject) {
         QMetaObjectBuilder builder(m_staticMetaObject);

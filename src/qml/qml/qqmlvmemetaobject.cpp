@@ -390,26 +390,35 @@ bool QQmlInterceptorMetaObject::doIntercept(QMetaObject::Call c, int id, void **
     return false;
 }
 
-static QMetaObject *stringCastMetaObject(QObject *o, const QMetaObject *top)
+static const QMetaObject *stringCastMetaObject(QObject *o, const QMetaObject *top)
 {
     for (const QMetaObject *mo = top; mo; mo = mo->superClass()) {
         if (o->qt_metacast(mo->className()) != nullptr)
-            return const_cast<QMetaObject *>(mo);
+            return mo;
     }
     return nullptr;
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(7, 0, 0)
+const QMetaObject *QQmlInterceptorMetaObject::toDynamicMetaObject(QObject *o) const
+#else
 QMetaObject *QQmlInterceptorMetaObject::toDynamicMetaObject(QObject *o)
+#endif
 {
     if (!metaObject)
         metaObject = cache->createMetaObject();
 
+    const QMetaObject *mo = nullptr;
     if (Q_UNLIKELY(metaObject.tag() == MetaObjectInvalid))
-        return stringCastMetaObject(o, metaObject->superClass());
+        mo = stringCastMetaObject(o, metaObject->superClass());
+    if (!mo)
+        mo = metaObject.data();
 
-    // ### Qt7: The const_cast is only due to toDynamicMetaObject having the wrong return type.
-    //          It should be const QMetaObject *. Fix this.
-    return const_cast<QMetaObject *>(metaObject.data());
+#if QT_VERSION >= QT_VERSION_CHECK(7, 0, 0)
+    return mo;
+#else
+    return const_cast<QMetaObject *>(mo);
+#endif
 }
 
 QQmlVMEMetaObject::QQmlVMEMetaObject(QV4::ExecutionEngine *engine,
