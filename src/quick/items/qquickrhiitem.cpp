@@ -418,6 +418,15 @@ QQuickRhiItem::QQuickRhiItem(QQuickItem *parent)
 }
 
 /*!
+ *  \internal
+ */
+QQuickRhiItem::QQuickRhiItem(QQuickRhiItemPrivate &dd, QQuickItem *parent)
+    : QQuickItem(dd, parent)
+{
+    setFlag(ItemHasContents);
+}
+
+/*!
     Destructor.
 */
 QQuickRhiItem::~QQuickRhiItem()
