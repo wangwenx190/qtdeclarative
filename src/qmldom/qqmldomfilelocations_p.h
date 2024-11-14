@@ -50,7 +50,7 @@ QString canonicalPathForTesting(const Tree &base);
 // returns the path looked up and the found tree when looking for the info attached to item
 Tree treeOf(const DomItem &);
 
-void updateFullLocation(const Tree &fLoc, SourceLocation loc);
+// beware of shrinking and reassigning regions (QTBUG-131288)
 void addRegion(const Tree &fLoc, FileLocationRegion region, SourceLocation loc);
 QQmlJS::SourceLocation region(const Tree &fLoc, FileLocationRegion region);
 
@@ -70,9 +70,7 @@ public:
         return std::static_pointer_cast<Node>(doCopy(self));
     }
 
-    Node(const Ptr &parent = nullptr, const Path &p = Path()) : m_path(p), m_parent(parent) { }
-
-    Node(const Node &o) = default;
+    static Ptr instantiate(const Ptr &parent = nullptr, const Path &p = Path());
 
     Path path() const { return m_path; }
     Ptr parent() const { return m_parent.lock(); }
@@ -83,10 +81,13 @@ public:
     Ptr insertOrReturnChildAt(const Path &path);
 
 private:
-    std::shared_ptr<OwningItem> doCopy(const DomItem &) const override
-    {
-        return std::make_shared<Node>(*this);
-    }
+    // Because of the current implementation (weak_ptr to the parent, extensive use of shared_ptr-s)
+    // it's safer to prohibit construction on the stack or non-shared heap.
+    // Otherwise there is a high chance of misuse leading to double free
+    Node(const Ptr &parent = nullptr, const Path &p = Path()) : m_path(p), m_parent(parent) { }
+    Node(const Node &o) = default;
+
+    std::shared_ptr<OwningItem> doCopy(const DomItem &) const override;
 
 private:
     Path m_path;

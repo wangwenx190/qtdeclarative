@@ -49,7 +49,7 @@ bool Info::iterateDirectSubpaths(const DomItem &self, DirectVisitor visitor) con
 
 Tree createTree(const Path &basePath)
 {
-    return std::make_shared<Node>(nullptr, basePath);
+    return Node::instantiate(nullptr, basePath);
 }
 
 Tree ensure(const Tree &base, const Path &basePath)
@@ -126,7 +126,7 @@ Tree treeOf(const DomItem &item)
     return {};
 }
 
-void updateFullLocation(const Tree &fLoc, SourceLocation loc)
+static void updateFullLocation(const Tree &fLoc, SourceLocation loc)
 {
     Q_ASSERT(fLoc);
     if (loc != SourceLocation()) {
@@ -147,6 +147,7 @@ void updateFullLocation(const Tree &fLoc, SourceLocation loc)
 // Adding a new region to file location regions might break down qmlformat because
 // comments might be linked to new region undesirably. We might need to add an
 // exception to AstRangesVisitor::shouldSkipRegion when confronted those cases.
+// beware of shrinking and reassigning regions (QTBUG-131288)
 void addRegion(const Tree &fLoc, FileLocationRegion region, SourceLocation loc)
 {
     Q_ASSERT(fLoc);
@@ -182,6 +183,11 @@ Attributes:
 
 \sa QQmlJs::Dom::Node
 */
+
+Node::Ptr Node::instantiate(const Ptr &parent, const Path &p)
+{
+    return std::shared_ptr<Node>(new Node(parent, p));
+}
 
 bool Node::iterateDirectSubpaths(const DomItem &self, DirectVisitor visitor) const
 {
@@ -219,7 +225,12 @@ Node::Ptr Node::insertOrReturnChildAt(const Path &path)
     if (Node::Ptr subEl = m_subItems.value(path)) {
         return subEl;
     }
-    return m_subItems.insert(path, std::make_shared<Node>(shared_from_this(), path)).value();
+    return m_subItems.insert(path, Node::instantiate(shared_from_this(), path)).value();
+}
+
+std::shared_ptr<OwningItem> Node::doCopy(const DomItem &) const
+{
+    return std::shared_ptr<Node>(new Node(*this));
 }
 
 } // namespace FileLocations
