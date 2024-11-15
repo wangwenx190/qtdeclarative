@@ -231,7 +231,8 @@ protected:
             return convertStored(from, to.storedType(), variable);
         } else {
             return convertContained(
-                    m_typeResolver->syntheticType(from).storedIn(m_typeResolver->storedType(from)),
+                    m_pool->storedIn(
+                            m_typeResolver->syntheticType(from), m_typeResolver->storedType(from)),
                     to, variable);
         }
     }
@@ -241,7 +242,7 @@ protected:
                        const QString &variable)
     {
         Q_ASSERT(m_typeResolver->equals(m_typeResolver->storedType(to), to));
-        return conversion(from, from.castTo(to).storedIn(to), variable);
+        return conversion(from, m_pool->storedIn(m_pool->castTo(from, to), to), variable);
     }
 
     QString conversion(const QQmlJSScope::ConstPtr &from,
@@ -361,12 +362,12 @@ private:
     QQmlJSRegisterContent originalType(const QQmlJSRegisterContent &tracked)
     {
         const QQmlJSRegisterContent restored = m_typeResolver->original(tracked);
-        return restored.storedIn(m_typeResolver->originalType(tracked.storedType()));
+        return m_pool->storedIn(restored, m_typeResolver->originalType(tracked.storedType()));
     }
 
     QQmlJSRegisterContent literalType(const QQmlJSScope::ConstPtr &contained)
     {
-        return m_typeResolver->literalType(contained).storedIn(contained);
+        return m_pool->storedIn(m_typeResolver->literalType(contained), contained);
     }
 
     bool registerIsStoredIn(

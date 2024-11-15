@@ -349,6 +349,7 @@ void tst_qqmljsscope::groupedProperties()
 
 void tst_qqmljsscope::descriptiveNameOfNull()
 {
+    QQmlJSRegisterContentPool pool;
     QQmlJSRegisterContent nullContent;
     QCOMPARE(nullContent.descriptiveName(), u"(invalid type)"_s);
 
@@ -357,10 +358,10 @@ void tst_qqmljsscope::descriptiveNameOfNull()
     QQmlJSMetaProperty property;
     property.setPropertyName(u"foo"_s);
     property.setTypeName(u"baz"_s);
-    QQmlJSRegisterContent unscoped = QQmlJSRegisterContent::create(
+    QQmlJSRegisterContent unscoped = pool.storedIn(pool.create(
             property, QQmlJSRegisterContent::InvalidLookupIndex,
             QQmlJSRegisterContent::InvalidLookupIndex, QQmlJSRegisterContent::Property,
-            QQmlJSRegisterContent()).storedIn(stored);
+            QQmlJSRegisterContent()), stored);
     QCOMPARE(unscoped.descriptiveName(), u"(invalid type)::foo with type baz (stored as bar)"_s);
 }
 

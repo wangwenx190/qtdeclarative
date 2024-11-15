@@ -274,6 +274,7 @@ public:
                       const InstructionAnnotations &annotations = {})
         : m_jsUnitGenerator(jsUnitGenerator)
         , m_typeResolver(typeResolver)
+        , m_pool(typeResolver->registerContentPool())
         , m_logger(logger)
         , m_errors(errors)
         , m_basicBlocks(basicBlocks)
@@ -283,6 +284,7 @@ public:
 protected:
     const QV4::Compiler::JSUnitGenerator *m_jsUnitGenerator = nullptr;
     const QQmlJSTypeResolver *m_typeResolver = nullptr;
+    QQmlJSRegisterContentPool *m_pool = nullptr;
     QQmlJSLogger *m_logger = nullptr;
 
     const Function *m_function = nullptr;

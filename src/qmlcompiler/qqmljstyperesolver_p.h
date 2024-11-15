@@ -40,6 +40,7 @@ public:
 
     // Note: must be called after the construction to read the QML program
     void init(QQmlJSImportVisitor *visitor, QQmlJS::AST::Node *program);
+    QQmlJSRegisterContentPool *registerContentPool() const { return m_pool.get(); }
 
     QQmlJSScope::ConstPtr voidType() const { return m_voidType; }
     QQmlJSScope::ConstPtr emptyType() const { return m_emptyType; }
@@ -144,10 +145,10 @@ public:
     genericType(const QQmlJSScope::ConstPtr &type,
                 ComponentIsGeneric allowComponent = ComponentIsGeneric::No) const;
 
-    static QQmlJSRegisterContent literalType(const QQmlJSScope::ConstPtr &type);
-    static QQmlJSRegisterContent operationType(const QQmlJSScope::ConstPtr &type);
-    static QQmlJSRegisterContent namedType(const QQmlJSScope::ConstPtr &type);
-    static QQmlJSRegisterContent syntheticType(const QQmlJSScope::ConstPtr &type);
+    QQmlJSRegisterContent literalType(const QQmlJSScope::ConstPtr &type) const;
+    QQmlJSRegisterContent operationType(const QQmlJSScope::ConstPtr &type) const;
+    QQmlJSRegisterContent namedType(const QQmlJSScope::ConstPtr &type) const;
+    QQmlJSRegisterContent syntheticType(const QQmlJSScope::ConstPtr &type) const;
 
     QQmlJSScope::ConstPtr scopedType(
             const QQmlJSScope::ConstPtr &scope, const QString &name,
@@ -223,8 +224,6 @@ public:
             const QQmlJSRegisterContent &from, const QQmlJSRegisterContent &to) const;
     QQmlJSRegisterContent convert(
             const QQmlJSRegisterContent &from, const QQmlJSScope::ConstPtr &to) const;
-    QQmlJSRegisterContent cast(
-            const QQmlJSRegisterContent &from, const QQmlJSScope::ConstPtr &to) const;
 
     QQmlJSScope::ConstPtr merge(const QQmlJSScope::ConstPtr &a,
                                 const QQmlJSScope::ConstPtr &b) const;
@@ -286,6 +285,8 @@ protected:
     QQmlJSScope::ConstPtr resolveParentProperty(
             const QString &name, const QQmlJSScope::ConstPtr &base,
             const QQmlJSScope::ConstPtr &propType) const;
+
+    std::unique_ptr<QQmlJSRegisterContentPool> m_pool;
 
     QQmlJSScope::ConstPtr m_voidType;
     QQmlJSScope::ConstPtr m_emptyType;

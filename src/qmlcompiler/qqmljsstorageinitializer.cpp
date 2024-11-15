@@ -23,7 +23,7 @@ QQmlJSCompilePass::BlocksAndAnnotations QQmlJSStorageInitializer::run(Function *
     if (QQmlJSRegisterContent &returnType = function->returnType; returnType.isValid()) {
         if (const QQmlJSScope::ConstPtr stored
                 = m_typeResolver->storedType(returnType.containedType())) {
-            returnType = returnType.storedIn(m_typeResolver->trackedType(stored));
+            returnType = m_pool->storedIn(returnType, m_typeResolver->trackedType(stored));
         } else {
             addError(QStringLiteral("Cannot store the return type %1.")
                              .arg(returnType.containedType()->internalName()));
@@ -39,7 +39,7 @@ QQmlJSCompilePass::BlocksAndAnnotations QQmlJSStorageInitializer::run(Function *
                 = m_typeResolver->originalType(content.containedType());
         const QQmlJSScope::ConstPtr originalStored = m_typeResolver->storedType(original);
         const QQmlJSScope::ConstPtr originalTracked = m_typeResolver->trackedType(originalStored);
-        content = content.storedIn(originalTracked);
+        content = m_pool->storedIn(content, originalTracked);
 
         const QQmlJSScope::ConstPtr adjustedStored
                 = m_typeResolver->storedType(content.containedType());

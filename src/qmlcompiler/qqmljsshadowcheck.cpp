@@ -223,7 +223,7 @@ void QQmlJSShadowCheck::checkResettable(
     // will be in the basic blocks pass. For the purpose of adjusting newly
     // shadowable types we can ignore it. We only want to know if any of the
     // contents can hold undefined.
-    if (!m_typeResolver->canHoldUndefined(accumulatorIn.storedIn(varType)))
+    if (!m_typeResolver->canHoldUndefined(m_pool->storedIn(accumulatorIn, varType)))
         return;
 
     QQmlJSRegisterContent &readAccumulator

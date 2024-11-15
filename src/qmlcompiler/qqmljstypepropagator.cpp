@@ -231,7 +231,7 @@ void QQmlJSTypePropagator::generate_LoadLocal(int index)
     local.setType(m_typeResolver->jsValueType());
     local.setIndex(index);
 
-    setAccumulator(QQmlJSRegisterContent::create(
+    setAccumulator(m_pool->create(
             local, QQmlJSRegisterContent::InvalidLookupIndex,
             QQmlJSRegisterContent::InvalidLookupIndex,
             QQmlJSRegisterContent::Property, QQmlJSRegisterContent()));
@@ -610,7 +610,7 @@ void QQmlJSTypePropagator::generate_LoadQmlContextPropertyLookup(int index)
     setAccumulator(m_typeResolver->scopedType(m_function->qmlScope, name, index));
 
     if (!m_state.accumulatorOut().isValid() && m_typeResolver->isPrefix(name)) {
-        setAccumulator(QQmlJSRegisterContent::create(
+        setAccumulator(m_pool->create(
                     nameIndex, m_typeResolver->voidType(), QQmlJSRegisterContent::ModulePrefix,
                     m_function->qmlScope));
         return;
@@ -778,7 +778,7 @@ void QQmlJSTypePropagator::generate_LoadElement(int base)
         property.setTypeName(jsValue->internalName());
         property.setType(jsValue);
 
-        setAccumulator(QQmlJSRegisterContent::create(
+        setAccumulator(m_pool->create(
                 property, QQmlJSRegisterContent::InvalidLookupIndex,
                 QQmlJSRegisterContent::InvalidLookupIndex, QQmlJSRegisterContent::ListValue,
                 m_typeResolver->convert(m_typeResolver->valueType(baseRegister), jsValue)));
@@ -879,7 +879,7 @@ void QQmlJSTypePropagator::propagatePropertyLookup(const QString &propertyName, 
         if (m_typeResolver->isPrefix(propertyName)) {
             Q_ASSERT(m_state.accumulatorIn().isValid());
             addReadAccumulator(m_state.accumulatorIn());
-            setAccumulator(QQmlJSRegisterContent::create(
+            setAccumulator(m_pool->create(
                         m_jsUnitGenerator->getStringId(propertyName),
                         m_state.accumulatorIn().containedType(),
                         QQmlJSRegisterContent::ModulePrefix,
@@ -983,7 +983,7 @@ void QQmlJSTypePropagator::propagatePropertyLookup(const QString &propertyName, 
             prop.setTypeName(u"double"_s);
             prop.setType(m_typeResolver->realType());
             setAccumulator(
-                QQmlJSRegisterContent::create(
+                m_pool->create(
                     prop, m_state.accumulatorIn().resultLookupIndex(), lookupIndex,
                     QQmlJSRegisterContent::Property, m_state.accumulatorIn())
             );
@@ -1110,7 +1110,7 @@ void QQmlJSTypePropagator::generate_StoreProperty(int nameIndex, int base)
 
     const QQmlJSScope::ConstPtr varType = m_typeResolver->varType();
     const QQmlJSRegisterContent readType = m_typeResolver->canHoldUndefined(m_state.accumulatorIn())
-            ? property.castTo(varType)
+            ? m_pool->castTo(property, varType)
             : std::move(property);
     addReadAccumulator(readType);
     addReadRegister(base, callBase);
@@ -2202,7 +2202,7 @@ void QQmlJSTypePropagator::generate_GetIterator(int iterator)
         prop.setPropertyName(u"<>"_s);
         prop.setTypeName(jsValue->internalName());
         prop.setType(jsValue);
-        setAccumulator(QQmlJSRegisterContent::create(
+        setAccumulator(m_pool->create(
                 prop, currentInstructionOffset(),
                 QQmlJSRegisterContent::InvalidLookupIndex, QQmlJSRegisterContent::ListIterator,
                 listType));
@@ -2616,7 +2616,7 @@ void QQmlJSTypePropagator::generate_As(int lhs)
         if (m_typeResolver->inherits(inContained, outContained))
             output = input;
         else
-            output = m_typeResolver->cast(input, outContained);
+            output = m_pool->castTo(input, outContained);
     } else {
         if (!m_typeResolver->canAddressValueTypes()) {
             addError(u"invalid cast from %1 to %2. You can only cast object types."_s.arg(
@@ -2625,13 +2625,13 @@ void QQmlJSTypePropagator::generate_As(int lhs)
 
         if (m_typeResolver->inherits(inContained, outContained)) {
             // A "slicing" cannot result in void
-            output = m_typeResolver->cast(input, outContained);
+            output = m_pool->castTo(input, outContained);
         } else {
             // A value type cast can result in either the type or undefined.
             // Using convert() retains the variant of the input type.
             output = m_typeResolver->merge(
-                    m_typeResolver->cast(input, outContained),
-                    m_typeResolver->cast(input, m_typeResolver->voidType()));
+                    m_pool->castTo(input, outContained),
+                    m_pool->castTo(input, m_typeResolver->voidType()));
         }
     }
 

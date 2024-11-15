@@ -835,7 +835,8 @@ void QQmlJSCodeGenerator::generate_LoadElement(int base)
 
     // Since we can do .at() below, we know that we can natively store the element type.
     QQmlJSRegisterContent elementType = m_typeResolver->valueType(baseType);
-    elementType = elementType.storedIn(m_typeResolver->storedType(elementType.containedType()));
+    elementType = m_pool->storedIn(
+            elementType, m_typeResolver->storedType(elementType.containedType()));
 
     QString access = baseName + u".at("_s + indexName + u')';
 
@@ -1329,7 +1330,8 @@ QString QQmlJSCodeGenerator::generateCallConstructor(
             argPointers.append(contentPointer(argumentType, arg));
         } else {
             const QQmlJSRegisterContent parameterTypeConversion
-                    = argumentType.castTo(parameterType).storedIn(
+                    = m_pool->storedIn(
+                        m_pool->castTo(argumentType, parameterType),
                         m_typeResolver->genericType(parameterType));
             result += conversion(argumentType, parameterTypeConversion, argument);
             argPointers.append(contentPointer(parameterTypeConversion, arg));
@@ -1610,9 +1612,10 @@ void QQmlJSCodeGenerator::generate_SetLookup(int index, int baseReg)
         if (m_typeResolver->isPrimitive(specific.storedType())
                 && m_typeResolver->isPrimitive(valueType)) {
             // Preferably store in QJSPrimitiveValue since we need the content pointer below.
-            property = property.storedIn(m_typeResolver->jsPrimitiveType());
+            property = m_pool->storedIn(property, m_typeResolver->jsPrimitiveType());
         } else {
-            property = property.storedIn(m_typeResolver->merge(specific.storedType(), valueType));
+            property = m_pool->storedIn(
+                    property, m_typeResolver->merge(specific.storedType(), valueType));
         }
     }
 
@@ -2474,8 +2477,8 @@ void QQmlJSCodeGenerator::generate_Construct(int func, int argc, int argv)
                 metaObject(extension ? extension : originalContained));
 
         m_body += m_state.accumulatorVariableOut + u" = "_s
-                + conversion(originalResult.storedIn(
-                                     m_typeResolver->varType()), m_state.accumulatorOut(), result)
+                + conversion(m_pool->storedIn(originalResult, m_typeResolver->varType()),
+                             m_state.accumulatorOut(), result)
                 + u";\n"_s;
 
         return;
@@ -2657,7 +2660,7 @@ void QQmlJSCodeGenerator::generate_IteratorNext(int value, int offset)
 
     // We know that this works because we can do ->next() below.
     QQmlJSRegisterContent iteratorValue = m_typeResolver->valueType(iteratorContent);
-    iteratorValue = iteratorValue.storedIn(iteratorValue.containedType());
+    iteratorValue = m_pool->storedIn(iteratorValue, iteratorValue.containedType());
 
     m_body += changedRegisterVariable() + u" = "
             + conversion(
@@ -3499,24 +3502,30 @@ void QQmlJSCodeGenerator::generateEqualityOperation(
         } else if (m_typeResolver->equals(contained, containedOriginal)) {
             if (originalContent.isConversion()) {
                 // The original conversion origins are more accurate
-                return originalContent.storedIn(content.storedType());
+                return m_pool->storedIn(originalContent, content.storedType());
             }
         } else if (m_typeResolver->canHold(contained, containedOriginal)) {
-            return originalContent.storedIn(content.storedType());
+            return m_pool->storedIn(originalContent, content.storedType());
         }
 
         return content;
     };
 
+    const QQmlJSScope::ConstPtr lhsType = lhsContent.storedType();
+    const QQmlJSScope::ConstPtr rhsType = rhsContent.storedType();
+
     if (!isComparable()) {
         QQmlJSRegisterContent lhsOriginal = retrieveOriginal(lhsContent);
         QQmlJSRegisterContent rhsOriginal = retrieveOriginal(rhsContent);
-        if (lhsOriginal != lhsContent || rhsOriginal != rhsContent) {
+        if (lhsOriginal.containedType() != lhsContent.containedType()
+                || lhsOriginal.storedType() != lhsType
+                || rhsOriginal.containedType() != rhsContent.containedType()
+                || rhsOriginal.storedType() != rhsType) {
             // If either side is simply a wrapping of a specific type into a more general one, we
             // can compare the original types instead. You can't nest wrappings after all.
             generateEqualityOperation(lhsOriginal, rhsOriginal,
-                                      conversion(lhsContent.storedType(), lhsOriginal, lhsName),
-                                      conversion(rhsContent.storedType(), rhsOriginal, rhsName),
+                                      conversion(lhsType, lhsOriginal, lhsName),
+                                      conversion(rhsType, rhsOriginal, rhsName),
                                       function, invert);
             return;
         }
@@ -3524,9 +3533,6 @@ void QQmlJSCodeGenerator::generateEqualityOperation(
         reject(u"incomparable types %1 and %2"_s.arg(
                 rhsContent.descriptiveName(), lhsContent.descriptiveName()));
     }
-
-    const QQmlJSScope::ConstPtr lhsType = lhsContent.storedType();
-    const QQmlJSScope::ConstPtr rhsType = rhsContent.storedType();
 
     if (strictlyComparableWithVar) {
         // Determine which side is holding a storable type
@@ -4334,11 +4340,12 @@ QString QQmlJSCodeGenerator::convertContained(const QQmlJSRegisterContent &from,
             && m_typeResolver->canHold(containedFrom, containedOriginalFrom)) {
         // If from is simply a wrapping of a specific type into a more general one, we can convert
         // the original type instead. You can't nest wrappings after all.
-        return conversion(originalFrom.storedIn(from.storedType()), to, variable);
+        return conversion(m_pool->storedIn(originalFrom, from.storedType()), to, variable);
     }
 
     if (m_typeResolver->isPrimitive(containedFrom) && m_typeResolver->isPrimitive(containedTo)) {
-        const QQmlJSRegisterContent intermediate = from.storedIn(m_typeResolver->jsPrimitiveType());
+        const QQmlJSRegisterContent intermediate
+                = m_pool->storedIn(from, m_typeResolver->jsPrimitiveType());
         return conversion(intermediate, to, conversion(from, intermediate, variable));
     }
 

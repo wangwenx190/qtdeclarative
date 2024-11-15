@@ -26,7 +26,7 @@ QQmlJSCompilePass::BlocksAndAnnotations QQmlJSStorageGeneralizer::run(Function *
     if (QQmlJSRegisterContent &returnType = function->returnType; returnType.isValid()) {
         if (QQmlJSScope::ConstPtr stored = m_typeResolver->genericType(
                     returnType.storedType(), QQmlJSTypeResolver::ComponentIsGeneric::Yes)) {
-            returnType = returnType.storedIn(stored);
+            returnType = m_pool->storedIn(returnType, stored);
         } else {
             addError(QStringLiteral("Cannot store the return type %1.")
                      .arg(returnType.storedType()->internalName()));

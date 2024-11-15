@@ -162,7 +162,7 @@ QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
     bindingLocation.startColumn = irBinding.location.column();
 
     QQmlJSCompilePass::Function function;
-    function.qmlScope = QQmlJSRegisterContent::create(
+    function.qmlScope = m_typeResolver->registerContentPool()->create(
             m_scopeType, QQmlJSRegisterContent::InvalidLookupIndex,
             QQmlJSRegisterContent::ScopeObject);
 
@@ -275,7 +275,7 @@ QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
     Q_UNUSED(functionName);
 
     QQmlJSCompilePass::Function function;
-    function.qmlScope = QQmlJSRegisterContent::create(
+    function.qmlScope = m_typeResolver->registerContentPool()->create(
             m_scopeType, QQmlJSRegisterContent::InvalidLookupIndex,
             QQmlJSRegisterContent::ScopeObject);
 
