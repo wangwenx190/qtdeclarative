@@ -141,17 +141,50 @@ bool QQuickVisualTestUtils::isDelegateVisible(QQuickItem *item)
 */
 bool QQuickVisualTestUtils::compareImages(const QImage &ia, const QImage &ib, QString *errorMessage)
 {
+    auto maybeSaveImagesForDebugging = [ia, ib](QDebug &debug) {
+        if (!lcCompareImages().isDebugEnabled())
+            return;
+
+        const QDir saveDir(QCoreApplication::applicationDirPath());
+        QString imageFileNamePrefix = QString::fromUtf8("%1-%2").arg(
+                QString::fromUtf8(QTest::currentAppName()),
+                QString::fromUtf8(QTest::currentTestFunction()));
+        if (QTest::currentDataTag())
+            imageFileNamePrefix.append(QStringLiteral("-") + QString::fromUtf8(QTest::currentDataTag()));
+
+        const QString actualImageFilePath = saveDir.filePath(imageFileNamePrefix + QLatin1String("-actual.png"));
+        const bool actualImageSaved = ia.save(actualImageFilePath);
+        if (!actualImageSaved)
+            qWarning() << "Failed to save actual image to" << actualImageFilePath;
+
+        const QString expectedImageFilePath = saveDir.filePath(imageFileNamePrefix + QLatin1String("-expected.png"));
+        const bool expectedImageSaved = ib.save(expectedImageFilePath);
+        if (!expectedImageSaved)
+            qWarning() << "Failed to save expected image to" << expectedImageFilePath;
+
+        if (actualImageSaved && expectedImageSaved) {
+            debug.noquote() << "\nActual image saved to:" << actualImageFilePath;
+            debug << "\nExpected image saved to:" << expectedImageFilePath;
+        }
+    };
+
     if (ia.size() != ib.size()) {
-        QDebug(errorMessage) << "Images are of different size:" << ia.size() << ib.size()
+        QDebug debug(errorMessage);
+        debug << "Images are of different size:" << ia.size() << ib.size()
             << "DPR:" << ia.devicePixelRatio() << ib.devicePixelRatio();
+        maybeSaveImagesForDebugging(debug);
         return false;
     }
     if (ia.format() != ib.format()) {
-        QDebug(errorMessage) << "Images are of different formats:" << ia.format() << ib.format();
+        QDebug debug(errorMessage);
+        debug << "Images are of different formats:" << ia.format() << ib.format();
+        maybeSaveImagesForDebugging(debug);
         return false;
     }
     if (ia.depth() != 32) {
-        QDebug(errorMessage) << "This function only supports bit depths of 32 - depth of images is:" << ia.depth();
+        QDebug debug(errorMessage);
+        debug << "This function only supports bit depths of 32 - depth of images is:" << ia.depth();
+        maybeSaveImagesForDebugging(debug);
         return false;
     }
 
@@ -173,30 +206,7 @@ bool QQuickVisualTestUtils::compareImages(const QImage &ia, const QImage &ib, QS
                 QDebug debug(errorMessage);
                 debug << "Mismatch at:" << x << y << ':'
                     << Qt::hex << Qt::showbase << a << b;
-
-                if (lcCompareImages().isDebugEnabled()) {
-                    const QDir saveDir(QCoreApplication::applicationDirPath());
-                    QString imageFileNamePrefix = QString::fromUtf8("%1-%2").arg(
-                            QString::fromUtf8(QTest::currentAppName()),
-                            QString::fromUtf8(QTest::currentTestFunction()));
-                    if (QTest::currentDataTag())
-                        imageFileNamePrefix.append(QStringLiteral("-") + QString::fromUtf8(QTest::currentDataTag()));
-
-                    const QString actualImageFilePath = saveDir.filePath(imageFileNamePrefix + QLatin1String("-actual.png"));
-                    const bool actualImageSaved = ia.save(actualImageFilePath);
-                    if (!actualImageSaved)
-                        qWarning() << "Failed to save actual image to" << actualImageFilePath;
-
-                    const QString expectedImageFilePath = saveDir.filePath(imageFileNamePrefix + QLatin1String("-expected.png"));
-                    const bool expectedImageSaved = ib.save(expectedImageFilePath);
-                    if (!expectedImageSaved)
-                        qWarning() << "Failed to save expected image to" << expectedImageFilePath;
-
-                    if (actualImageSaved && expectedImageSaved) {
-                        debug.noquote() << "\nActual image saved to:" << actualImageFilePath;
-                        debug << "\nExpected image saved to:" << expectedImageFilePath;
-                    }
-                }
+                maybeSaveImagesForDebugging(debug);
                 return false;
             }
         }
