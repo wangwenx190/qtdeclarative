@@ -226,6 +226,7 @@ private:
     void propagateScopeLookupCall(const QString &functionName, int argc, int argv);
     void saveRegisterStateForJump(int offset);
     bool canConvertFromTo(const QQmlJSRegisterContent &from, const QQmlJSRegisterContent &to);
+    bool canConvertFromTo(const QQmlJSRegisterContent &from, const QQmlJSScope::ConstPtr &to);
 
     QString registerName(int registerIndex) const;
 
@@ -238,7 +239,14 @@ private:
     void mergeRegister(int index, const QQmlJSRegisterContent &a, const QQmlJSRegisterContent &b);
 
     void addReadRegister(int index, const QQmlJSRegisterContent &convertTo);
+    void addReadRegister(int index, const QQmlJSScope::ConstPtr &convertTo);
+
     void addReadAccumulator(const QQmlJSRegisterContent &convertTo)
+    {
+        addReadRegister(Accumulator, convertTo);
+    }
+
+    void addReadAccumulator(const QQmlJSScope::ConstPtr &convertTo)
     {
         addReadRegister(Accumulator, convertTo);
     }
@@ -276,7 +284,7 @@ private:
 
     void setVarAccumulatorAndError()
     {
-        setAccumulator(m_typeResolver->varRegister());
+        setAccumulator(m_typeResolver->syntheticType(m_typeResolver->varType()));
         m_state.instructionHasError = true;
     }
 

@@ -146,8 +146,8 @@ public:
 
     static QQmlJSRegisterContent literalType(const QQmlJSScope::ConstPtr &type);
     static QQmlJSRegisterContent operationType(const QQmlJSScope::ConstPtr &type);
-    static QQmlJSRegisterContent conversionType(const QQmlJSScope::ConstPtr &type);
     static QQmlJSRegisterContent namedType(const QQmlJSScope::ConstPtr &type);
+    static QQmlJSRegisterContent syntheticType(const QQmlJSScope::ConstPtr &type);
 
     QQmlJSScope::ConstPtr scopedType(
             const QQmlJSScope::ConstPtr &scope, const QString &name,
@@ -221,16 +221,13 @@ public:
 
     QQmlJSRegisterContent convert(
             const QQmlJSRegisterContent &from, const QQmlJSRegisterContent &to) const;
+    QQmlJSRegisterContent convert(
+            const QQmlJSRegisterContent &from, const QQmlJSScope::ConstPtr &to) const;
     QQmlJSRegisterContent cast(
             const QQmlJSRegisterContent &from, const QQmlJSScope::ConstPtr &to) const;
 
     QQmlJSScope::ConstPtr merge(const QQmlJSScope::ConstPtr &a,
                                 const QQmlJSScope::ConstPtr &b) const;
-
-    QQmlJSRegisterContent varRegister() const
-    {
-        return conversionType(m_varType);
-    }
 
     bool canHoldUndefined(const QQmlJSRegisterContent &content) const;
     bool isOptionalType(const QQmlJSRegisterContent &content) const;

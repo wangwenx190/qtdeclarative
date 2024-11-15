@@ -49,7 +49,6 @@ public:
 
         Literal,
         Operation,
-        Conversion,
 
         BaseType,
         Unknown,

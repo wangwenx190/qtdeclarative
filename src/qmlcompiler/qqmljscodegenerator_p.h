@@ -231,9 +231,24 @@ protected:
             return convertStored(from, to.storedType(), variable);
         } else {
             return convertContained(
-                    m_typeResolver->conversionType(from).storedIn(m_typeResolver->storedType(from)),
+                    m_typeResolver->syntheticType(from).storedIn(m_typeResolver->storedType(from)),
                     to, variable);
         }
+    }
+
+    QString conversion(const QQmlJSRegisterContent &from,
+                       const QQmlJSScope::ConstPtr &to,
+                       const QString &variable)
+    {
+        Q_ASSERT(m_typeResolver->equals(m_typeResolver->storedType(to), to));
+        return conversion(from, from.castTo(to).storedIn(to), variable);
+    }
+
+    QString conversion(const QQmlJSScope::ConstPtr &from,
+                       const QQmlJSScope::ConstPtr &to,
+                       const QString &variable)
+    {
+        return convertStored(from, to, variable);
     }
 
     QString convertStored(const QQmlJSScope::ConstPtr &from,
@@ -347,11 +362,6 @@ private:
     {
         const QQmlJSRegisterContent restored = m_typeResolver->original(tracked);
         return restored.storedIn(m_typeResolver->originalType(tracked.storedType()));
-    }
-
-    QQmlJSRegisterContent conversionType(const QQmlJSScope::ConstPtr &contained)
-    {
-        return m_typeResolver->conversionType(contained).storedIn(contained);
     }
 
     QQmlJSRegisterContent literalType(const QQmlJSScope::ConstPtr &contained)

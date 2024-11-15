@@ -1016,22 +1016,18 @@ QQmlJSRegisterContent QQmlJSTypeResolver::operationType(const QQmlJSScope::Const
 
 /*!
  * \internal
- * The type of the result of a type conversion
- */
-QQmlJSRegisterContent QQmlJSTypeResolver::conversionType(const QQmlJSScope::ConstPtr &type)
-{
-    return QQmlJSRegisterContent::create(
-            type, QQmlJSRegisterContent::InvalidLookupIndex, QQmlJSRegisterContent::Conversion);
-}
-
-/*!
- * \internal
  * A type named explicitly, for example in "as"-casts or as function annotation.
  */
 QQmlJSRegisterContent QQmlJSTypeResolver::namedType(const QQmlJSScope::ConstPtr &type)
 {
     return QQmlJSRegisterContent::create(
             type, QQmlJSRegisterContent::InvalidLookupIndex, QQmlJSRegisterContent::TypeByName);
+}
+
+QQmlJSRegisterContent QQmlJSTypeResolver::syntheticType(const QQmlJSScope::ConstPtr &type)
+{
+    return QQmlJSRegisterContent::create(
+            type, QQmlJSRegisterContent::InvalidLookupIndex, QQmlJSRegisterContent::Unknown);
 }
 
 static QQmlJSRegisterContent::ContentVariant scopeContentVariant(QQmlJSScope::ExtensionKind mode,
@@ -1917,22 +1913,33 @@ bool QQmlJSTypeResolver::equals(const QQmlJSScope::ConstPtr &a, const QQmlJSScop
     return comparableType(a) == comparableType(b);
 }
 
-QQmlJSRegisterContent QQmlJSTypeResolver::convert(
-        const QQmlJSRegisterContent &from, const QQmlJSRegisterContent &to) const
+static QQmlJSRegisterContent doConvert(
+        const QQmlJSRegisterContent &from, const QQmlJSScope::ConstPtr &to,
+        const QQmlJSRegisterContent &scope)
 {
     if (from.isConversion()) {
         return QQmlJSRegisterContent::create(
-                from.conversionOrigins(), to.containedType(),
-                to.scopeType().isValid()
-                        ? to.scopeType()
-                        : from.conversionResultScope(),
+                from.conversionOrigins(), to,
+                scope.isValid() ? scope : from.conversionResultScope(),
                 from.variant(), from.scopeType());
     }
 
     return QQmlJSRegisterContent::create(
             QList<QQmlJSRegisterContent>{from},
-            to.containedType(), to.scopeType(), from.variant(),
+            to, scope, from.variant(),
             from.scopeType());
+}
+
+QQmlJSRegisterContent QQmlJSTypeResolver::convert(
+        const QQmlJSRegisterContent &from, const QQmlJSRegisterContent &to) const
+{
+    return doConvert(from, to.containedType(), to.scopeType());
+}
+
+QQmlJSRegisterContent QQmlJSTypeResolver::convert(
+        const QQmlJSRegisterContent &from, const QQmlJSScope::ConstPtr &to) const
+{
+    return doConvert(from, to, QQmlJSRegisterContent());
 }
 
 QQmlJSRegisterContent QQmlJSTypeResolver::cast(
