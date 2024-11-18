@@ -3,6 +3,7 @@
 
 #include "qqmldomscanner_p.h"
 #include "qqmldomerrormessage_p.h"
+#include "qqmljsgrammar_p.h"
 
 #include <QtCore/QMetaEnum>
 
@@ -195,7 +196,6 @@ bool Token::lexKindIsDelimiter(int kind)
     case QQmlJSGrammar::T_LT_LT_EQ:
     case QQmlJSGrammar::T_MINUS:
     case QQmlJSGrammar::T_MINUS_EQ:
-    case QQmlJSGrammar::T_MINUS_MINUS:
     case QQmlJSGrammar::T_NOT:
     case QQmlJSGrammar::T_NOT_EQ:
     case QQmlJSGrammar::T_NOT_EQ_EQ:
@@ -204,7 +204,6 @@ bool Token::lexKindIsDelimiter(int kind)
     case QQmlJSGrammar::T_OR_OR:
     case QQmlJSGrammar::T_PLUS:
     case QQmlJSGrammar::T_PLUS_EQ:
-    case QQmlJSGrammar::T_PLUS_PLUS:
     case QQmlJSGrammar::T_QUESTION:
     case QQmlJSGrammar::T_QUESTION_DOT:
     case QQmlJSGrammar::T_QUESTION_QUESTION:
@@ -217,8 +216,12 @@ bool Token::lexKindIsDelimiter(int kind)
     case QQmlJSGrammar::T_TILDE:
     case QQmlJSGrammar::T_XOR:
     case QQmlJSGrammar::T_XOR_EQ:
-
     case QQmlJSGrammar::T_AT:
+    case QQmlJSGrammar::T_COMMA:
+    case QQmlJSGrammar::T_COLON:
+    case QQmlJSGrammar::T_LPAREN:
+    case QQmlJSGrammar::T_DIVIDE_:
+    case QQmlJSGrammar::T_DIVIDE_EQ:
         return true;
     default:
         break;

@@ -11,9 +11,6 @@ QT_BEGIN_NAMESPACE
 namespace QQmlJS {
 namespace Dom {
 
-static QSet<int> splitSequence = { QQmlJSGrammar::T_COMMA, QQmlJSGrammar::T_AND_AND,
-                                   QQmlJSGrammar::T_OR_OR, QQmlJSGrammar::T_LPAREN };
-
 FormatPartialStatus &IndentingLineWriter::fStatus()
 {
     if (!m_fStatusValid) {
@@ -105,7 +102,7 @@ void IndentingLineWriter::splitOnMaxLength(const QString &eol, bool eof)
     for (int iToken = 0; iToken < fStatus().tokenCount(); ++iToken) {
         const Token t = fStatus().tokenAt(iToken);
         int tCol = column(t.end());
-        if (splitSequence.contains(t.lexKind) && tCol > minLen) {
+        if (Token::lexKindIsDelimiter(t.lexKind) && tCol > minLen) {
             if (tCol <= maxLen && possibleSplit < t.end())
                 possibleSplit = t.end();
             if (t.end() < minSplit)
