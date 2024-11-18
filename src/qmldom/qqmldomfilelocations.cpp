@@ -38,7 +38,8 @@ bool Info::iterateDirectSubpaths(const DomItem &self, DirectVisitor visitor) con
     cont = cont && self.dvValueLazyField(visitor, Fields::fullRegion, [this]() {
         return sourceLocationToQCborValue(fullRegion);
     });
-    cont = cont && self.dvItemField(visitor, Fields::regions, [this, &self]() -> DomItem {
+    cont = cont
+            && self.dvItemField(std::move(visitor), Fields::regions, [this, &self]() -> DomItem {
         const Path pathFromOwner = self.pathFromOwner().field(Fields::regions);
         auto map = Map::fromFileRegionMap(pathFromOwner, regions);
         return self.subMapItem(map);
@@ -185,10 +186,11 @@ Attributes:
 bool Node::iterateDirectSubpaths(const DomItem &self, DirectVisitor visitor) const
 {
     bool cont = true;
-    if (Ptr p = parent())
-        cont = cont && self.dvItemField(visitor, Fields::parent, [&self, p]() {
+    if (const Ptr p = parent()) {
+        cont = cont && self.dvItemField(visitor, Fields::parent, [&self, &p]() {
             return self.copy(p, self.m_ownerPath.dropTail(2), p.get());
         });
+    }
     cont = cont
             && self.dvValueLazyField(visitor, Fields::path, [this]() { return path().toString(); });
     cont = cont && self.dvItemField(visitor, Fields::subItems, [this, &self]() {
@@ -206,7 +208,7 @@ bool Node::iterateDirectSubpaths(const DomItem &self, DirectVisitor visitor) con
                 },
                 QLatin1String("Node")));
     });
-    cont = cont && self.dvItemField(visitor, Fields::infoItem, [&self, this]() {
+    cont = cont && self.dvItemField(std::move(visitor), Fields::infoItem, [&self, this]() {
         return self.wrapField(Fields::infoItem, m_info);
     });
     return cont;
