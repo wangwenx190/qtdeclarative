@@ -53,6 +53,7 @@ public:
 
 private:
     Q_DISABLE_COPY_MOVE(IndentingLineWriter)
+    int findSplitLocation(const QList<Token> &tokens, int minSplitLength);
 protected:
     FormatTextStatus m_preCachedStatus;
     bool m_fStatusValid = false;

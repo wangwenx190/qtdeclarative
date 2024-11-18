@@ -198,6 +198,23 @@ private slots:
         QTest::newRow("file1NoReorder")
                 << QStringLiteral(u"file1.qml") << QStringLiteral(u"file1Reformatted2.qml")
                 << noReorderOptions;
+        {
+            // line break width tests
+            LineWriterOptions lwOptions;
+            lwOptions.maxLineLength = 40;
+            QTest::newRow("linebreakBinding")
+                    << QStringLiteral(u"linebreakAfterColon.qml")
+                    << QStringLiteral(u"linebreakAfterColonReformatted.qml") << lwOptions;
+            QTest::newRow("linebreakPrePostIncDec")
+                    << QStringLiteral(u"linebreakPrePostIncDec.qml")
+                    << QStringLiteral(u"linebreakPrePostIncDecReformatted.qml") << lwOptions;
+            QTest::newRow("linebreakArrayTypes")
+                    << QStringLiteral(u"linebreakArray.qml")
+                    << QStringLiteral(u"linebreakArrayReformatted.qml") << lwOptions;
+            QTest::newRow("linebreakBasicFunction")
+                    << QStringLiteral(u"linebreakFunction.qml")
+                    << QStringLiteral(u"linebreakFunctionReformatted.qml") << lwOptions;
+        }
     }
 
     void lineByLineReformatter()

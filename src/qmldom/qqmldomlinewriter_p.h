@@ -83,7 +83,6 @@ public:
     Q_ENUM(AttributesSequence)
 
     int maxLineLength = -1; // -1 means no limit
-    int strongMaxLineExtra = 20;
     int minContentLength = 10;
 #if defined (Q_OS_WIN)
     LineEndings lineEndings = LineEndings::Windows;

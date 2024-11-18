@@ -11,6 +11,23 @@ QT_BEGIN_NAMESPACE
 namespace QQmlJS {
 namespace Dom {
 
+// If one of these tokens is the split token on a line, the line should be split after it.
+static constexpr bool shouldSplitAfterToken(int kind)
+{
+    switch (kind) {
+    case Lexer::T_COMMA:
+    case Lexer::T_COLON:
+    case Lexer::T_SEMICOLON:
+    case Lexer::T_LBRACE:
+    case Lexer::T_LPAREN:
+    case Lexer::T_LBRACKET:
+        return true;
+    default:
+        break;
+    }
+    return false;
+}
+
 FormatPartialStatus &IndentingLineWriter::fStatus()
 {
     if (!m_fStatusValid) {
@@ -84,9 +101,30 @@ void IndentingLineWriter::handleTrailingSpace()
     LineWriter::handleTrailingSpace(trailingSpace);
 }
 
+int IndentingLineWriter::findSplitLocation(const QList<Token> &tokens, int minSplitLength)
+{
+    // Reverse search to find the "last"
+    auto lastDelimiterTokenBeforeLineSplitIt =
+            std::find_if(tokens.crbegin(), tokens.crend(), [&](auto &&t) {
+                return Token::lexKindIsDelimiter(t.lexKind)
+                        && column(t.end()) >= minSplitLength;
+            });
+
+    if (lastDelimiterTokenBeforeLineSplitIt == tokens.crend())
+        return -1;
+
+    if (shouldSplitAfterToken(lastDelimiterTokenBeforeLineSplitIt->lexKind)) {
+        return lastDelimiterTokenBeforeLineSplitIt->end();
+    } else {
+        // split before the token (after the previous token)
+        auto previousTokenIt = std::next(lastDelimiterTokenBeforeLineSplitIt);
+        return previousTokenIt != tokens.crend() ? previousTokenIt->end()
+                                                 : lastDelimiterTokenBeforeLineSplitIt->begin();
+    }
+}
+
 void IndentingLineWriter::splitOnMaxLength(const QString &eol, bool eof)
 {
-    int possibleSplit = -1;
     if (fStatus().lineTokens.size() <= 1)
         return;
     // {}[] should already be handled (handle also here?)
@@ -94,24 +132,7 @@ void IndentingLineWriter::splitOnMaxLength(const QString &eol, bool eof)
     while (minLen < m_currentLine.size() && m_currentLine.at(minLen).isSpace())
         ++minLen;
     minLen = column(minLen) + m_options.minContentLength;
-    int maxLen = qMax(minLen + m_options.strongMaxLineExtra, m_options.maxLineLength);
-
-    // try split after other binary operators?
-    int minSplit = m_currentLine.size();
-
-    for (int iToken = 0; iToken < fStatus().tokenCount(); ++iToken) {
-        const Token t = fStatus().tokenAt(iToken);
-        int tCol = column(t.end());
-        if (Token::lexKindIsDelimiter(t.lexKind) && tCol > minLen) {
-            if (tCol <= maxLen && possibleSplit < t.end())
-                possibleSplit = t.end();
-            if (t.end() < minSplit)
-                minSplit = t.end();
-        }
-    }
-
-    if (possibleSplit == -1 && minSplit + 4 < m_currentLine.size())
-        possibleSplit = minSplit;
+    int possibleSplit = findSplitLocation(fStatus().lineTokens, minLen);
     if (possibleSplit > 0) {
         lineChanged();
         quint32 oChange = eolToWrite().size();
