@@ -104,6 +104,10 @@ public:
     QQmlJSMetaMethod methodCall() const;
     ContentVariant variant() const;
 
+    QQmlJSRegisterContent storage() const;
+    QQmlJSRegisterContent original() const;
+    QQmlJSRegisterContent shadowed() const;
+
 private:
     friend class QQmlJSRegisterContentPool;
     // TODO: Constant string/number/bool/enumval
@@ -176,6 +180,14 @@ public:
     QQmlJSRegisterContent castTo(
             const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &newContainedType);
 
+    QQmlJSRegisterContent clone(const QQmlJSRegisterContent from) { return clone(from.d); }
+
+    void adjustType(
+            const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &adjusted);
+    void generalizeType(
+            const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &generalized);
+
+
 private:
     struct Deleter {
         // It's a template so that we only need the QQmlJSRegisterContentPrivate dtor on usage.
@@ -184,7 +196,6 @@ private:
     };
 
     using Pool = std::vector<std::unique_ptr<QQmlJSRegisterContentPrivate, Deleter>>;
-
 
     QQmlJSRegisterContentPrivate *clone(const QQmlJSRegisterContentPrivate *from);
     QQmlJSRegisterContentPrivate *create() { return clone(nullptr); }

@@ -29,7 +29,6 @@ static inline void assertExtension(const QQmlJSScope::ConstPtr &type, QLatin1Str
 QQmlJSTypeResolver::QQmlJSTypeResolver(QQmlJSImporter *importer)
     : m_pool(std::make_unique<QQmlJSRegisterContentPool>())
     , m_imports(importer->builtinInternalNames())
-    , m_trackedTypes(std::make_unique<QHash<QQmlJSScope::ConstPtr, TrackedType>>())
 {
     const QQmlJSImporter::ImportedTypes &builtinTypes = m_imports;
 
@@ -392,104 +391,6 @@ bool QQmlJSTypeResolver::isNativeArrayIndex(const QQmlJSScope::ConstPtr &type) c
             || equals(type, m_int32Type));
 }
 
-QQmlJSScope::ConstPtr QQmlJSTypeResolver::trackedType(const QQmlJSScope::ConstPtr &type) const
-{
-    if (m_cloneMode == QQmlJSTypeResolver::DoNotCloneTypes)
-        return type;
-
-    // If origin is in fact an already tracked type, track the original of that one instead.
-    const auto it = m_trackedTypes->find(type);
-    QQmlJSScope::ConstPtr orig = (it == m_trackedTypes->end()) ? type : it->original;
-
-    QQmlJSScope::Ptr clone = QQmlJSScope::clone(orig);
-    m_trackedTypes->insert(clone, { std::move(orig), QQmlJSScope::ConstPtr(), clone });
-    return clone;
-}
-
-QQmlJSRegisterContent QQmlJSTypeResolver::shallowTransformed(
-        const QQmlJSRegisterContent &origin,
-        QQmlJSScope::ConstPtr (QQmlJSTypeResolver::*op)(const QQmlJSScope::ConstPtr &) const,
-        const QQmlJSRegisterContent &transformedScope) const
-{
-    if (origin.isType()) {
-        return m_pool->create(
-                (this->*op)(origin.type()), origin.resultLookupIndex(), origin.variant(),
-                transformedScope);
-    }
-
-    if (origin.isProperty()) {
-        QQmlJSMetaProperty prop = origin.property();
-        prop.setType((this->*op)(prop.type()));
-        return m_pool->create(
-                prop, origin.baseLookupIndex(), origin.resultLookupIndex(), origin.variant(),
-                transformedScope);
-    }
-
-    if (origin.isEnumeration()) {
-        QQmlJSMetaEnum enumeration = origin.enumeration();
-        enumeration.setType((this->*op)(enumeration.type()));
-        return m_pool->create(
-                enumeration, origin.enumMember(), origin.variant(),
-                transformedScope);
-    }
-
-    if (origin.isMethod()) {
-        return m_pool->create(
-                origin.method(), (this->*op)(origin.methodType()), origin.variant(),
-                transformedScope);
-    }
-
-    if (origin.isImportNamespace()) {
-        return m_pool->create(
-                origin.importNamespace(), (this->*op)(origin.importNamespaceType()),
-                origin.variant(), transformedScope);
-    }
-
-    if (origin.isMethodCall()) {
-        return m_pool->create(
-                origin.methodCall(), (this->*op)(origin.containedType()), transformedScope);
-    }
-
-    if (origin.isConversion()) {
-        // When retrieving the originals we want a deep retrieval.
-        // When tracking a new type, we don't want to re-track its originals, though.
-
-        const QList<QQmlJSRegisterContent> origins = origin.conversionOrigins();
-        QList<QQmlJSRegisterContent> transformedOrigins;
-        if (op == &QQmlJSTypeResolver::trackedType) {
-            transformedOrigins = origins;
-        } else {
-            transformedOrigins.reserve(origins.length());
-            for (const QQmlJSRegisterContent &origin: origins)
-                transformedOrigins.append(shallowTransformed(origin, op, origin.scopeType()));
-        }
-
-        return m_pool->create(
-                transformedOrigins,
-                (this->*op)(origin.conversionResult()),
-                shallowTransformed(
-                        origin.conversionResultScope(), op,
-                        origin.conversionResultScope().scopeType()),
-                origin.variant(), transformedScope);
-    }
-
-    Q_ASSERT(origin.isNull());
-    return origin;
-}
-
-QQmlJSRegisterContent QQmlJSTypeResolver::transformed(
-        const QQmlJSRegisterContent &origin,
-        QQmlJSScope::ConstPtr (QQmlJSTypeResolver::*op)(const QQmlJSScope::ConstPtr &) const) const
-{
-    // We transform one level deep for now.
-    // TODO: This is quite arbitrary, but it will fix itself
-    //       once we re-organize the transformations.
-    const QQmlJSRegisterContent transformedScope
-            = shallowTransformed(origin.scopeType(), op, origin.scopeType().scopeType());
-
-    return shallowTransformed(origin, op, transformedScope);
-}
-
 QQmlJSScope::ConstPtr QQmlJSTypeResolver::containedTypeForName(const QString &name) const
 {
     QQmlJSScope::ConstPtr type = typeForName(name);
@@ -583,101 +484,89 @@ QQmlJSRegisterContent QQmlJSTypeResolver::registerContentForName(
 
 QQmlJSRegisterContent QQmlJSTypeResolver::original(const QQmlJSRegisterContent &type) const
 {
-    return transformed(type, &QQmlJSTypeResolver::originalType);
+    QQmlJSRegisterContent result = type.original();
+    return result.isNull() ? type : result;
 }
 
 QQmlJSRegisterContent QQmlJSTypeResolver::tracked(const QQmlJSRegisterContent &type) const
 {
-    return transformed(type, &QQmlJSTypeResolver::trackedType);
-}
-
-QQmlJSScope::ConstPtr QQmlJSTypeResolver::trackedContainedType(
-        const QQmlJSRegisterContent &container) const
-{
-    const QQmlJSScope::ConstPtr type = container.containedType();
-    return m_trackedTypes->contains(type) ? type : QQmlJSScope::ConstPtr();
+    return m_pool->clone(type);
 }
 
 QQmlJSScope::ConstPtr QQmlJSTypeResolver::originalContainedType(
         const QQmlJSRegisterContent &container) const
 {
-    return originalType(container.containedType());
+    return original(container).containedType();
 }
 
 bool QQmlJSTypeResolver::adjustTrackedType(
-        const QQmlJSScope::ConstPtr &tracked, const QQmlJSScope::ConstPtr &conversion) const
+        const QQmlJSRegisterContent &tracked, const QQmlJSScope::ConstPtr &conversion) const
 {
     if (m_cloneMode == QQmlJSTypeResolver::DoNotCloneTypes)
         return true;
 
-    const auto it = m_trackedTypes->find(tracked);
-    Q_ASSERT(it != m_trackedTypes->end());
+    QQmlJSScope::ConstPtr contained = tracked.containedType();
 
     // If we cannot convert to the new type without the help of e.g. lookupResultMetaType(),
     // we better not change the type.
-    if (!canPrimitivelyConvertFromTo(tracked, conversion)
-           && !canPopulate(conversion, tracked, nullptr)
-           && !selectConstructor(conversion, tracked, nullptr).isValid()) {
+    if (!canPrimitivelyConvertFromTo(contained, conversion)
+        && !canPopulate(conversion, contained, nullptr)
+        && !selectConstructor(conversion, contained, nullptr).isValid()) {
         return false;
     }
 
-    Q_ASSERT(!it->replacement);
-    it->replacement = comparableType(conversion);
-    *it->clone = std::move(*QQmlJSScope::clone(conversion));
+    m_pool->adjustType(tracked, conversion);
     return true;
 }
 
 bool QQmlJSTypeResolver::adjustTrackedType(
-        const QQmlJSScope::ConstPtr &tracked, const QList<QQmlJSScope::ConstPtr> &conversions) const
+        const QQmlJSRegisterContent &tracked, const QQmlJSRegisterContent &conversion) const
+{
+    return adjustTrackedType(tracked, conversion.containedType());
+}
+
+bool QQmlJSTypeResolver::adjustTrackedType(
+        const QQmlJSRegisterContent &tracked, const QList<QQmlJSRegisterContent> &conversions) const
 {
     if (m_cloneMode == QQmlJSTypeResolver::DoNotCloneTypes)
         return true;
 
-    const auto it = m_trackedTypes->find(tracked);
-    Q_ASSERT(it != m_trackedTypes->end());
-    QQmlJSScope::Ptr mutableTracked = it->clone;
     QQmlJSScope::ConstPtr result;
-    for (const QQmlJSScope::ConstPtr &type : conversions)
-        result = merge(type, result);
+    for (const QQmlJSRegisterContent &type : conversions)
+        result = merge(type.containedType(), result);
+
+    QQmlJSScope::ConstPtr contained = tracked.containedType();
 
     // If we cannot convert to the new type without the help of e.g. lookupResultMetaType(),
     // we better not change the type.
-    if (!canPrimitivelyConvertFromTo(tracked, result)
-            && !canPopulate(result, tracked, nullptr)
-            && !selectConstructor(result, tracked, nullptr).isValid()) {
+    if (!canPrimitivelyConvertFromTo(contained, result)
+            && !canPopulate(result, contained, nullptr)
+            && !selectConstructor(result, contained, nullptr).isValid()) {
         return false;
     }
 
-    Q_ASSERT(!it->replacement);
-    it->replacement = comparableType(result);
-    *mutableTracked = std::move(*QQmlJSScope::clone(result));
+    m_pool->adjustType(tracked, result);
     return true;
 }
 
 void QQmlJSTypeResolver::adjustOriginalType(
-        const QQmlJSScope::ConstPtr &tracked, const QQmlJSScope::ConstPtr &conversion) const
+        const QQmlJSRegisterContent &tracked, const QQmlJSScope::ConstPtr &conversion) const
 {
     if (m_cloneMode == QQmlJSTypeResolver::DoNotCloneTypes)
         return;
 
-    const auto it = m_trackedTypes->find(tracked);
-    Q_ASSERT(it != m_trackedTypes->end());
-
-    it->original = conversion;
-    *it->clone = std::move(*QQmlJSScope::clone(conversion));
+    m_pool->generalizeType(tracked, conversion);
 }
 
-void QQmlJSTypeResolver::generalizeType(const QQmlJSScope::ConstPtr &type) const
+void QQmlJSTypeResolver::generalizeType(const QQmlJSRegisterContent &type) const
 {
     if (m_cloneMode == QQmlJSTypeResolver::DoNotCloneTypes)
         return;
 
-    const auto it = m_trackedTypes->find(type);
-    Q_ASSERT(it != m_trackedTypes->end());
-    *it->clone = std::move(*QQmlJSScope::clone(genericType(type)));
-    if (it->replacement)
-        it->replacement = genericType(it->replacement);
-    it->original = genericType(it->original);
+    for (QQmlJSRegisterContent orig = type; !orig.isNull(); orig = orig.original()) {
+        if (!orig.shadowed().isValid())
+            m_pool->generalizeType(orig, genericType(orig.containedType()));
+    }
 }
 
 bool QQmlJSTypeResolver::canConvertFromTo(const QQmlJSScope::ConstPtr &from,
@@ -885,7 +774,7 @@ bool QQmlJSTypeResolver::canHoldUndefined(const QQmlJSRegisterContent &content) 
 
     const auto origins = content.conversionOrigins();
     for (const auto &origin : origins) {
-        if (canBeUndefined(origin.containedType()))
+        if (canBeUndefined(originalContainedType(origin)))
             return true;
     }
 
@@ -901,22 +790,31 @@ bool QQmlJSTypeResolver::isOptionalType(const QQmlJSRegisterContent &content) co
     if (origins.length() != 2)
         return false;
 
-    return registerContains(origins[0], m_voidType)
-            || registerContains(origins[1], m_voidType);
+    // Conversion origins are always adjusted to the conversion result. None of them will be void.
+    // Therefore, retrieve the originals first.
+
+    return registerContains(original(origins[0]), m_voidType)
+            || registerContains(original(origins[1]), m_voidType);
 }
 
-QQmlJSScope::ConstPtr QQmlJSTypeResolver::extractNonVoidFromOptionalType(
+QQmlJSRegisterContent QQmlJSTypeResolver::extractNonVoidFromOptionalType(
         const QQmlJSRegisterContent &content) const
 {
     if (!isOptionalType(content))
-        return QQmlJSScope::ConstPtr();
+        return QQmlJSRegisterContent();
 
-    const auto origins = content.conversionOrigins();
+    // Conversion origins are always adjusted to the conversion result. None of them will be void.
+    // Therefore, retrieve the originals first.
+
+    auto origins = content.conversionOrigins();
+    std::transform(origins.cbegin(), origins.cend(), origins.begin(),
+                   [this](QQmlJSRegisterContent content) {return original(content);});
     const QQmlJSRegisterContent result = registerContains(origins[0], m_voidType)
             ? origins[1]
             : origins[0];
-    Q_ASSERT(!registerContains(result, m_voidType));
-    return result.containedType();
+
+    // The result may still be undefined. You can write "undefined ?? undefined ?? 1"
+    return result;
 }
 
 QQmlJSScope::ConstPtr QQmlJSTypeResolver::genericType(
@@ -1753,16 +1651,11 @@ QQmlJSRegisterContent QQmlJSTypeResolver::memberType(
         // we can produce the members of that one type.
         // If the value is then actually undefined, the result is an exception.
 
-        auto origins = type.conversionOrigins();
-        const auto begin = origins.begin();
-        const auto end = std::remove_if(begin, origins.end(),
-                       [this](const QQmlJSRegisterContent &origin) {
-            return registerContains(origin, m_voidType);
-        });
+        const auto nonVoid = extractNonVoidFromOptionalType(type);
 
         // If the conversion cannot hold the original type, it loses information.
-        return (end - begin == 1 && canHold(type.conversionResult(), begin->containedType()))
-                ? memberType(*begin, name, type.resultLookupIndex(), lookupIndex)
+        return (!nonVoid.isNull() && canHold(type.conversionResult(), nonVoid.containedType()))
+                ? memberType(nonVoid, name, type.resultLookupIndex(), lookupIndex)
                 : QQmlJSRegisterContent();
     }
 
@@ -1832,8 +1725,6 @@ QQmlJSRegisterContent QQmlJSTypeResolver::extensionType(
 QQmlJSRegisterContent QQmlJSTypeResolver::baseType(
         const QQmlJSScope::ConstPtr &base, const QQmlJSRegisterContent &derived) const
 {
-    if (derived.containedType() == base)
-        return derived;
     return m_pool->create(
             base, derived.resultLookupIndex(), QQmlJSRegisterContent::BaseType, derived);
 }
@@ -1848,8 +1739,6 @@ QQmlJSRegisterContent QQmlJSTypeResolver::baseType(
 QQmlJSRegisterContent QQmlJSTypeResolver::parentScope(
         const QQmlJSScope::ConstPtr &parent, const QQmlJSRegisterContent &child) const
 {
-    if (child.containedType() == parent)
-        return child;
     return m_pool->create(
             parent, child.resultLookupIndex(), QQmlJSRegisterContent::ParentScope, child);
 }
@@ -1902,23 +1791,9 @@ QQmlJSScope::ConstPtr QQmlJSTypeResolver::storedType(const QQmlJSScope::ConstPtr
     return type;
 }
 
-QQmlJSScope::ConstPtr QQmlJSTypeResolver::originalType(const QQmlJSScope::ConstPtr &type) const
-{
-    const auto it = m_trackedTypes->find(type);
-    return it == m_trackedTypes->end() ? type : it->original;
-}
-
-/*!
- * \internal
- *
- * Compares the origin types of \a a and \a b. A straight a == b would compare the identity
- * of the pointers. However, since we clone types to keep track of them, we need a separate
- * way to compare the clones. Usually you'd do *a == *b for that, but as QQmlJSScope is rather
- * large, we offer an optimization here that uses the type tracking we already have in place.
- */
 bool QQmlJSTypeResolver::equals(const QQmlJSScope::ConstPtr &a, const QQmlJSScope::ConstPtr &b) const
 {
-    return comparableType(a) == comparableType(b);
+    return a == b;
 }
 
 static QQmlJSRegisterContent doConvert(
@@ -1948,14 +1823,6 @@ QQmlJSRegisterContent QQmlJSTypeResolver::convert(
         const QQmlJSRegisterContent &from, const QQmlJSScope::ConstPtr &to) const
 {
     return doConvert(from, to, QQmlJSRegisterContent(), m_pool.get());
-}
-
-QQmlJSScope::ConstPtr QQmlJSTypeResolver::comparableType(const QQmlJSScope::ConstPtr &type) const
-{
-    const auto it = m_trackedTypes->constFind(type);
-    if (it == m_trackedTypes->constEnd())
-        return type;
-    return it->replacement ? it->replacement : it->original;
 }
 
 QT_END_NAMESPACE

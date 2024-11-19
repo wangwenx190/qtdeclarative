@@ -172,7 +172,6 @@ public:
 
         void addReadRegister(int registerIndex, const QQmlJSRegisterContent &reg)
         {
-            Q_ASSERT(isRename() || reg.isConversion());
             const VirtualRegister &source = registers[registerIndex];
             VirtualRegister &target = m_readRegisters[registerIndex];
             target.content = reg;

@@ -124,6 +124,9 @@ public:
     Content m_content;
     ContentVariant m_variant = ContentVariant::Unknown;
 
+    QQmlJSRegisterContent m_original;
+    QQmlJSRegisterContent m_shadowed;
+
     int resultLookupIndex() const
     {
         switch (Kind(m_content.index())) {
@@ -134,6 +137,36 @@ public:
         default:
             return QQmlJSRegisterContent::InvalidLookupIndex;
         }
+    }
+
+    void setType(const QQmlJSScope::ConstPtr &type)
+    {
+        switch (Kind(m_content.index())) {
+        case Kind::Type:
+            std::get<std::pair<QQmlJSScope::ConstPtr, int>>(m_content).first = type;
+            return;
+        case Kind::Property:
+            std::get<PropertyLookup>(m_content).property.setType(type);
+            return;
+        case Kind::Enum:
+            std::get<std::pair<QQmlJSMetaEnum, QString>>(m_content).first.setType(type);
+            return;
+        case Kind::Method:
+            std::get<std::pair<QList<QQmlJSMetaMethod>, QQmlJSScope::ConstPtr>>(m_content)
+                    .second = type;
+            return;
+        case Kind::ImportNamespace:
+            std::get<std::pair<uint, QQmlJSScope::ConstPtr>>(m_content).second = type;
+            return;
+        case Kind::Conversion:
+            std::get<ConvertedTypes>(m_content).result = type;
+            return;
+        case Kind::MethodCall:
+            std::get<QQmlJSMetaMethod>(m_content).setReturnType({ type });
+            return;
+        }
+
+        Q_UNREACHABLE_RETURN();
     }
 
 private:
@@ -479,6 +512,21 @@ QQmlJSRegisterContent::ContentVariant QQmlJSRegisterContent::variant() const
     return d ? d->m_variant : Unknown;
 }
 
+QQmlJSRegisterContent QQmlJSRegisterContent::storage() const
+{
+    return d ? d->m_storage : QQmlJSRegisterContent();
+}
+
+QQmlJSRegisterContent QQmlJSRegisterContent::original() const
+{
+    return d ? d->m_original : QQmlJSRegisterContent();
+}
+
+QQmlJSRegisterContent QQmlJSRegisterContent::shadowed() const
+{
+    return d ? d->m_shadowed : QQmlJSRegisterContent();
+}
+
 QQmlJSRegisterContentPool::QQmlJSRegisterContentPool() = default;
 QQmlJSRegisterContentPool::~QQmlJSRegisterContentPool() = default;
 
@@ -580,6 +628,28 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::castTo(
     QQmlJSRegisterContentPrivate *result = create(content, ContentVariant::Cast);
     result->m_content = std::make_pair(newContainedType, result->resultLookupIndex());
     return result;
+}
+
+void QQmlJSRegisterContentPool::adjustType(
+        const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &adjusted)
+{
+    QQmlJSRegisterContentPrivate *d = content.d;
+
+    Q_ASSERT(d);
+    Q_ASSERT(d->m_original.isNull());
+    d->m_original = clone(d);
+    d->setType(adjusted);
+}
+
+void QQmlJSRegisterContentPool::generalizeType(
+        const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &generalized)
+{
+    QQmlJSRegisterContentPrivate *d = content.d;
+
+    Q_ASSERT(d);
+    Q_ASSERT(d->m_shadowed.isNull());
+    d->m_shadowed = clone(d);
+    d->setType(generalized);
 }
 
 QQmlJSRegisterContentPrivate *QQmlJSRegisterContentPool::clone(

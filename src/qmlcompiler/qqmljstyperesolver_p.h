@@ -106,10 +106,7 @@ public:
     }
     QString nameForType(const QQmlJSScope::ConstPtr &type) const
     {
-        // We want here not the name of the original type. That one may not exist.
-        // We want the name of the type we've used as replacement since that is
-        // whatever we do with the type expects.
-        return m_imports.name(comparableType(type));
+        return m_imports.name(type);
     }
 
     QQmlJSScope::ConstPtr typeFromAST(QQmlJS::AST::Type *type) const;
@@ -186,17 +183,18 @@ public:
     QQmlJSRegisterContent tracked(const QQmlJSRegisterContent &type) const;
     QQmlJSRegisterContent original(const QQmlJSRegisterContent &type) const;
 
-    QQmlJSScope::ConstPtr trackedContainedType(const QQmlJSRegisterContent &container) const;
     QQmlJSScope::ConstPtr originalContainedType(const QQmlJSRegisterContent &container) const;
 
     [[nodiscard]] bool adjustTrackedType(
-            const QQmlJSScope::ConstPtr &tracked, const QQmlJSScope::ConstPtr &conversion) const;
+            const QQmlJSRegisterContent &tracked, const QQmlJSScope::ConstPtr &conversion) const;
     [[nodiscard]] bool adjustTrackedType(
-            const QQmlJSScope::ConstPtr &tracked,
-            const QList<QQmlJSScope::ConstPtr> &conversions) const;
+            const QQmlJSRegisterContent &tracked, const QQmlJSRegisterContent &conversion) const;
+    [[nodiscard]] bool adjustTrackedType(
+            const QQmlJSRegisterContent &tracked,
+            const QList<QQmlJSRegisterContent> &conversions) const;
     void adjustOriginalType(
-            const QQmlJSScope::ConstPtr &tracked, const QQmlJSScope::ConstPtr &conversion) const;
-    void generalizeType(const QQmlJSScope::ConstPtr &type) const;
+            const QQmlJSRegisterContent &tracked, const QQmlJSScope::ConstPtr &conversion) const;
+    void generalizeType(const QQmlJSRegisterContent &type) const;
 
     void setParentMode(ParentMode mode) { m_parentMode = mode; }
     ParentMode parentMode() const { return m_parentMode; }
@@ -205,9 +203,7 @@ public:
     bool cloneMode() const { return m_cloneMode; }
 
     QQmlJSScope::ConstPtr storedType(const QQmlJSScope::ConstPtr &type) const;
-    QQmlJSScope::ConstPtr originalType(const QQmlJSScope::ConstPtr &type) const;
-    QQmlJSScope::ConstPtr trackedType(const QQmlJSScope::ConstPtr &type) const;
-    QQmlJSScope::ConstPtr comparableType(const QQmlJSScope::ConstPtr &type) const;
+    QQmlJSScope::ConstPtr trackedType(const QQmlJSScope::ConstPtr &type) const { return type; }
 
     const QQmlJSScopesById &objectsById() const { return m_objectsById; }
     bool canCallJSFunctions() const { return m_objectsById.signaturesAreEnforced(); }
@@ -230,7 +226,7 @@ public:
 
     bool canHoldUndefined(const QQmlJSRegisterContent &content) const;
     bool isOptionalType(const QQmlJSRegisterContent &content) const;
-    QQmlJSScope::ConstPtr extractNonVoidFromOptionalType(
+    QQmlJSRegisterContent extractNonVoidFromOptionalType(
             const QQmlJSRegisterContent &content) const;
 
     bool isNumeric(const QQmlJSScope::ConstPtr &type) const;
@@ -269,14 +265,6 @@ protected:
     bool canPrimitivelyConvertFromTo(
             const QQmlJSScope::ConstPtr &from, const QQmlJSScope::ConstPtr &to) const;
     QQmlJSRegisterContent lengthProperty(bool isWritable, const QQmlJSRegisterContent &scope) const;
-
-    QQmlJSRegisterContent shallowTransformed(
-            const QQmlJSRegisterContent &origin,
-            QQmlJSScope::ConstPtr (QQmlJSTypeResolver::*op)(const QQmlJSScope::ConstPtr &) const,
-            const QQmlJSRegisterContent &transformedScope) const;
-    QQmlJSRegisterContent transformed(
-            const QQmlJSRegisterContent &origin,
-            QQmlJSScope::ConstPtr (QQmlJSTypeResolver::*op)(const QQmlJSScope::ConstPtr &) const) const;
 
     QQmlJSScope::ConstPtr containedTypeForName(const QString &name) const;
     QQmlJSRegisterContent registerContentForName(
@@ -351,8 +339,6 @@ protected:
         // contents possibly overwritten by replacement.
         QQmlJSScope::Ptr clone;
     };
-
-    std::unique_ptr<QHash<QQmlJSScope::ConstPtr, TrackedType>> m_trackedTypes;
 };
 
 /*!

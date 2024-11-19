@@ -985,7 +985,8 @@ void QQmlJSTypePropagator::propagatePropertyLookup(const QString &propertyName, 
             setAccumulator(
                 m_pool->create(
                     prop, m_state.accumulatorIn().resultLookupIndex(), lookupIndex,
-                    QQmlJSRegisterContent::Property, m_state.accumulatorIn())
+                    // Use pre-determined scope type here to avoid adjusting it later.
+                    QQmlJSRegisterContent::Property, m_state.accumulatorOut().scopeType())
             );
 
             return;
@@ -1189,8 +1190,11 @@ void QQmlJSTypePropagator::generate_CallProperty_SCMath(
     const QList<QQmlJSMetaMethod> methods = math.containedType()->ownMethods(name);
     Q_ASSERT(methods.length() == 1);
 
+    // Declare the Math object as base type of itself so that it gets cloned and won't be
+    // adjusted later. This is what we do with all method calls.
     QQmlJSRegisterContent realType = m_typeResolver->returnType(
-            methods[0], m_typeResolver->realType(), math);
+            methods[0], m_typeResolver->realType(),
+            m_typeResolver->baseType(math.containedType(), math));
     for (int i = 0; i < argc; ++i)
         addReadRegister(argv + i, realType);
     setAccumulator(realType);
@@ -1234,7 +1238,12 @@ void QQmlJSTypePropagator::generate_CallProperty_SCconsole(
     const QQmlJSRegisterContent &console = m_state.registers[base].content;
     QList<QQmlJSMetaMethod> methods = console.containedType()->ownMethods(name);
     Q_ASSERT(methods.length() == 1);
-    setAccumulator(m_typeResolver->returnType(methods[0], m_typeResolver->voidType(), console));
+
+    // Declare the console object as base type of itself so that it gets cloned and won't be
+    // adjusted later. This is what we do with all method calls.
+    setAccumulator(m_typeResolver->returnType(
+            methods[0], m_typeResolver->voidType(),
+            m_typeResolver->baseType(console.containedType(), console)));
 }
 
 void QQmlJSTypePropagator::propagateCall_SAcheck(const QQmlJSMetaMethod &method,
@@ -1508,8 +1517,13 @@ void QQmlJSTypePropagator::mergeRegister(
 
 void QQmlJSTypePropagator::addReadRegister(int index, const QQmlJSRegisterContent &convertTo)
 {
-    m_state.addReadRegister(
-            index, m_typeResolver->convert(m_state.registers[index].content, convertTo));
+    if (m_state.registers[index].content == convertTo) {
+        // Explicitly pass the same type through without conversion
+        m_state.addReadRegister(index, convertTo);
+    } else {
+        m_state.addReadRegister(
+                index, m_typeResolver->convert(m_state.registers[index].content, convertTo));
+    }
 }
 
 void QQmlJSTypePropagator::addReadRegister(int index, const QQmlJSScope::ConstPtr &convertTo)
@@ -2447,11 +2461,11 @@ void QQmlJSTypePropagator::recordEqualsType(int lhs)
     }
 
     const auto containedAccumulatorIn = m_typeResolver->isOptionalType(accumulatorIn)
-            ? m_typeResolver->extractNonVoidFromOptionalType(accumulatorIn)
+            ? m_typeResolver->extractNonVoidFromOptionalType(accumulatorIn).containedType()
             : accumulatorIn.containedType();
 
     const auto containedLhs = m_typeResolver->isOptionalType(lhsRegister)
-            ? m_typeResolver->extractNonVoidFromOptionalType(lhsRegister)
+            ? m_typeResolver->extractNonVoidFromOptionalType(lhsRegister).containedType()
             : lhsRegister.containedType();
 
     // We don't modify types if the types are comparable with QObject, QUrl or var types

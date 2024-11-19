@@ -32,19 +32,19 @@ QQmlJSCompilePass::BlocksAndAnnotations QQmlJSStorageInitializer::run(Function *
     }
 
     const auto storeRegister = [&](QQmlJSRegisterContent &content) {
-        if (!content.isValid())
+        if (!content.isValid() || !content.storage().isNull())
             return;
 
-        const QQmlJSScope::ConstPtr original
-                = m_typeResolver->originalType(content.containedType());
-        const QQmlJSScope::ConstPtr originalStored = m_typeResolver->storedType(original);
+        const QQmlJSRegisterContent original = m_typeResolver->original(content);
+        const QQmlJSScope::ConstPtr originalStored
+                = m_typeResolver->storedType(original.containedType());
         const QQmlJSScope::ConstPtr originalTracked = m_typeResolver->trackedType(originalStored);
         content = m_pool->storedIn(content, originalTracked);
 
         const QQmlJSScope::ConstPtr adjustedStored
                 = m_typeResolver->storedType(content.containedType());
 
-        if (!m_typeResolver->adjustTrackedType(originalTracked, adjustedStored)) {
+        if (!m_typeResolver->adjustTrackedType(content.storage(), adjustedStored)) {
             addError(QStringLiteral("Cannot adjust stored type for %1.")
                              .arg(content.containedType()->internalName()));
         }

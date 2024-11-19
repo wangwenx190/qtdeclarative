@@ -40,8 +40,8 @@ public:
 private:
     struct RegisterAccess
     {
-        QList<QQmlJSScope::ConstPtr> trackedTypes;
-        QHash<int, QQmlJSScope::ConstPtr> typeReaders;
+        QList<QQmlJSRegisterContent> trackedTypes;
+        QHash<int, QQmlJSRegisterContent> typeReaders;
         QHash<int, Conversions> registerReadersAndConversions;
         int trackedRegister;
     };

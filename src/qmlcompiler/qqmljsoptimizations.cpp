@@ -83,10 +83,9 @@ void QQmlJSOptimizations::populateReaderLocations()
             access.trackedTypes.clear();
             const auto origins = writeIt->second.changedRegister.conversionOrigins();
             for (const QQmlJSRegisterContent &origin : origins)
-                access.trackedTypes.append(origin.containedType());
+                access.trackedTypes.append(origin);
         } else {
-            access.trackedTypes.append(
-                    m_typeResolver->trackedContainedType(writeIt->second.changedRegister));
+            access.trackedTypes.append(writeIt->second.changedRegister);
             Q_ASSERT(!access.trackedTypes.last().isNull());
         }
 
@@ -124,19 +123,22 @@ void QQmlJSOptimizations::populateReaderLocations()
                 for (auto readIt = blockInstr->second.readRegisters.constBegin(),
                      end = blockInstr->second.readRegisters.constEnd();
                      readIt != end; ++readIt) {
-                    if (!blockInstr->second.isRename) {
+                    if (blockInstr->second.isRename) {
+                        // Nothing to do
+                    } else if (readIt->second.content.isConversion()) {
                         const QList<QQmlJSRegisterContent> conversionOrigins
                                 = readIt->second.content.conversionOrigins();
                         for (const QQmlJSRegisterContent &origin : conversionOrigins) {
-                            if (!access.trackedTypes.contains(origin.containedType()))
+                            if (!access.trackedTypes.contains(origin))
                                 continue;
 
-                            Q_ASSERT(readIt->second.content.isConversion());
                             Q_ASSERT(readIt->second.content.conversionResult());
-                            access.typeReaders[blockInstr.key()]
-                                    = readIt->second.content.conversionResult();
+                            access.typeReaders[blockInstr.key()] = readIt->second.content;
                             break;
                         }
+                    } else if (access.trackedTypes.contains(readIt->second.content)) {
+                        // We've used the original content instead of converting it
+                        access.typeReaders[blockInstr.key()] = readIt->second.content;
                     }
                     if (registerActive && readIt->first == writtenRegister)
                         access.registerReadersAndConversions[blockInstr.key()] = conversions;
@@ -195,7 +197,7 @@ bool QQmlJSOptimizations::eraseDeadStore(const InstructionAnnotations::iterator 
         } else {
             // void the output, rather than deleting it. We still need its variant.
             const bool adjusted = m_typeResolver->adjustTrackedType(
-                    it->second.changedRegister.containedType(), m_typeResolver->voidType());
+                    it->second.changedRegister, m_typeResolver->voidType());
             Q_ASSERT(adjusted); // Can always convert to void
         }
         m_readerLocations.erase(reader);
@@ -280,24 +282,30 @@ QQmlJSBasicBlocks::objectAndArrayDefinitions() const
 }
 
 static QString adjustErrorMessage(
-        const QQmlJSScope::ConstPtr &origin, const QQmlJSScope::ConstPtr &conversion) {
+        const QQmlJSRegisterContent &origin, const QQmlJSScope::ConstPtr &conversion) {
     return QLatin1String("Cannot convert from ")
-            + origin->internalName() + QLatin1String(" to ") + conversion->internalName();
+            + origin.containedType()->internalName() + QLatin1String(" to ")
+            + conversion->internalName();
 }
 
 static QString adjustErrorMessage(
-        const QQmlJSScope::ConstPtr &origin, const QList<QQmlJSScope::ConstPtr> &conversions) {
+        const QQmlJSRegisterContent &origin, const QQmlJSRegisterContent &conversion) {
+    return adjustErrorMessage(origin, conversion.containedType());
+}
+
+static QString adjustErrorMessage(
+        const QQmlJSRegisterContent &origin, const QList<QQmlJSRegisterContent> &conversions) {
     if (conversions.size() == 1)
         return adjustErrorMessage(origin, conversions[0]);
 
     QString types;
-    for (const QQmlJSScope::ConstPtr &type : conversions) {
+    for (const QQmlJSRegisterContent &type : conversions) {
         if (!types.isEmpty())
             types += QLatin1String(", ");
-        types += type->internalName();
+        types += type.containedType()->internalName();
     }
     return QLatin1String("Cannot convert from ")
-            + origin->internalName() + QLatin1String(" to union of ") + types;
+            + origin.containedType()->internalName() + QLatin1String(" to union of ") + types;
 }
 
 void QQmlJSOptimizations::adjustTypes()
@@ -331,10 +339,12 @@ void QQmlJSOptimizations::adjustTypes()
             return;
 
         Q_ASSERT(it->trackedTypes.size() == 1);
-        Q_ASSERT(it->trackedTypes[0] == annotation.changedRegister.containedType());
+        Q_ASSERT(it->trackedTypes[0] == annotation.changedRegister);
 
-        if (it->trackedTypes[0]->accessSemantics() != QQmlJSScope::AccessSemantics::Sequence)
+        if (it->trackedTypes[0].containedType()->accessSemantics()
+                != QQmlJSScope::AccessSemantics::Sequence) {
             return; // Constructed something else.
+        }
 
         if (!m_typeResolver->adjustTrackedType(it->trackedTypes[0], it->typeReaders.values()))
             addError(adjustErrorMessage(it->trackedTypes[0], it->typeReaders.values()));
@@ -342,15 +352,15 @@ void QQmlJSOptimizations::adjustTypes()
         // Now we don't adjust the type we store, but rather the type we expect to read. We
         // can do this because we've tracked the read type when we defined the array in
         // QQmlJSTypePropagator.
-        if (QQmlJSScope::ConstPtr valueType = it->trackedTypes[0]->valueType()) {
+        if (QQmlJSScope::ConstPtr valueType = it->trackedTypes[0].containedType()->valueType()) {
             const QQmlJSRegisterContent content = annotation.readRegisters.begin().value().content;
             const QQmlJSScope::ConstPtr contained = content.containedType();
 
             // If it's the 1-arg Array ctor, and the argument is a number, that's special.
             if (mode != ObjectOrArrayDefinition::ArrayConstruct1ArgId
                     || !m_typeResolver->equals(contained, m_typeResolver->realType())) {
-                if (!m_typeResolver->adjustTrackedType(contained, valueType))
-                    addError(adjustErrorMessage(contained, valueType));
+                if (!m_typeResolver->adjustTrackedType(content, valueType))
+                    addError(adjustErrorMessage(content, valueType));
             }
         }
 
@@ -368,9 +378,9 @@ void QQmlJSOptimizations::adjustTypes()
         const InstructionAnnotation &annotation = m_annotations[object.instructionOffset];
 
         Q_ASSERT(it->trackedTypes.size() == 1);
-        QQmlJSScope::ConstPtr resultType = it->trackedTypes[0];
+        const QQmlJSRegisterContent resultType = it->trackedTypes[0];
 
-        Q_ASSERT(resultType == annotation.changedRegister.containedType());
+        Q_ASSERT(resultType == annotation.changedRegister);
         Q_ASSERT(!annotation.readRegisters.isEmpty());
 
         if (!m_typeResolver->adjustTrackedType(resultType, it->typeReaders.values()))
@@ -378,9 +388,9 @@ void QQmlJSOptimizations::adjustTypes()
 
         m_readerLocations.erase(it);
 
-        if (m_typeResolver->equals(resultType, m_typeResolver->varType())
-                || m_typeResolver->equals(resultType, m_typeResolver->variantMapType())
-                || m_typeResolver->equals(resultType, m_typeResolver->jsValueType())) {
+        if (m_typeResolver->registerContains(resultType, m_typeResolver->varType())
+                || m_typeResolver->registerContains(resultType, m_typeResolver->variantMapType())
+                || m_typeResolver->registerContains(resultType, m_typeResolver->jsValueType())) {
             // It's all variant anyway
             return;
         }
@@ -394,10 +404,10 @@ void QQmlJSOptimizations::adjustTypes()
             // QQmlJSTypePropagator.
 
             const QString propName = m_jsUnitGenerator->jsClassMember(object.internalClassId, i);
-            const QQmlJSMetaProperty property = resultType->property(propName);
+            const QQmlJSMetaProperty property = resultType.containedType()->property(propName);
             if (!property.isValid()) {
-                addError(resultType->internalName() + QLatin1String(" has no property called ")
-                         + propName);
+                addError(resultType.containedType()->internalName()
+                         + QLatin1String(" has no property called ") + propName);
                 continue;
             }
             const QQmlJSScope::ConstPtr propType = property.type();
@@ -406,9 +416,8 @@ void QQmlJSOptimizations::adjustTypes()
                 continue;
             }
             const QQmlJSRegisterContent content = annotation.readRegisters[object.argv + i].content;
-            const QQmlJSScope::ConstPtr contained = content.containedType();
-            if (!m_typeResolver->adjustTrackedType(contained, propType))
-                addError(adjustErrorMessage(contained, propType));
+            if (!m_typeResolver->adjustTrackedType(content, propType))
+                addError(adjustErrorMessage(content, propType));
         }
 
         // The others cannot be adjusted. We don't know their names, yet.
@@ -459,12 +468,11 @@ void QQmlJSOptimizations::adjustTypes()
             QQmlJSScope::ConstPtr newResult;
             const auto content = conversion->second.content;
             if (content.isConversion()) {
-                QQmlJSScope::ConstPtr conversionResult = content.conversionResult();
                 const auto conversionOrigins = content.conversionOrigins();
                 for (const auto &origin : conversionOrigins)
                     newResult = m_typeResolver->merge(newResult, origin.containedType());
-                if (!m_typeResolver->adjustTrackedType(conversionResult, newResult))
-                    addError(adjustErrorMessage(conversionResult, newResult));
+                if (!m_typeResolver->adjustTrackedType(content, newResult))
+                    addError(adjustErrorMessage(content, newResult));
             }
             newRegisters.appendOrdered(conversion);
         }
@@ -491,17 +499,14 @@ void QQmlJSOptimizations::populateBasicBlocks()
             const InstructionAnnotation &instruction = instrIt->second;
             for (auto it = instruction.readRegisters.begin(), end = instruction.readRegisters.end();
                  it != end; ++it) {
-                Q_ASSERT(instruction.isRename || it->second.content.isConversion());
                 if (!writtenRegisters.contains(it->first))
                     block.readRegisters.append(it->first);
             }
 
             // If it's just a renaming, the type has existed in a different register before.
             if (instruction.changedRegisterIndex != InvalidRegister) {
-                if (!instruction.isRename) {
-                    writtenTypes.append(m_typeResolver->trackedContainedType(
-                                            instruction.changedRegister));
-                }
+                if (!instruction.isRename)
+                    writtenTypes.append(instruction.changedRegister.containedType());
                 writtenRegisters.append(instruction.changedRegisterIndex);
             }
         }

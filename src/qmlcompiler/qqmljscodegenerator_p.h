@@ -362,7 +362,8 @@ private:
     QQmlJSRegisterContent originalType(const QQmlJSRegisterContent &tracked)
     {
         const QQmlJSRegisterContent restored = m_typeResolver->original(tracked);
-        return m_pool->storedIn(restored, m_typeResolver->originalType(tracked.storedType()));
+        return m_pool->storedIn(
+                restored, m_typeResolver->original(tracked.storage()).containedType());
     }
 
     QQmlJSRegisterContent literalType(const QQmlJSScope::ConstPtr &contained)
