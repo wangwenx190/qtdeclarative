@@ -50,6 +50,8 @@ public:
         Operation,
 
         BaseType,
+
+        Storage,
         Unknown,
     };
 

@@ -79,7 +79,7 @@ public:
     friend size_t qHash(const QQmlJSRegisterContentPrivate &registerContent, size_t seed = 0)
     {
         seed = qHashMulti(
-                seed, registerContent.m_storedType, registerContent.m_content.index(),
+                seed, registerContent.m_storage, registerContent.m_content.index(),
                 registerContent.m_variant, registerContent.m_scope);
 
         switch (Kind(registerContent.m_content.index())) {
@@ -109,7 +109,7 @@ public:
     friend bool operator==(
             const QQmlJSRegisterContentPrivate &a, const QQmlJSRegisterContentPrivate &b)
     {
-        return a.m_storedType == b.m_storedType && a.m_variant == b.m_variant
+        return a.m_storage == b.m_storage && a.m_variant == b.m_variant
                 && a.m_scope == b.m_scope && a.m_content == b.m_content;
     }
 
@@ -119,7 +119,7 @@ public:
         return !(a == b);
     }
 
-    QQmlJSScope::ConstPtr m_storedType;
+    QQmlJSRegisterContent m_storage;
     QQmlJSRegisterContent m_scope;
     Content m_content;
     ContentVariant m_variant = ContentVariant::Unknown;
@@ -160,7 +160,7 @@ QString QQmlJSRegisterContent::descriptiveName() const
 {
     using Kind = QQmlJSRegisterContentPrivate::Kind;
 
-    if (d->m_storedType.isNull() && containedType().isNull())
+    if (!d->m_storage.isValid() && containedType().isNull())
         return u"(invalid type)"_s;
 
     const auto scope = [this]() -> QString {
@@ -184,15 +184,17 @@ QString QQmlJSRegisterContent::descriptiveName() const
     case Kind::Type: {
         const QQmlJSScope::ConstPtr contained = type();
         result += contained->internalName();
-        if (d->m_storedType && d->m_storedType->internalName() != contained->internalName())
-            result += u" stored as "_s + d->m_storedType->internalName();
+        const QQmlJSScope::ConstPtr stored = d->m_storage.containedType();
+        if (stored && stored->internalName() != contained->internalName())
+            result += u" stored as "_s + stored->internalName();
         return result;
     }
     case Kind::Property: {
         const QQmlJSMetaProperty prop = property();
         result += scope() + prop.propertyName() + u" with type "_s + prop.typeName();
-        if (d->m_storedType && d->m_storedType->internalName() != prop.typeName())
-            result += u" (stored as "_s + d->m_storedType->internalName() + u")";
+        const QQmlJSScope::ConstPtr stored = d->m_storage.containedType();
+        if (stored && stored->internalName() != prop.typeName())
+            result += u" (stored as "_s + stored->internalName() + u")";
         return result;
     }
     case Kind::Method: {
@@ -201,8 +203,8 @@ QString QQmlJSRegisterContent::descriptiveName() const
             result = scope() + u"(unknown method)"_s;
         else
             result = scope() + methods[0].methodName() + u"(...)"_s;
-        if (d->m_storedType)
-            return result + u" (stored as "_s + d->m_storedType->internalName() + u")";
+        if (d->m_storage.isValid())
+            return result + u" (stored as "_s + d->m_storage.containedType()->internalName() + u")";
         return result;
     }
     case Kind::Enum: {
@@ -212,8 +214,8 @@ QString QQmlJSRegisterContent::descriptiveName() const
             result = scope() + enumName;
         else
             result = scope() + enumName + u"::"_s + memberName;
-        if (d->m_storedType)
-            return result + u" (stored as "_s + d->m_storedType->internalName() + u")";
+        if (d->m_storage.isValid())
+            return result + u" (stored as "_s + d->m_storage.containedType()->internalName() + u")";
         return result;
     }
     case Kind::ImportNamespace: {
@@ -355,7 +357,7 @@ QQmlJSRegisterContent QQmlJSRegisterContent::attachee() const
 
 QQmlJSScope::ConstPtr QQmlJSRegisterContent::storedType() const
 {
-    return d->m_storedType;
+    return d->m_storage.containedType();
 }
 
 QQmlJSScope::ConstPtr QQmlJSRegisterContent::containedType() const
@@ -548,7 +550,8 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::storedIn(
         const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &newStoredType)
 {
     QQmlJSRegisterContentPrivate *result = clone(content.d);
-    result->m_storedType = newStoredType;
+    result->m_storage = create(
+            newStoredType, QQmlJSRegisterContent::InvalidLookupIndex, ContentVariant::Storage);
     return result;
 }
 
