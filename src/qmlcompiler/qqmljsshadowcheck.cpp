@@ -163,6 +163,7 @@ QQmlJSShadowCheck::Shadowability QQmlJSShadowCheck::checkShadowing(
     case QQmlJSRegisterContent::MethodCall:
     case QQmlJSRegisterContent::Property:
     case QQmlJSRegisterContent::TypeByName:
+    case QQmlJSRegisterContent::Cast:
     case QQmlJSRegisterContent::Unknown: {
         const QQmlJSRegisterContent member = m_typeResolver->memberType(baseType, memberName);
 

@@ -50,6 +50,7 @@ public:
         Operation,
 
         BaseType,
+        Cast,
 
         Storage,
         Unknown,

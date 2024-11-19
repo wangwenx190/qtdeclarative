@@ -559,7 +559,7 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::castTo(
         const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &newContainedType)
 {
     // This is not a conversion but a run time cast. It may result in null or undefined.
-    QQmlJSRegisterContentPrivate *result = clone(content.d);
+    QQmlJSRegisterContentPrivate *result = create(content, ContentVariant::Cast);
     result->m_content = std::make_pair(newContainedType, result->resultLookupIndex());
     return result;
 }

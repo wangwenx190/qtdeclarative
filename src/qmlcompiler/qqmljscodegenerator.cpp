@@ -1331,7 +1331,7 @@ QString QQmlJSCodeGenerator::generateCallConstructor(
         } else {
             const QQmlJSRegisterContent parameterTypeConversion
                     = m_pool->storedIn(
-                        m_pool->castTo(argumentType, parameterType),
+                        m_typeResolver->convert(argumentType, parameterType),
                         m_typeResolver->genericType(parameterType));
             result += conversion(argumentType, parameterTypeConversion, argument);
             argPointers.append(contentPointer(parameterTypeConversion, arg));
