@@ -473,7 +473,8 @@ QQmlJSRegisterContent QQmlJSTypeResolver::shallowTransformed(
                 origin.variant(), transformedScope);
     }
 
-    Q_UNREACHABLE_RETURN({});
+    Q_ASSERT(origin.isNull());
+    return origin;
 }
 
 QQmlJSRegisterContent QQmlJSTypeResolver::transformed(

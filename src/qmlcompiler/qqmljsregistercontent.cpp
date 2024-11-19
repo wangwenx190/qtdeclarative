@@ -147,10 +147,6 @@ private:
     QQmlJSRegisterContentPrivate &operator=(QQmlJSRegisterContentPrivate &&) = default;
 };
 
-QQmlJSRegisterContent::QQmlJSRegisterContent()
-    : d(QQmlJSRegisterContentPool::invalid())
-{}
-
 bool QQmlJSRegisterContent::isValid() const
 {
     return !containedType().isNull();
@@ -160,7 +156,7 @@ QString QQmlJSRegisterContent::descriptiveName() const
 {
     using Kind = QQmlJSRegisterContentPrivate::Kind;
 
-    if (!d->m_storage.isValid() && containedType().isNull())
+    if (!d || (!d->m_storage.isValid() && containedType().isNull()))
         return u"(invalid type)"_s;
 
     const auto scope = [this]() -> QString {
@@ -253,42 +249,45 @@ QString QQmlJSRegisterContent::containedTypeName() const
 
 bool QQmlJSRegisterContent::isType() const
 {
-    return d->m_content.index() == size_t(QQmlJSRegisterContentPrivate::Kind::Type);
+    return d && d->m_content.index() == size_t(QQmlJSRegisterContentPrivate::Kind::Type);
 }
 
 bool QQmlJSRegisterContent::isProperty() const
 {
-    return d->m_content.index() == size_t(QQmlJSRegisterContentPrivate::Kind::Property);
+    return d && d->m_content.index() == size_t(QQmlJSRegisterContentPrivate::Kind::Property);
 }
 
 bool QQmlJSRegisterContent::isEnumeration() const
 {
-    return d->m_content.index() == size_t(QQmlJSRegisterContentPrivate::Kind::Enum);
+    return d && d->m_content.index() == size_t(QQmlJSRegisterContentPrivate::Kind::Enum);
 }
 
 bool QQmlJSRegisterContent::isMethod() const
 {
-    return d->m_content.index() == size_t(QQmlJSRegisterContentPrivate::Kind::Method);
+    return d && d->m_content.index() == size_t(QQmlJSRegisterContentPrivate::Kind::Method);
 }
 
 bool QQmlJSRegisterContent::isImportNamespace() const
 {
-    return d->m_content.index() == size_t(QQmlJSRegisterContentPrivate::Kind::ImportNamespace);
+    return d && d->m_content.index() == size_t(QQmlJSRegisterContentPrivate::Kind::ImportNamespace);
 }
 
 bool QQmlJSRegisterContent::isConversion() const
 {
-    return d->m_content.index() == size_t(QQmlJSRegisterContentPrivate::Kind::Conversion);
+    return d && d->m_content.index() == size_t(QQmlJSRegisterContentPrivate::Kind::Conversion);
 }
 
 bool QQmlJSRegisterContent::isMethodCall() const
 {
-    return d->m_content.index() == size_t(QQmlJSRegisterContentPrivate::Kind::MethodCall);
+    return d && d->m_content.index() == size_t(QQmlJSRegisterContentPrivate::Kind::MethodCall);
 }
 
 bool QQmlJSRegisterContent::isList() const
 {
     using Kind = QQmlJSRegisterContentPrivate::Kind;
+
+    if (!d)
+        return false;
 
     switch (Kind(d->m_content.index())) {
     case Kind::Type:
@@ -312,6 +311,9 @@ bool QQmlJSRegisterContent::isWritable() const
 {
     using Kind = QQmlJSRegisterContentPrivate::Kind;
 
+    if (!d)
+        return false;
+
     switch (Kind(d->m_content.index())) {
     case Kind::Property:
         return std::get<QQmlJSRegisterContentPrivate::PropertyLookup>(d->m_content)
@@ -327,7 +329,7 @@ bool QQmlJSRegisterContent::isWritable() const
 
 bool QQmlJSRegisterContent::isJavaScriptReturnValue() const
 {
-    return isMethodCall() && std::get<QQmlJSMetaMethod>(d->m_content).isJavaScriptFunction();
+    return d && isMethodCall() && std::get<QQmlJSMetaMethod>(d->m_content).isJavaScriptFunction();
 }
 
 /*!
@@ -337,6 +339,7 @@ bool QQmlJSRegisterContent::isJavaScriptReturnValue() const
  */
 QQmlJSRegisterContent QQmlJSRegisterContent::attacher() const
 {
+    Q_ASSERT(d);
     Q_ASSERT(d->m_variant == Attachment);
     return scopeType();
 }
@@ -348,6 +351,7 @@ QQmlJSRegisterContent QQmlJSRegisterContent::attacher() const
  */
 QQmlJSRegisterContent QQmlJSRegisterContent::attachee() const
 {
+    Q_ASSERT(d);
     Q_ASSERT(d->m_variant == Attachment);
     QQmlJSRegisterContent attachee = attacher().scopeType();
     while (attachee.variant() == ModulePrefix)
@@ -357,11 +361,13 @@ QQmlJSRegisterContent QQmlJSRegisterContent::attachee() const
 
 QQmlJSScope::ConstPtr QQmlJSRegisterContent::storedType() const
 {
-    return d->m_storage.containedType();
+    return d ? d->m_storage.containedType() : QQmlJSScope::ConstPtr();
 }
 
 QQmlJSScope::ConstPtr QQmlJSRegisterContent::containedType() const
 {
+    if (!d)
+        return QQmlJSScope::ConstPtr();
     if (isType())
         return type();
     if (isProperty())
@@ -382,88 +388,99 @@ QQmlJSScope::ConstPtr QQmlJSRegisterContent::containedType() const
 
 QQmlJSRegisterContent QQmlJSRegisterContent::scopeType() const
 {
-    return d->m_scope;
+    return d ? d->m_scope : QQmlJSRegisterContent();
 }
 
 QQmlJSScope::ConstPtr QQmlJSRegisterContent::type() const
 {
+    Q_ASSERT(isType());
     return std::get<std::pair<QQmlJSScope::ConstPtr, int>>(d->m_content).first;
 }
 
 QQmlJSMetaProperty QQmlJSRegisterContent::property() const
 {
+    Q_ASSERT(isProperty());
     return std::get<QQmlJSRegisterContentPrivate::PropertyLookup>(d->m_content).property;
 }
 
 int QQmlJSRegisterContent::baseLookupIndex() const
 {
+    Q_ASSERT(isProperty());
     return std::get<QQmlJSRegisterContentPrivate::PropertyLookup>(d->m_content).baseLookupIndex;
 }
 
 int QQmlJSRegisterContent::resultLookupIndex() const
 {
-    return d->resultLookupIndex();
+    return d ? d->resultLookupIndex() : InvalidLookupIndex;
 }
 
 QQmlJSMetaEnum QQmlJSRegisterContent::enumeration() const
 {
+    Q_ASSERT(isEnumeration());
     return std::get<std::pair<QQmlJSMetaEnum, QString>>(d->m_content).first;
 }
 
 QString QQmlJSRegisterContent::enumMember() const
 {
+    Q_ASSERT(isEnumeration());
     return std::get<std::pair<QQmlJSMetaEnum, QString>>(d->m_content).second;
 }
 
 QList<QQmlJSMetaMethod> QQmlJSRegisterContent::method() const
 {
+    Q_ASSERT(isMethod());
     return std::get<std::pair<QList<QQmlJSMetaMethod>, QQmlJSScope::ConstPtr>>(d->m_content).first;
 }
 
 QQmlJSScope::ConstPtr QQmlJSRegisterContent::methodType() const
 {
+    Q_ASSERT(isMethod());
     return std::get<std::pair<QList<QQmlJSMetaMethod>, QQmlJSScope::ConstPtr>>(d->m_content).second;
 }
 
 uint QQmlJSRegisterContent::importNamespace() const
 {
+    Q_ASSERT(isImportNamespace());
     return std::get<std::pair<uint, QQmlJSScope::ConstPtr>>(d->m_content).first;
 }
 
 QQmlJSScope::ConstPtr QQmlJSRegisterContent::importNamespaceType() const
 {
+    Q_ASSERT(isImportNamespace());
     return std::get<std::pair<uint, QQmlJSScope::ConstPtr>>(d->m_content).second;
 }
 
 QQmlJSScope::ConstPtr QQmlJSRegisterContent::conversionResult() const
 {
+    Q_ASSERT(isConversion());
     return std::get<QQmlJSRegisterContentPrivate::ConvertedTypes>(d->m_content).result;
 }
 
 QQmlJSRegisterContent QQmlJSRegisterContent::conversionResultScope() const
 {
+    Q_ASSERT(isConversion());
     return std::get<QQmlJSRegisterContentPrivate::ConvertedTypes>(d->m_content).resultScope;
 }
 
 QList<QQmlJSRegisterContent> QQmlJSRegisterContent::conversionOrigins() const
 {
+    Q_ASSERT(isConversion());
     return std::get<QQmlJSRegisterContentPrivate::ConvertedTypes>(d->m_content).origins;
 }
 
 QQmlJSMetaMethod QQmlJSRegisterContent::methodCall() const
 {
+    Q_ASSERT(isMethodCall());
     return std::get<QQmlJSMetaMethod>(d->m_content);
 }
 
 QQmlJSRegisterContent::ContentVariant QQmlJSRegisterContent::variant() const
 {
-    return d->m_variant;
+    return d ? d->m_variant : Unknown;
 }
 
 QQmlJSRegisterContentPool::QQmlJSRegisterContentPool() = default;
 QQmlJSRegisterContentPool::~QQmlJSRegisterContentPool() = default;
-
-const QQmlJSRegisterContentPrivate QQmlJSRegisterContentPool::s_invalid;
 
 QQmlJSRegisterContent QQmlJSRegisterContentPool::create(
         const QQmlJSScope::ConstPtr &type, int resultLookupIndex,
@@ -549,6 +566,7 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::create(
 QQmlJSRegisterContent QQmlJSRegisterContentPool::storedIn(
         const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &newStoredType)
 {
+    Q_ASSERT(content.d);
     QQmlJSRegisterContentPrivate *result = clone(content.d);
     result->m_storage = create(
             newStoredType, QQmlJSRegisterContent::InvalidLookupIndex, ContentVariant::Storage);

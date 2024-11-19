@@ -58,7 +58,9 @@ public:
 
     enum { InvalidLookupIndex = -1 };
 
-    QQmlJSRegisterContent();
+    QQmlJSRegisterContent() = default;
+
+    bool isNull() const { return !d; }
     bool isValid() const;
 
     QString descriptiveName() const;
@@ -123,7 +125,7 @@ private:
         return qHash(registerContent.d, seed);
     }
 
-    const QQmlJSRegisterContentPrivate *d = nullptr;
+    QQmlJSRegisterContentPrivate *d = nullptr;
 };
 
 class Q_QMLCOMPILER_EXPORT QQmlJSRegisterContentPool
@@ -174,8 +176,6 @@ public:
     QQmlJSRegisterContent castTo(
             const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &newContainedType);
 
-    static const QQmlJSRegisterContentPrivate *invalid() { return &s_invalid; }
-
 private:
     struct Deleter {
         // It's a template so that we only need the QQmlJSRegisterContentPrivate dtor on usage.
@@ -192,7 +192,6 @@ private:
             const QQmlJSRegisterContent &scope, ContentVariant variant);
 
     Pool m_pool;
-    static const QQmlJSRegisterContentPrivate s_invalid;
 };
 
 QT_END_NAMESPACE
