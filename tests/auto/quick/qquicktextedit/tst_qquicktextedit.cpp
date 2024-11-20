@@ -1723,7 +1723,7 @@ void tst_qquicktextedit::keySelection()
     QQuickTextEdit *input = qobject_cast<QQuickTextEdit *>(qvariant_cast<QObject *>(window.rootObject()->property("myInput")));
 
     QVERIFY(input != nullptr);
-    QVERIFY(input->hasActiveFocus());
+    QTRY_VERIFY(input->hasActiveFocus());
 
     QSignalSpy spy(input, SIGNAL(selectedTextChanged()));
 
