@@ -4065,7 +4065,7 @@ void tst_qquicktextedit::signal_editingfinished()
     QQuickView window;
     window.setBaseSize(QSize(800, 600));
     QVERIFY(QQuickTest::showView(window, testFileUrl("signal_editingfinished.qml")));
-    QCOMPARE(QGuiApplication::focusWindow(), &window);
+    QTRY_COMPARE(QGuiApplication::focusWindow(), &window);
 
     QQuickTextEdit *input1 = qobject_cast<QQuickTextEdit *>(qvariant_cast<QObject *>(window.rootObject()->property("input1")));
     QVERIFY(input1);
