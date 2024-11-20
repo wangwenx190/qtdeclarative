@@ -1324,7 +1324,7 @@ void tst_qquicktextedit::persistentSelection()
 
     QQuickTextEdit *edit = qobject_cast<QQuickTextEdit *>(window.rootObject());
     QVERIFY(edit);
-    QVERIFY(edit->hasActiveFocus());
+    QTRY_VERIFY(edit->hasActiveFocus());
 
     QSignalSpy spy(edit, SIGNAL(persistentSelectionChanged(bool)));
 
