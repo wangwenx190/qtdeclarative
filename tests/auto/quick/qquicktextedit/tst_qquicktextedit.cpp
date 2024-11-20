@@ -2986,7 +2986,7 @@ void tst_qquicktextedit::cursorDelegateHeight()
 
     // Test that the delegate gets created.
     textEditObject->setFocus(true);
-    QVERIFY(textEditObject->isCursorVisible());
+    QTRY_VERIFY(textEditObject->isCursorVisible());
     QQuickItem* delegateObject = textEditObject->findChild<QQuickItem*>("cursorInstance");
     QVERIFY(delegateObject);
 
