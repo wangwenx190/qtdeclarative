@@ -46,6 +46,7 @@ private slots:
     void fileSelectors();
     void imageProvider();
     void translucentColors();
+    void loadEmptyUrl();
 
 private:
     void setTheme();
@@ -513,6 +514,27 @@ void tst_qquickiconimage::translucentColors()
     const QImage image = grabItemToImage(iconImage);
     QVERIFY(!image.isNull());
     QCOMPARE(image.pixelColor(image.width() / 2, image.height() / 2), QColor::fromRgba(0x80000000));
+}
+
+void tst_qquickiconimage::loadEmptyUrl()
+{
+    const QIcon icon = QIcon::fromTheme(QIcon::ThemeIcon::EditCopy);
+    if (icon.isNull())
+        QSKIP("Platform does not provide icon for QIcon::ThemeIcon::EditCopy");
+
+    QQuickView view(testFileUrl("loadEmptyUrl.qml"));
+    QCOMPARE(view.status(), QQuickView::Ready);
+    view.show();
+    view.requestActivate();
+    QVERIFY(QTest::qWaitForWindowActive(&view));
+
+    const QQuickIconImage *iconImage = qobject_cast<QQuickIconImage*>(view.rootObject());
+    QVERIFY(iconImage);
+    QVERIFY(!iconImage->sourceSize().isNull());
+    QVERIFY(iconImage->paintedWidth());
+    QVERIFY(iconImage->paintedHeight());
+    QVERIFY(iconImage->implicitWidth());
+    QVERIFY(iconImage->implicitHeight());
 }
 
 int main(int argc, char *argv[])
