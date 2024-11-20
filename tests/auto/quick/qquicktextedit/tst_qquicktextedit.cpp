@@ -3395,7 +3395,7 @@ void tst_qquicktextedit::inputMethodUpdate()
     QVERIFY(QQuickTest::showView(window, testFileUrl("inputMethodEvent.qml")));
     QQuickTextEdit *edit = qobject_cast<QQuickTextEdit *>(window.rootObject());
     QVERIFY(edit);
-    QVERIFY(edit->hasActiveFocus());
+    QTRY_VERIFY(edit->hasActiveFocus());
 
     // text change even without cursor position change needs to trigger update
     edit->setText("test");
