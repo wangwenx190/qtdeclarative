@@ -1606,7 +1606,7 @@ void tst_qquicktextedit::overwriteMode()
 
     QSignalSpy spy(textEdit, SIGNAL(overwriteModeChanged(bool)));
 
-    QVERIFY(textEdit->hasActiveFocus());
+    QTRY_VERIFY(textEdit->hasActiveFocus());
 
     textEdit->setOverwriteMode(true);
     QCOMPARE(spy.size(), 1);
