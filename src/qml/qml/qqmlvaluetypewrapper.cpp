@@ -787,7 +787,15 @@ bool QQmlValueTypeWrapper::virtualPut(Managed *m, PropertyKey id, const Value &v
         v = v.toInt();
 
     void *gadget = r->d()->gadgetPtr();
-    property.writeOnGadget(gadget, std::move(v));
+    const QMetaType type = v.metaType();
+    if (!property.writeOnGadget(gadget, std::move(v))) {
+        const QString error = QLatin1String("Cannot assign ") +
+                QLatin1String(type.name()) +
+                QLatin1String(" to ") +
+                QLatin1String(property.metaType().name());
+        scope.engine->throwError(error);
+        return true;
+    }
 
     if (heapObject)
         r->d()->writeBack(pd.coreIndex());

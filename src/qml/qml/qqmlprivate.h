@@ -771,6 +771,7 @@ namespace QQmlPrivate
 
         bool setValueLookup(uint index, void *target, void *value) const;
         void initSetValueLookup(uint index, const QMetaObject *metaObject) const;
+        void initSetValueLookupAsVariant(uint index, const QMetaObject *metaObject) const;
 #if QT_QML_REMOVED_SINCE(6, 9)
         void initSetValueLookup(uint index, const QMetaObject *metaObject, QMetaType type) const;
 #endif

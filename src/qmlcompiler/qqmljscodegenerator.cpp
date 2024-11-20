@@ -1684,7 +1684,13 @@ void QQmlJSCodeGenerator::generate_SetLookup(int index, int baseReg)
         const QString lookup = u"aotContext->setValueLookup("_s + indexString
                 + u", "_s + baseContentPointer
                 + u", "_s + variableIn + u')';
-        const QString initialization = u"aotContext->initSetValueLookup("_s
+
+        // We use the asVariant lookup also for non-shadowable properties if the input can hold
+        // undefined since that may be a reset. See QQmlJSTypePropagator::generate_StoreProperty().
+        const QString initialization
+                = (m_typeResolver->registerContains(property, m_typeResolver->varType())
+                           ? u"aotContext->initSetValueLookupAsVariant("_s
+                           : u"aotContext->initSetValueLookup("_s)
                 + indexString + u", "_s + metaObject(originalScope) + u')';
 
         generateLookup(lookup, initialization);
