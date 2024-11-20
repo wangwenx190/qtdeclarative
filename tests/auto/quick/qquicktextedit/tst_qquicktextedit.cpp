@@ -4364,7 +4364,7 @@ void tst_qquicktextedit::inputMethodComposing()
 
     QQuickTextEdit *edit = qobject_cast<QQuickTextEdit *>(window.rootObject());
     QVERIFY(edit);
-    QCOMPARE(QGuiApplication::focusObject(), static_cast<QObject *>(edit));
+    QTRY_COMPARE(QGuiApplication::focusObject(), static_cast<QObject *>(edit));
 
     QSignalSpy spy(edit, SIGNAL(inputMethodComposingChanged()));
     edit->setCursorPosition(12);
