@@ -50,13 +50,6 @@ long-running C++ functions, and so on.
 
 The profiler is part of both \QC and \QDS.
 
-\section1 QmlLive
-
-\l{QmlLive Manual}{QmlLive} is a 3rd party tool that offers a QML runtime
-capable of rendering changes to the code in realtime. It avoids the need to
-rebuild the application after every code change and install it on the target
-device. You can also extend it to build a custom runtime that suits your needs.
-
 \section1 Felgo QML Hot Reload
 
 \l{Felgo QML Hot Reload Tool}{Felgo QML Hot Reload} is a third-party tool that
