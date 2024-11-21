@@ -3826,9 +3826,8 @@ void tst_qquicktextedit::largeTextObservesViewport_data()
 
 void tst_qquicktextedit::largeTextObservesViewport()
 {
-    if ((QGuiApplication::platformName() == QLatin1String("offscreen"))
-        || (QGuiApplication::platformName() == QLatin1String("minimal")))
-        QSKIP("Skipping due to grabWindow not functional on offscreen/minimal platforms");
+    SKIP_IF_NO_WINDOW_GRAB;
+
     QFETCH(QString, text);
     QFETCH(QQuickTextEdit::TextFormat, textFormat);
     QFETCH(bool, parentIsViewport);

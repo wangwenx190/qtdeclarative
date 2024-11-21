@@ -941,8 +941,7 @@ void tst_qquickimage::sourceClipRect()
     QCOMPARE(image->implicitWidth(), sourceClipRect.isNull() ? 300 : sourceClipRect.width());
     QCOMPARE(image->implicitHeight(), sourceClipRect.isNull() ? 300 : sourceClipRect.height());
 
-    if (QGuiApplication::platformName() == QLatin1String("minimal"))
-        QSKIP("Skipping due to grabWindow not functional on offscreen/minimal platforms");
+    SKIP_IF_NO_WINDOW_GRAB;
     QImage contents = toUnscaledImage(window->grabWindow());
     if (contents.width() < sourceClipRect.width())
         QSKIP("Skipping due to grabWindow not functional");

@@ -1559,6 +1559,8 @@ void tst_qquickwindow::grab_data()
 
 void tst_qquickwindow::grab()
 {
+    // This test fails when running with the offscreen and minimal platform plugins,
+    // so we can't use SKIP_IF_NO_WINDOW_GRAB here.
     if ((QGuiApplication::platformName() == QLatin1String("offscreen"))
         || (QGuiApplication::platformName() == QLatin1String("minimal")))
         QSKIP("Skipping due to grabWindow not functional on offscreen/minimal platforms");

@@ -189,9 +189,11 @@ public:
 
 void tst_SceneGraph::manyWindows()
 {
-    if ((QGuiApplication::platformName() == QLatin1String("offscreen"))
-        || (QGuiApplication::platformName() == QLatin1String("minimal")))
-        QSKIP("Skipping due to grabWindow not functional on offscreen/minimal platforms");
+    SKIP_IF_NO_WINDOW_GRAB;
+    if (QGuiApplication::platformName() == QLatin1String("offscreen")) {
+        QSKIP("Skipping due to createPlatformOpenGLContext returning nullptr with "
+            "offscreen platform plugin on non-x11 platforms like QNX");
+    }
 
     QFETCH(QString, file);
     QFETCH(bool, toplevel);
