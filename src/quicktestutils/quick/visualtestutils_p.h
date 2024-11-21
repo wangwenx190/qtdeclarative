@@ -237,6 +237,13 @@ do { \
         QSKIP("grabWindow is not supported on the minimal platform"); \
 } while (false)
 
+#define SKIP_IF_NO_MOUSE_HOVER \
+do { \
+    if ((QGuiApplication::platformName() == QLatin1String("offscreen")) \
+            || (QGuiApplication::platformName() == QLatin1String("minimal"))) \
+        QSKIP("Mouse hovering is not supported on the offscreen/minimal platforms"); \
+} while (false)
+
 QT_END_NAMESPACE
 
 #endif // QQUICKVISUALTESTUTILS_P_H
