@@ -5231,7 +5231,7 @@ static void beginDeferredOnce(QQmlEnginePrivate *enginePriv,
         state.setCompletePending(true);
 
         state.initCreator(deferData->context->parent(), deferData->compilationUnit,
-                                 QQmlRefPointer<QQmlContextData>());
+                                 QQmlRefPointer<QQmlContextData>(), deferData->inlineComponentName);
 
         enginePriv->inProgressCreations++;
 

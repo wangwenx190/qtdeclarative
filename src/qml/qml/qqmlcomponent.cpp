@@ -1099,10 +1099,11 @@ QObject *QQmlComponentPrivate::beginCreate(QQmlRefPointer<QQmlContextData> conte
     const QQmlType type = loadedType();
     if (!type.isValid()) {
         enginePriv->referenceScarceResources();
-        state.initCreator(context, compilationUnit, creationContext);
+        const QString *icName = inlineComponentName.get();
+        state.initCreator(context, compilationUnit, creationContext, icName ? *icName : QString());
 
         QQmlObjectCreator::CreationFlags flags;
-        if (const QString *icName = inlineComponentName.get()) {
+        if (icName) {
             flags = QQmlObjectCreator::InlineComponent;
             if (start == -1)
                 start = compilationUnit->inlineComponentId(*icName);
@@ -1172,7 +1173,9 @@ void QQmlComponentPrivate::beginDeferred(QQmlEnginePrivate *enginePriv,
         auto creator = state.initCreator(
                     deferredData->context->parent(),
                     deferredData->compilationUnit,
-                    QQmlRefPointer<QQmlContextData>());
+                    QQmlRefPointer<QQmlContextData>(),
+                    deferredData->inlineComponentName
+                );
 
         if (!creator->populateDeferredProperties(object, deferredData))
             state.appendCreatorErrors();
@@ -1546,7 +1549,9 @@ void QQmlComponent::create(QQmlIncubator &incubator, QQmlContext *context, QQmlC
 
     p->compilationUnit = d->compilationUnit;
     p->enginePriv = enginePriv;
-    p->creator.reset(new QQmlObjectCreator(contextData, d->compilationUnit, d->creationContext, p.data()));
+    p->creator.reset(new QQmlObjectCreator(contextData, d->compilationUnit, d->creationContext,
+                                           d->inlineComponentName ? *d->inlineComponentName : QString(),
+                                           p.data()));
     p->subComponentToCreate = d->start;
 
     enginePriv->incubate(incubator, forContextData);
@@ -1618,7 +1623,7 @@ void QQmlComponentPrivate::incubateObject(
 
     incubatorPriv->compilationUnit = componentPriv->compilationUnit;
     incubatorPriv->enginePriv = enginePriv;
-    incubatorPriv->creator.reset(new QQmlObjectCreator(context, componentPriv->compilationUnit, componentPriv->creationContext));
+    incubatorPriv->creator.reset(new QQmlObjectCreator(context, componentPriv->compilationUnit, componentPriv->creationContext, inlineComponentName ? *inlineComponentName : QString()));
 
     if (start == -1) {
         if (const QString *icName = componentPriv->inlineComponentName.get()) {
