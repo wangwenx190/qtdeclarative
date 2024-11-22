@@ -2912,6 +2912,8 @@ void QQuickTextEdit::q_textChanged()
     }
 
     emit textChanged();
+    if (d->control->isBeingEdited())
+        emit textEdited();
 }
 
 void QQuickTextEdit::markDirtyNodesForRange(int start, int end, int charDelta)
@@ -3542,6 +3544,15 @@ void QQuickTextEditPrivate::updateMouseCursorShape()
     and the link string provides access to the particular link.
 
     \sa linkHovered, linkAt()
+*/
+
+/*!
+    \qmlsignal QtQuick::TextEdit::textEdited()
+    \since 6.9
+
+    This signal is emitted whenever the text is edited. Unlike \l textChanged(),
+    this signal is not emitted when the text is changed programmatically, for example,
+    by changing the value of the \l text property or by calling \l clear().
 */
 
 QString QQuickTextEdit::hoveredLink() const

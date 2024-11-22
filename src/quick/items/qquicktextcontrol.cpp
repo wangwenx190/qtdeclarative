@@ -81,6 +81,7 @@ QQuickTextControlPrivate::QQuickTextControlPrivate()
       hoveredMarker(false),
       selectByTouchDrag(false),
       imSelectionAfterPress(false),
+      beingEdited(false),
       lastSelectionStart(-1),
       lastSelectionEnd(-1)
 {}
@@ -768,6 +769,12 @@ bool QQuickTextControl::event(QEvent *e)
     return QObject::event(e);
 }
 
+bool QQuickTextControl::isBeingEdited()
+{
+    Q_D(QQuickTextControl);
+    return d->beingEdited;
+}
+
 void QQuickTextControl::timerEvent(QTimerEvent *e)
 {
     Q_D(QQuickTextControl);
@@ -806,6 +813,7 @@ void QQuickTextControlPrivate::keyPressEvent(QKeyEvent *e)
 {
     Q_Q(QQuickTextControl);
 
+    QScopedValueRollback<bool> rollbackBeingEdited(beingEdited, true);
     if (e->key() == Qt::Key_Back) {
          e->ignore();
          return;
