@@ -61,12 +61,12 @@ bool argumentsFromCommandLineAndFile(QStringList& allArguments, const QStringLis
     return true;
 }
 
-int main(int argv, char *argc[])
+int main(int argc, char *argv[])
 {
     QHashSeed::setDeterministicGlobalSeed();
     QList<QQmlJS::LoggerCategory> categories;
 
-    QCoreApplication app(argv, argc);
+    QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("qmllint");
     QCoreApplication::setApplicationVersion(QT_VERSION_STR);
     QCommandLineParser parser;
