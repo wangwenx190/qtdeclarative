@@ -620,6 +620,7 @@ bool QQmlJSTypeResolver::adjustTrackedType(
         return false;
     }
 
+    Q_ASSERT(!it->replacement);
     it->replacement = comparableType(conversion);
     *it->clone = std::move(*QQmlJSScope::clone(conversion));
     return true;
@@ -646,6 +647,7 @@ bool QQmlJSTypeResolver::adjustTrackedType(
         return false;
     }
 
+    Q_ASSERT(!it->replacement);
     it->replacement = comparableType(result);
     *mutableTracked = std::move(*QQmlJSScope::clone(result));
     return true;

@@ -376,6 +376,8 @@ void QQmlJSOptimizations::adjustTypes()
         if (!m_typeResolver->adjustTrackedType(resultType, it->typeReaders.values()))
             addError(adjustErrorMessage(resultType, it->typeReaders.values()));
 
+        m_readerLocations.erase(it);
+
         if (m_typeResolver->equals(resultType, m_typeResolver->varType())
                 || m_typeResolver->equals(resultType, m_typeResolver->variantMapType())
                 || m_typeResolver->equals(resultType, m_typeResolver->jsValueType())) {
