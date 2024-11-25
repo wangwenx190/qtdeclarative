@@ -200,7 +200,6 @@ public:
     bool cloneMode() const { return m_cloneMode; }
 
     QQmlJSScope::ConstPtr storedType(const QQmlJSScope::ConstPtr &type) const;
-    QQmlJSScope::ConstPtr trackedType(const QQmlJSScope::ConstPtr &type) const { return type; }
 
     const QQmlJSScopesById &objectsById() const { return m_objectsById; }
     bool canCallJSFunctions() const { return m_objectsById.signaturesAreEnforced(); }

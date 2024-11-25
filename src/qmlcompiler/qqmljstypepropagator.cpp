@@ -2294,8 +2294,7 @@ void QQmlJSTypePropagator::generate_DefineArray(int argc, int args)
     setAccumulator(m_typeResolver->operationType(m_typeResolver->variantListType()));
 
     // Track all arguments as the same type.
-    const QQmlJSScope::ConstPtr elementType
-            = m_typeResolver->trackedType(m_typeResolver->varType());
+    const QQmlJSScope::ConstPtr elementType = m_typeResolver->varType();
     for (int i = 0; i < argc; ++i)
         addReadRegister(args + i, elementType);
 }
@@ -2306,11 +2305,8 @@ void QQmlJSTypePropagator::generate_DefineObjectLiteral(int internalClassId, int
     Q_ASSERT(argc >= classSize);
 
     // Track each element as separate type
-    for (int i = 0; i < classSize; ++i) {
-        addReadRegister(
-                args + i,
-                m_typeResolver->trackedType(m_typeResolver->varType()));
-    }
+    for (int i = 0; i < classSize; ++i)
+        addReadRegister(args + i, m_typeResolver->varType());
 
     for (int i = classSize; i < argc; i += 3) {
         // layout for remaining members is:
@@ -2319,14 +2315,10 @@ void QQmlJSTypePropagator::generate_DefineObjectLiteral(int internalClassId, int
         // could not be compiled to C++. Ignore it.
 
         // 1: name of argument
-        addReadRegister(
-                args + i + 1,
-                m_typeResolver->trackedType(m_typeResolver->stringType()));
+        addReadRegister(args + i + 1, m_typeResolver->stringType());
 
         // 2: value of argument
-        addReadRegister(
-                args + i + 2,
-                m_typeResolver->trackedType(m_typeResolver->varType()));
+        addReadRegister(args + i + 2, m_typeResolver->varType());
     }
 
     setAccumulator(m_typeResolver->operationType(m_typeResolver->variantMapType()));
