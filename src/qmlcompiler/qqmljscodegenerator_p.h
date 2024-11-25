@@ -218,10 +218,10 @@ protected:
                        const QString &variable)
     {
         const QQmlJSScope::ConstPtr contained = to.containedType();
-        if (m_typeResolver->equals(to.storedType(), contained)
+        if (to.storedType() == contained
                 || m_typeResolver->isNumeric(to.storedType())
                 || to.storedType()->isReferenceType()
-                || m_typeResolver->equals(from, contained)) {
+                || from == contained) {
             // If:
             // * the output is not actually wrapped at all, or
             // * the output is a number (as there are no internals to a number)
@@ -241,7 +241,7 @@ protected:
                        const QQmlJSScope::ConstPtr &to,
                        const QString &variable)
     {
-        Q_ASSERT(m_typeResolver->equals(m_typeResolver->storedType(to), to));
+        Q_ASSERT(m_typeResolver->storedType(to) == to);
         return conversion(from, m_pool->storedIn(m_pool->castTo(from, to), to), variable);
     }
 
@@ -369,12 +369,6 @@ private:
     QQmlJSRegisterContent literalType(const QQmlJSScope::ConstPtr &contained)
     {
         return m_pool->storedIn(m_typeResolver->literalType(contained), contained);
-    }
-
-    bool registerIsStoredIn(
-            const QQmlJSRegisterContent &reg, const QQmlJSScope::ConstPtr &type) const
-    {
-        return m_typeResolver->equals(reg.storedType(), type);
     }
 
     // map from instruction offset to sequential label number

@@ -111,7 +111,7 @@ void QQmlJSFunctionInitializer::populateSignature(
             const QQmlJS::AST::BoundName &argument = arguments[i];
             if (argument.typeAnnotation) {
                 if (const auto type = m_typeResolver->typeFromAST(argument.typeAnnotation->type)) {
-                    if (!m_typeResolver->registerContains(function->argumentTypes[i], type)) {
+                    if (!function->argumentTypes[i].contains(type)) {
                         signatureError(u"Type annotation %1 on signal handler "
                                         "contradicts signal argument type %2"_s
                                        .arg(argument.typeAnnotation->type->toString(),

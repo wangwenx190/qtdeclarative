@@ -22,26 +22,26 @@ static bool canConvertForLiteralBinding(QQmlJSTypeResolver *resolver,
     Q_ASSERT(resolver);
     auto from = QQmlJSScope::scope(fromElement);
     auto to = QQmlJSScope::scope(toElement);
-    if (resolver->equals(from, to))
+    if (from == to)
         return true;
 
     if (!resolver->canConvertFromTo(from, to))
         return false;
 
-    const bool fromIsString = resolver->equals(from, resolver->stringType());
+    const bool fromIsString = from == resolver->stringType();
 
-    if (resolver->equals(to, resolver->stringType())
-            || resolver->equals(to, resolver->stringListType())
-            || resolver->equals(to, resolver->byteArrayType())
-            || resolver->equals(to, resolver->urlType())) {
+    if (to == resolver->stringType()
+            || to == resolver->stringListType()
+            || to == resolver->byteArrayType()
+            || to == resolver->urlType()) {
         return fromIsString;
     }
 
     if (resolver->isNumeric(to))
         return resolver->isNumeric(from);
 
-    if (resolver->equals(to, resolver->boolType()))
-        return resolver->equals(from, resolver->boolType());
+    if (to == resolver->boolType())
+        return from == resolver->boolType();
 
     return true;
 }

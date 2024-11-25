@@ -108,6 +108,9 @@ public:
     QQmlJSRegisterContent original() const;
     QQmlJSRegisterContent shadowed() const;
 
+    bool contains(const QQmlJSScope::ConstPtr &type) const { return type == containedType(); }
+    bool isStoredIn(const QQmlJSScope::ConstPtr &type) const { return type == storedType(); }
+
 private:
     friend class QQmlJSRegisterContentPool;
     // TODO: Constant string/number/bool/enumval

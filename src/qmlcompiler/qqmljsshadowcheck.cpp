@@ -91,7 +91,7 @@ void QQmlJSShadowCheck::handleStore(int base, const QString &memberName)
     const auto baseType = m_state.registers[base].content;
 
     // If the accumulator is already read as var, we don't have to do anything.
-    if (m_typeResolver->registerContains(readAccumulator, m_typeResolver->varType())) {
+    if (readAccumulator.contains(m_typeResolver->varType())) {
         if (checkBaseType(baseType) == NotShadowable)
             m_baseTypes.append(baseType);
         return;

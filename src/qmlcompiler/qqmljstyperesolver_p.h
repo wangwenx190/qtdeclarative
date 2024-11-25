@@ -177,9 +177,6 @@ public:
             const QQmlJSRegisterContent &listType, QQmlJS::AST::ForEachType type,
             int lookupIndex) const;
 
-    bool registerContains(const QQmlJSRegisterContent &reg,
-                          const QQmlJSScope::ConstPtr &type) const;
-
     QQmlJSRegisterContent tracked(const QQmlJSRegisterContent &type) const;
     QQmlJSRegisterContent original(const QQmlJSRegisterContent &type) const;
 
@@ -213,8 +210,6 @@ public:
     {
         return m_signalHandlers;
     }
-
-    bool equals(const QQmlJSScope::ConstPtr &a, const QQmlJSScope::ConstPtr &b) const;
 
     QQmlJSRegisterContent convert(
             const QQmlJSRegisterContent &from, const QQmlJSRegisterContent &to) const;

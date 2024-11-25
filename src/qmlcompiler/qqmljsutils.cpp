@@ -214,8 +214,8 @@ bool canStrictlyCompareWithVar(
     Q_ASSERT(typeResolver);
 
     const QQmlJSScope::ConstPtr varType = typeResolver->varType();
-    const bool leftIsVar = typeResolver->equals(lhsType, varType);
-    const bool righttIsVar = typeResolver->equals(rhsType, varType);
+    const bool leftIsVar = (lhsType == varType);
+    const bool righttIsVar = (rhsType == varType);
     return leftIsVar != righttIsVar;
 }
 
@@ -230,11 +230,9 @@ bool canCompareWithQObject(
 {
     Q_ASSERT(typeResolver);
     return (lhsType->isReferenceType()
-            && (rhsType->isReferenceType()
-                || typeResolver->equals(rhsType, typeResolver->nullType())))
+            && (rhsType->isReferenceType() || rhsType == typeResolver->nullType()))
             || (rhsType->isReferenceType()
-                && (lhsType->isReferenceType()
-                    || typeResolver->equals(lhsType, typeResolver->nullType())));
+                && (lhsType->isReferenceType() || lhsType == typeResolver->nullType()));
 }
 
 /*! \internal
@@ -247,8 +245,7 @@ bool canCompareWithQUrl(
         const QQmlJSScope::ConstPtr &rhsType)
 {
     Q_ASSERT(typeResolver);
-    return typeResolver->equals(lhsType, typeResolver->urlType())
-            && typeResolver->equals(rhsType, typeResolver->urlType());
+    return lhsType == typeResolver->urlType() && rhsType == typeResolver->urlType();
 }
 
 static QVarLengthArray<QString, 2> resourceFoldersFromBuildFolder(const QString &buildFolder)

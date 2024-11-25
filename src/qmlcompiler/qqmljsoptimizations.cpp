@@ -358,7 +358,7 @@ void QQmlJSOptimizations::adjustTypes()
 
             // If it's the 1-arg Array ctor, and the argument is a number, that's special.
             if (mode != ObjectOrArrayDefinition::ArrayConstruct1ArgId
-                    || !m_typeResolver->equals(contained, m_typeResolver->realType())) {
+                    || contained != m_typeResolver->realType()) {
                 if (!m_typeResolver->adjustTrackedType(content, valueType))
                     addError(adjustErrorMessage(content, valueType));
             }
@@ -388,9 +388,9 @@ void QQmlJSOptimizations::adjustTypes()
 
         m_readerLocations.erase(it);
 
-        if (m_typeResolver->registerContains(resultType, m_typeResolver->varType())
-                || m_typeResolver->registerContains(resultType, m_typeResolver->variantMapType())
-                || m_typeResolver->registerContains(resultType, m_typeResolver->jsValueType())) {
+        if (resultType.contains(m_typeResolver->varType())
+                || resultType.contains(m_typeResolver->variantMapType())
+                || resultType.contains(m_typeResolver->jsValueType())) {
             // It's all variant anyway
             return;
         }

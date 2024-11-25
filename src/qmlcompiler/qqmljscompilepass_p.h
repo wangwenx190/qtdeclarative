@@ -320,11 +320,9 @@ protected:
     {
         switch (content.variant()) {
         case QQmlJSRegisterContent::ScopeObject:
-            return m_typeResolver->equals(
-                    content.containedType(), m_function->qmlScope.containedType());
+            return content.contains(m_function->qmlScope.containedType());
         case QQmlJSRegisterContent::ModulePrefix:
-            return m_typeResolver->equals(
-                    content.scopeType().containedType(), m_function->qmlScope.containedType());
+            return content.scopeType().contains(m_function->qmlScope.containedType());
         default:
             break;
         }
