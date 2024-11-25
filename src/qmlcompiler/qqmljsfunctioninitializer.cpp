@@ -86,13 +86,10 @@ void QQmlJSFunctionInitializer::populateSignature(
         for (const QQmlJS::AST::BoundName &argument : std::as_const(arguments)) {
             if (argument.typeAnnotation) {
                 if (const auto type = m_typeResolver->typeFromAST(argument.typeAnnotation->type)) {
-                    function->argumentTypes.append(
-                                m_typeResolver->tracked(
-                                    m_typeResolver->namedType(type)));
+                    function->argumentTypes.append(m_typeResolver->namedType(type));
                 } else {
                     function->argumentTypes.append(
-                                m_typeResolver->tracked(
-                                    m_typeResolver->namedType(m_typeResolver->varType())));
+                            m_typeResolver->namedType(m_typeResolver->varType()));
                     signatureError(u"Cannot resolve the argument type %1."_s
                                    .arg(argument.typeAnnotation->type->toString()));
                 }
@@ -100,8 +97,7 @@ void QQmlJSFunctionInitializer::populateSignature(
                 if (!alreadyWarnedAboutMissingAnnotations) {
                     alreadyWarnedAboutMissingAnnotations = true;
                     function->argumentTypes.append(
-                                m_typeResolver->tracked(
-                                    m_typeResolver->namedType(m_typeResolver->varType())));
+                            m_typeResolver->namedType(m_typeResolver->varType()));
                     signatureError(u"Functions without type annotations won't be compiled"_s);
                 }
             }
@@ -134,8 +130,7 @@ void QQmlJSFunctionInitializer::populateSignature(
 
     for (int i = QQmlJSCompilePass::FirstArgument + function->argumentTypes.size();
          i < context->registerCountInFunction; ++i) {
-        function->registerTypes.append(m_typeResolver->tracked(
-                                           m_typeResolver->namedType(m_typeResolver->voidType())));
+        function->registerTypes.append(m_typeResolver->namedType(m_typeResolver->voidType()));
     }
 
     function->addressableScopes = m_typeResolver->objectsById();
@@ -195,12 +190,9 @@ QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
                                                  arguments[i].typeName()),
                                          QtDebugMsg, bindingLocation, errors);
                                 function.argumentTypes.append(
-                                        m_typeResolver->tracked(
-                                                m_typeResolver->namedType(
-                                                        m_typeResolver->varType())));
+                                        m_typeResolver->namedType(m_typeResolver->varType()));
                             } else {
-                                function.argumentTypes.append(m_typeResolver->tracked(
-                                        m_typeResolver->namedType(type)));
+                                function.argumentTypes.append(m_typeResolver->namedType(type));
                             }
                         }
                         break;
