@@ -320,19 +320,6 @@ protected:
     ParentMode m_parentMode = UseParentProperty;
     CloneMode m_cloneMode = CloneTypes;
     QQmlJSLogger *m_logger = nullptr;
-
-    struct TrackedType
-    {
-        // The type originally found via type analysis.
-        QQmlJSScope::ConstPtr original;
-
-        // Any later replacement used to overwrite the contents of the clone.
-        QQmlJSScope::ConstPtr replacement;
-
-        // A clone of original, used to track the type,
-        // contents possibly overwritten by replacement.
-        QQmlJSScope::Ptr clone;
-    };
 };
 
 /*!
