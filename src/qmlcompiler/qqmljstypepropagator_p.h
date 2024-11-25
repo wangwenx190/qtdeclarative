@@ -238,8 +238,14 @@ private:
     void setRegister(int index, const QQmlJSRegisterContent &content);
     void mergeRegister(int index, const QQmlJSRegisterContent &a, const QQmlJSRegisterContent &b);
 
+    void addReadRegister(int index);
     void addReadRegister(int index, const QQmlJSRegisterContent &convertTo);
     void addReadRegister(int index, const QQmlJSScope::ConstPtr &convertTo);
+
+    void addReadAccumulator()
+    {
+        addReadRegister(Accumulator);
+    }
 
     void addReadAccumulator(const QQmlJSRegisterContent &convertTo)
     {
