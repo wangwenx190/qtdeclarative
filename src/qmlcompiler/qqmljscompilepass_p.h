@@ -322,7 +322,7 @@ protected:
         case QQmlJSRegisterContent::ScopeObject:
             return content.contains(m_function->qmlScope.containedType());
         case QQmlJSRegisterContent::ModulePrefix:
-            return content.scopeType().contains(m_function->qmlScope.containedType());
+            return content.scope().contains(m_function->qmlScope.containedType());
         default:
             break;
         }

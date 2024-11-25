@@ -132,7 +132,7 @@ void QQmlJSOptimizations::populateReaderLocations()
                             if (!access.trackedTypes.contains(origin))
                                 continue;
 
-                            Q_ASSERT(readIt->second.content.conversionResult());
+                            Q_ASSERT(readIt->second.content.conversionResultType());
                             access.typeReaders[blockInstr.key()] = readIt->second.content;
                             break;
                         }

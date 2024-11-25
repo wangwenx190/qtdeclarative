@@ -251,7 +251,7 @@ QString QQmlJSRegisterContent::descriptiveName() const
         return u"import namespace %1"_s.arg(importNamespace());
     }
     case Kind::Conversion: {
-        return u"conversion to %1"_s.arg(conversionResult()->internalName());
+        return u"conversion to %1"_s.arg(conversionResultType()->internalName());
     }
     case Kind::MethodCall: {
         const QQmlJSMetaMethod &method = std::get<QQmlJSMetaMethod>(d->m_content);
@@ -269,7 +269,7 @@ QString QQmlJSRegisterContent::containedTypeName() const
 
     switch (variant()) {
     case QQmlJSRegisterContent::MetaType:
-        type = scopeType().containedType();
+        type = scopeType();
         break;
     default:
         type = containedType();
@@ -374,7 +374,7 @@ QQmlJSRegisterContent QQmlJSRegisterContent::attacher() const
 {
     Q_ASSERT(d);
     Q_ASSERT(d->m_variant == Attachment);
-    return scopeType();
+    return scope();
 }
 
 /*!
@@ -386,9 +386,9 @@ QQmlJSRegisterContent QQmlJSRegisterContent::attachee() const
 {
     Q_ASSERT(d);
     Q_ASSERT(d->m_variant == Attachment);
-    QQmlJSRegisterContent attachee = attacher().scopeType();
+    QQmlJSRegisterContent attachee = attacher().scope();
     while (attachee.variant() == ModulePrefix)
-        attachee = attachee.scopeType();
+        attachee = attachee.scope();
     return attachee;
 }
 
@@ -412,16 +412,16 @@ QQmlJSScope::ConstPtr QQmlJSRegisterContent::containedType() const
     if (isImportNamespace())
         return importNamespaceType();
     if (isConversion())
-        return conversionResult();
+        return conversionResultType();
     if (isMethodCall())
         return std::get<QQmlJSMetaMethod>(d->m_content).returnType();
 
     Q_UNREACHABLE_RETURN({});
 }
 
-QQmlJSRegisterContent QQmlJSRegisterContent::scopeType() const
+QQmlJSScope::ConstPtr QQmlJSRegisterContent::scopeType() const
 {
-    return d ? d->m_scope : QQmlJSRegisterContent();
+    return d ? d->m_scope.containedType() : QQmlJSScope::ConstPtr();
 }
 
 QQmlJSScope::ConstPtr QQmlJSRegisterContent::type() const
@@ -483,7 +483,7 @@ QQmlJSScope::ConstPtr QQmlJSRegisterContent::importNamespaceType() const
     return std::get<std::pair<uint, QQmlJSScope::ConstPtr>>(d->m_content).second;
 }
 
-QQmlJSScope::ConstPtr QQmlJSRegisterContent::conversionResult() const
+QQmlJSScope::ConstPtr QQmlJSRegisterContent::conversionResultType() const
 {
     Q_ASSERT(isConversion());
     return std::get<QQmlJSRegisterContentPrivate::ConvertedTypes>(d->m_content).result;
@@ -510,6 +510,11 @@ QQmlJSMetaMethod QQmlJSRegisterContent::methodCall() const
 QQmlJSRegisterContent::ContentVariant QQmlJSRegisterContent::variant() const
 {
     return d ? d->m_variant : Unknown;
+}
+
+QQmlJSRegisterContent QQmlJSRegisterContent::scope() const
+{
+    return d ? d->m_scope : QQmlJSRegisterContent();
 }
 
 QQmlJSRegisterContent QQmlJSRegisterContent::storage() const

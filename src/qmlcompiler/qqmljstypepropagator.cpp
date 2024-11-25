@@ -748,7 +748,7 @@ bool QQmlJSTypePropagator::checkForEnumProblems(
             return true;
         }
     } else if (base.variant() == QQmlJSRegisterContent::MetaType) {
-        const QQmlJSMetaEnum metaEn = base.scopeType().containedType()->enumeration(propertyName);
+        const QQmlJSMetaEnum metaEn = base.scopeType()->enumeration(propertyName);
         if (metaEn.isValid() && !metaEn.isScoped() && !metaEn.isQml()) {
             const QString error
                     = u"You cannot access unscoped enum \"%1\" from here."_s.arg(propertyName);
@@ -891,7 +891,7 @@ void QQmlJSTypePropagator::propagatePropertyLookup(const QString &propertyName, 
 
     if (m_state.accumulatorOut().variant() == QQmlJSRegisterContent::Singleton
         && m_state.accumulatorIn().variant() == QQmlJSRegisterContent::ModulePrefix
-        && !isQmlScopeObject(m_state.accumulatorIn().scopeType())) {
+        && !isQmlScopeObject(m_state.accumulatorIn().scope())) {
         m_logger->log(
                 u"Cannot access singleton as a property of an object. Did you want to access an attached object?"_s,
                 qmlAccessSingleton, getCurrentSourceLocation());
@@ -945,7 +945,7 @@ void QQmlJSTypePropagator::propagatePropertyLookup(const QString &propertyName, 
                 && m_state.accumulatorIn().variant() == QQmlJSRegisterContent::MetaType) {
 
             const QQmlJSScope::ConstPtr scopeType
-                    = m_state.accumulatorIn().scopeType().containedType();
+                    = m_state.accumulatorIn().scopeType();
             const auto metaEnums = scopeType->enumerations();
             const bool enforcesScoped = scopeType->enforcesScopedEnums();
 
@@ -984,7 +984,7 @@ void QQmlJSTypePropagator::propagatePropertyLookup(const QString &propertyName, 
                 m_pool->create(
                     prop, m_state.accumulatorIn().resultLookupIndex(), lookupIndex,
                     // Use pre-determined scope type here to avoid adjusting it later.
-                    QQmlJSRegisterContent::Property, m_state.accumulatorOut().scopeType())
+                    QQmlJSRegisterContent::Property, m_state.accumulatorOut().scope())
             );
 
             return;
@@ -1358,12 +1358,12 @@ void QQmlJSTypePropagator::generate_CallProperty(int nameIndex, int base, int ar
     }
 
     if (baseType->accessSemantics() == QQmlJSScope::AccessSemantics::Sequence
-            && member.scopeType().contains(m_typeResolver->arrayPrototype())
+            && member.scope().contains(m_typeResolver->arrayPrototype())
             && propagateArrayMethod(propertyName, argc, argv, callBase)) {
         return;
     }
 
-    propagateCall(member.method(), argc, argv, member.scopeType());
+    propagateCall(member.method(), argc, argv, member.scope());
 }
 
 QQmlJSMetaMethod QQmlJSTypePropagator::bestMatchForCall(const QList<QQmlJSMetaMethod> &methods,
@@ -1492,7 +1492,7 @@ void QQmlJSTypePropagator::mergeRegister(
         if (!lastTry.content.isConversion())
             return false;
 
-        if (lastTry.content.conversionResult() != merged.conversionResult()
+        if (lastTry.content.conversionResultType() != merged.conversionResultType()
                 || lastTry.content.conversionOrigins() != merged.conversionOrigins()) {
             return false;
         }
@@ -1942,13 +1942,13 @@ void QQmlJSTypePropagator::propagateScopeLookupCall(const QString &functionName,
             = m_typeResolver->scopedType(m_function->qmlScope, functionName);
     if (resolvedContent.isMethod()) {
         const auto methods = resolvedContent.method();
-        if (resolvedContent.scopeType().contains(m_typeResolver->jsGlobalObject())) {
+        if (resolvedContent.scope().contains(m_typeResolver->jsGlobalObject())) {
             if (propagateTranslationMethod(methods, argc, argv))
                 return;
         }
 
         if (!methods.isEmpty()) {
-            propagateCall(methods, argc, argv, resolvedContent.scopeType());
+            propagateCall(methods, argc, argv, resolvedContent.scope());
             return;
         }
     }
@@ -2040,8 +2040,8 @@ void QQmlJSTypePropagator::generate_Construct(int func, int argc, int argv)
 {
     const QQmlJSRegisterContent type = m_state.registers[func].content;
     if (type.contains(m_typeResolver->metaObjectType())) {
-        const QQmlJSRegisterContent valueType = type.scopeType();
-        const QQmlJSScope::ConstPtr contained = type.scopeType().containedType();
+        const QQmlJSRegisterContent valueType = type.scope();
+        const QQmlJSScope::ConstPtr contained = type.scopeType();
         if (contained->isValueType() && contained->isCreatable()) {
             const auto extension = contained->extensionType();
             if (extension.extensionSpecifier == QQmlJSScope::ExtensionType) {
@@ -2609,10 +2609,10 @@ void QQmlJSTypePropagator::generate_As(int lhs)
     const QQmlJSRegisterContent accumulatorIn = m_state.accumulatorIn();
     switch (accumulatorIn.variant()) {
     case QQmlJSRegisterContent::Attachment:
-        output = accumulatorIn.scopeType();
+        output = accumulatorIn.scope();
         break;
     case QQmlJSRegisterContent::MetaType:
-        output = accumulatorIn.scopeType();
+        output = accumulatorIn.scope();
         if (output.containedType()->isComposite()) // Otherwise we don't need it
             addReadAccumulator(m_typeResolver->metaObjectType());
         break;

@@ -686,7 +686,7 @@ void QQmlJSCodeGenerator::generate_LoadQmlContextPropertyLookup(int index)
 
     const int nameIndex = m_jsUnitGenerator->lookupNameIndex(index);
     const QString name = m_jsUnitGenerator->stringForIndex(nameIndex);
-    if (m_state.accumulatorOut().scopeType().contains(m_typeResolver->jsGlobalObject())) {
+    if (m_state.accumulatorOut().scope().contains(m_typeResolver->jsGlobalObject())) {
         // This produces a QJSValue. The QQmlJSMetaProperty used to analyze it may have more details
         // but the QQmlJSAotContext API does not reflect them.
         m_body += m_state.accumulatorVariableOut + u" = "_s
@@ -935,7 +935,7 @@ void QQmlJSCodeGenerator::generateEnumLookup(int index)
         return;
     }
 
-    const QQmlJSScope::ConstPtr scopeType = m_state.accumulatorOut().scopeType().containedType();
+    const QQmlJSScope::ConstPtr scopeType = m_state.accumulatorOut().scopeType();
 
     // Otherwise we would have found an enum with values.
     Q_ASSERT(!scopeType->isComposite());
@@ -1143,7 +1143,7 @@ void QQmlJSCodeGenerator::generateWriteBack(int registerIndex)
         const QString writeBackIndexString = QString::number(lookupIndex);
 
         const QQmlJSRegisterContent::ContentVariant variant = writeBack.variant();
-        if (variant == QQmlJSRegisterContent::Property && isQmlScopeObject(writeBack.scopeType())) {
+        if (variant == QQmlJSRegisterContent::Property && isQmlScopeObject(writeBack.scope())) {
             const QString lookup = u"aotContext->writeBackScopeObjectPropertyLookup("_s
                     + writeBackIndexString
                     + u", "_s + contentPointer(writeBack, writeBackRegister) + u')';
@@ -1177,7 +1177,7 @@ void QQmlJSCodeGenerator::generateWriteBack(int registerIndex)
 
         switch (writeBack.variant()) {
         case QQmlJSRegisterContent::Property:
-            if (writeBack.scopeType().containedType()->isReferenceType()) {
+            if (writeBack.scopeType()->isReferenceType()) {
                 const QString lookup = u"aotContext->writeBackObjectLookup("_s
                         + writeBackIndexString
                         + u", "_s + outerRegister
@@ -1197,7 +1197,7 @@ void QQmlJSCodeGenerator::generateWriteBack(int registerIndex)
                         + u", "_s + contentPointer(writeBack, writeBackRegister) + u')';
                 const QString initialization = u"aotContext->initGetValueLookup("_s
                         + writeBackIndexString
-                        + u", "_s + metaObject(writeBack.scopeType().containedType()) + u')';
+                        + u", "_s + metaObject(writeBack.scopeType()) + u')';
                 generateLookup(lookup, initialization);
             }
             break;
@@ -1361,7 +1361,7 @@ void QQmlJSCodeGenerator::generate_GetLookupHelper(int index)
         return;
     }
 
-    if (m_state.accumulatorOut().scopeType().contains(m_typeResolver->mathObject())) {
+    if (m_state.accumulatorOut().scope().contains(m_typeResolver->mathObject())) {
         QString name = m_jsUnitGenerator->lookupName(index);
 
         double value{};
@@ -1415,7 +1415,7 @@ void QQmlJSCodeGenerator::generate_GetLookupHelper(int index)
             ? QString::number(m_state.accumulatorIn().importNamespace())
             : u"QQmlPrivate::AOTCompiledContext::InvalidStringId"_s;
     const auto accumulatorIn = m_state.accumulatorIn();
-    const QQmlJSRegisterContent scope = m_state.accumulatorOut().scopeType();
+    const QQmlJSRegisterContent scope = m_state.accumulatorOut().scope();
     const bool isReferenceType = scope.containedType()->isReferenceType();
 
     switch (m_state.accumulatorOut().variant()) {
@@ -2236,7 +2236,7 @@ void QQmlJSCodeGenerator::generate_CallPropertyLookup(int index, int base, int a
 {
     INJECT_TRACE_INFO(generate_CallPropertyLookup);
 
-    const QQmlJSRegisterContent scopeContent = m_state.accumulatorOut().scopeType();
+    const QQmlJSRegisterContent scopeContent = m_state.accumulatorOut().scope();
     const QQmlJSScope::ConstPtr scope = scopeContent.containedType();
 
     AccumulatorConverter registers(this);
@@ -2337,7 +2337,7 @@ void QQmlJSCodeGenerator::generate_CallQmlContextPropertyLookup(int index, int a
 {
     INJECT_TRACE_INFO(generate_CallQmlContextPropertyLookup);
 
-    if (m_state.accumulatorOut().scopeType().contains(m_typeResolver->jsGlobalObject())) {
+    if (m_state.accumulatorOut().scope().contains(m_typeResolver->jsGlobalObject())) {
         const QString name = m_jsUnitGenerator->stringForIndex(
                 m_jsUnitGenerator->lookupNameIndex(index));
         if (inlineTranslateMethod(name, argc, argv))
