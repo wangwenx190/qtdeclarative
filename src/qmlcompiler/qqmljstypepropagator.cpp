@@ -1461,13 +1461,13 @@ void QQmlJSTypePropagator::setRegister(int index, const QQmlJSRegisterContent &c
         }
     }
 
-    m_state.setRegister(index, m_typeResolver->tracked(content));
+    m_state.setRegister(index, content);
 }
 
 void QQmlJSTypePropagator::mergeRegister(
             int index, const QQmlJSRegisterContent &a, const QQmlJSRegisterContent &b)
 {
-    auto merged = m_typeResolver->merge(a, b);
+    const QQmlJSRegisterContent merged = (a == b) ? a : m_typeResolver->merge(a, b);
     Q_ASSERT(merged.isValid());
 
     if (!merged.isConversion()) {
@@ -1504,10 +1504,11 @@ void QQmlJSTypePropagator::mergeRegister(
     };
 
     if (!tryPrevStateConversion(index, merged)) {
-        merged = m_typeResolver->tracked(merged);
-        Q_ASSERT(merged.isValid());
-        m_state.annotations[currentInstructionOffset()].typeConversions[index].content = merged;
-        m_state.registers[index].content = merged;
+        // if a != b, we have already re-tracked it.
+        QQmlJSRegisterContent cloned = (a == b) ? m_pool->clone(merged) : merged;
+        Q_ASSERT(cloned.isValid());
+        m_state.annotations[currentInstructionOffset()].typeConversions[index].content = cloned;
+        m_state.registers[index].content = cloned;
     }
 }
 
@@ -2350,7 +2351,7 @@ void QQmlJSTypePropagator::generate_CreateRestParameter(int argIndex)
 
 void QQmlJSTypePropagator::generate_ConvertThisToObject()
 {
-    setRegister(This, m_function->qmlScope);
+    setRegister(This, m_pool->clone(m_function->qmlScope));
 }
 
 void QQmlJSTypePropagator::generate_LoadSuperConstructor()
@@ -2479,13 +2480,20 @@ void QQmlJSTypePropagator::recordEqualsType(int lhs)
 
 void QQmlJSTypePropagator::recordCompareType(int lhs)
 {
-    // If they're both numeric, we can compare them directly.
-    // They may be casted to double, though.
+    // TODO: Revisit this. Does it make any sense to do a comparison on something non-numeric?
+    //       Does it pay off to record the exact number type to use?
 
-    if (m_typeResolver->isNumeric(m_state.accumulatorIn())
-            && m_typeResolver->isNumeric(m_state.registers[lhs].content)) {
-        const QQmlJSRegisterContent merged
-                = m_typeResolver->merge(m_state.accumulatorIn(), m_state.registers[lhs].content);
+    const QQmlJSRegisterContent lhsContent = m_state.registers[lhs].content;
+    const QQmlJSRegisterContent rhsContent = m_state.accumulatorIn();
+    if (lhsContent == rhsContent) {
+        // Do not re-track in this case. We want any manipulations on the original types to persist.
+        // TODO: Why? Can we just use double and be done with it?
+        addReadRegister(lhs, lhsContent);
+        addReadAccumulator(lhsContent);
+    } else if (m_typeResolver->isNumeric(lhsContent) && m_typeResolver->isNumeric(rhsContent)) {
+        // If they're both numeric, we can compare them directly.
+        // They may be casted to double, though.
+        const QQmlJSRegisterContent merged = m_typeResolver->merge(lhsContent, rhsContent);
         addReadRegister(lhs, merged);
         addReadAccumulator(merged);
     } else {
@@ -2620,7 +2628,7 @@ void QQmlJSTypePropagator::generate_As(int lhs)
         // Reference types can hold null. We don't need to special case that.
 
         if (m_typeResolver->inherits(inContained, outContained))
-            output = input;
+            output = m_pool->clone(input);
         else
             output = m_pool->castTo(input, outContained);
     } else {

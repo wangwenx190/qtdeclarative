@@ -212,8 +212,6 @@ public:
 
     // Creation of "tracked" QQmlJSRegisterContents
 
-    QQmlJSRegisterContent tracked(const QQmlJSRegisterContent &type) const;
-
     QQmlJSRegisterContent typeForBinaryOperation(
             QSOperator::Op oper, const QQmlJSRegisterContent &left,
             const QQmlJSRegisterContent &right) const;

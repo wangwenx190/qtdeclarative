@@ -299,12 +299,12 @@ QQmlJSTypeResolver::typeForBinaryOperation(QSOperator::Op oper, const QQmlJSRegi
     case QSOperator::Op::Mod:
         return operationType(realType());
     case QSOperator::Op::As:
-        return right;
+        return operationType(right.containedType());
     default:
         break;
     }
 
-    return merge(left, right);
+    return operationType(merge(left.containedType(), right.containedType()));
 }
 
 QQmlJSRegisterContent QQmlJSTypeResolver::typeForArithmeticUnaryOperation(
@@ -317,7 +317,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::typeForArithmeticUnaryOperation(
         return operationType(int32Type());
     case UnaryOperator::Plus:
         if (isIntegral(operand))
-            return operand;
+            return operationType(operand.containedType());
         Q_FALLTHROUGH();
     default:
         if (operand.containedType() == boolType())
@@ -480,11 +480,6 @@ QQmlJSRegisterContent QQmlJSTypeResolver::original(const QQmlJSRegisterContent &
     return result.isNull() ? type : result;
 }
 
-QQmlJSRegisterContent QQmlJSTypeResolver::tracked(const QQmlJSRegisterContent &type) const
-{
-    return m_pool->clone(type);
-}
-
 QQmlJSScope::ConstPtr QQmlJSTypeResolver::originalContainedType(
         const QQmlJSRegisterContent &container) const
 {
@@ -602,11 +597,10 @@ static QQmlJSRegisterContent::ContentVariant mergeVariants(QQmlJSRegisterContent
     return (a == b) ? a : QQmlJSRegisterContent::Unknown;
 }
 
-QQmlJSRegisterContent QQmlJSTypeResolver::merge(const QQmlJSRegisterContent &a,
-                                                const QQmlJSRegisterContent &b) const
+QQmlJSRegisterContent QQmlJSTypeResolver::merge(
+        const QQmlJSRegisterContent &a, const QQmlJSRegisterContent &b) const
 {
-    if (a == b)
-        return a;
+    Q_ASSERT(a != b);
 
     // We cannot easily provide an operator< for QQmlJSRegisterContent.
     // Therefore we use qHash and operator== here to deduplicate. That's somewhat inefficient.
@@ -634,12 +628,18 @@ QQmlJSRegisterContent QQmlJSTypeResolver::merge(const QQmlJSRegisterContent &a,
         bResultScope = b.scopeType();
     }
 
+    const auto mergeScopes = [&](const QQmlJSRegisterContent &a, const QQmlJSRegisterContent &b) {
+        // If they are the same, we don't want to re-track them.
+        // We want the repetition on type mismatches to converge.
+        return (a == b) ? a : merge(a, b);
+    };
+
     return m_pool->create(
             origins.values(),
             merge(a.containedType(), b.containedType()),
-            merge(aResultScope, bResultScope),
+            mergeScopes(aResultScope, bResultScope),
             mergeVariants(a.variant(), b.variant()),
-            merge(a.scopeType(), b.scopeType()));
+            mergeScopes(a.scopeType(), b.scopeType()));
 }
 
 QQmlJSScope::ConstPtr QQmlJSTypeResolver::merge(const QQmlJSScope::ConstPtr &a,
