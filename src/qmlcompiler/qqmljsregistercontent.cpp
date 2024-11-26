@@ -635,6 +635,17 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::castTo(
     return result;
 }
 
+void QQmlJSRegisterContentPool::storeType(
+        QQmlJSRegisterContent content, const QQmlJSScope::ConstPtr &stored)
+{
+    QQmlJSRegisterContentPrivate *d = content.d;
+
+    Q_ASSERT(d);
+    Q_ASSERT(d->m_storage.isNull());
+    d->m_storage = createType(
+            stored, QQmlJSRegisterContent::InvalidLookupIndex, ContentVariant::Storage);
+}
+
 void QQmlJSRegisterContentPool::adjustType(
         QQmlJSRegisterContent content, const QQmlJSScope::ConstPtr &adjusted)
 {

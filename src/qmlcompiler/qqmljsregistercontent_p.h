@@ -206,6 +206,8 @@ public:
 
     QQmlJSRegisterContent clone(QQmlJSRegisterContent from) { return clone(from.d); }
 
+    void storeType(
+            QQmlJSRegisterContent content, const QQmlJSScope::ConstPtr &stored);
     void adjustType(
             QQmlJSRegisterContent content, const QQmlJSScope::ConstPtr &adjusted);
     void generalizeType(
