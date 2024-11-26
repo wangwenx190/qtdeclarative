@@ -169,6 +169,9 @@ public:
     QQmlJSRegisterContentPool();
     ~QQmlJSRegisterContentPool();
 
+
+    // Create new register contents of specific kinds
+
     QQmlJSRegisterContent createType(
             const QQmlJSScope::ConstPtr &type, int resultLookupIndex, ContentVariant variant,
             QQmlJSRegisterContent scope = {});
@@ -198,6 +201,9 @@ public:
             QQmlJSRegisterContent conversionScope, ContentVariant variant,
             QQmlJSRegisterContent scope);
 
+
+    // Clone and possibly adapt register contents. This leaves the original intact.
+
     QQmlJSRegisterContent storedIn(
             QQmlJSRegisterContent content, const QQmlJSScope::ConstPtr &newStoredType);
 
@@ -205,6 +211,12 @@ public:
             QQmlJSRegisterContent content, const QQmlJSScope::ConstPtr &newContainedType);
 
     QQmlJSRegisterContent clone(QQmlJSRegisterContent from) { return clone(from.d); }
+
+
+    // Change the internals of the given register content. Adjusting and generalizing store a
+    // copy of the previous content as original() and shadowed(), respectively. Storing creates
+    // a new register content for storage(). All of those assume you only do this once per
+    // register content (although you can adjust and generalize the storage, for example).
 
     void storeType(
             QQmlJSRegisterContent content, const QQmlJSScope::ConstPtr &stored);
