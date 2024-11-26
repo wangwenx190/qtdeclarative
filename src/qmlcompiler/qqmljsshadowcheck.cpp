@@ -217,18 +217,12 @@ QQmlJSShadowCheck::Shadowability QQmlJSShadowCheck::checkShadowing(
 void QQmlJSShadowCheck::checkResettable(
         QQmlJSRegisterContent accumulatorIn, int instructionOffset)
 {
-    const QQmlJSScope::ConstPtr varType = m_typeResolver->varType();
-
-    // The stored type is not necessarily updated by the shadow check, but it
-    // will be in the basic blocks pass. For the purpose of adjusting newly
-    // shadowable types we can ignore it. We only want to know if any of the
-    // contents can hold undefined.
-    if (!m_typeResolver->canHoldUndefined(m_pool->storedIn(accumulatorIn, varType)))
+    if (!m_typeResolver->canHoldUndefined(accumulatorIn))
         return;
 
     QQmlJSRegisterContent &readAccumulator
             = m_annotations[instructionOffset].readRegisters[Accumulator].content;
-    readAccumulator = m_typeResolver->convert(readAccumulator, varType);
+    readAccumulator = m_typeResolver->convert(readAccumulator, m_typeResolver->varType());
 }
 
 QQmlJSShadowCheck::Shadowability QQmlJSShadowCheck::checkBaseType(
