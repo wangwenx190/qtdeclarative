@@ -230,7 +230,7 @@ void QQmlJSTypePropagator::generate_LoadLocal(int index)
     local.setType(m_typeResolver->jsValueType());
     local.setIndex(index);
 
-    setAccumulator(m_pool->create(
+    setAccumulator(m_pool->createProperty(
             local, QQmlJSRegisterContent::InvalidLookupIndex,
             QQmlJSRegisterContent::InvalidLookupIndex,
             QQmlJSRegisterContent::Property, QQmlJSRegisterContent()));
@@ -609,7 +609,7 @@ void QQmlJSTypePropagator::generate_LoadQmlContextPropertyLookup(int index)
     setAccumulator(m_typeResolver->scopedType(m_function->qmlScope, name, index));
 
     if (!m_state.accumulatorOut().isValid() && m_typeResolver->isPrefix(name)) {
-        setAccumulator(m_pool->create(
+        setAccumulator(m_pool->createImportNamespace(
                     nameIndex, m_typeResolver->voidType(), QQmlJSRegisterContent::ModulePrefix,
                     m_function->qmlScope));
         return;
@@ -777,7 +777,7 @@ void QQmlJSTypePropagator::generate_LoadElement(int base)
         property.setTypeName(jsValue->internalName());
         property.setType(jsValue);
 
-        setAccumulator(m_pool->create(
+        setAccumulator(m_pool->createProperty(
                 property, QQmlJSRegisterContent::InvalidLookupIndex,
                 QQmlJSRegisterContent::InvalidLookupIndex, QQmlJSRegisterContent::ListValue,
                 m_typeResolver->convert(m_typeResolver->valueType(baseRegister), jsValue)));
@@ -877,7 +877,7 @@ void QQmlJSTypePropagator::propagatePropertyLookup(const QString &propertyName, 
         if (m_typeResolver->isPrefix(propertyName)) {
             Q_ASSERT(m_state.accumulatorIn().isValid());
             addReadAccumulator();
-            setAccumulator(m_pool->create(
+            setAccumulator(m_pool->createImportNamespace(
                         m_jsUnitGenerator->getStringId(propertyName),
                         m_state.accumulatorIn().containedType(),
                         QQmlJSRegisterContent::ModulePrefix,
@@ -981,7 +981,7 @@ void QQmlJSTypePropagator::propagatePropertyLookup(const QString &propertyName, 
             prop.setTypeName(u"double"_s);
             prop.setType(m_typeResolver->realType());
             setAccumulator(
-                m_pool->create(
+                m_pool->createProperty(
                     prop, m_state.accumulatorIn().resultLookupIndex(), lookupIndex,
                     // Use pre-determined scope type here to avoid adjusting it later.
                     QQmlJSRegisterContent::Property, m_state.accumulatorOut().scope())
@@ -2218,7 +2218,7 @@ void QQmlJSTypePropagator::generate_GetIterator(int iterator)
         prop.setPropertyName(u"<>"_s);
         prop.setTypeName(jsValue->internalName());
         prop.setType(jsValue);
-        setAccumulator(m_pool->create(
+        setAccumulator(m_pool->createProperty(
                 prop, currentInstructionOffset(),
                 QQmlJSRegisterContent::InvalidLookupIndex, QQmlJSRegisterContent::ListIterator,
                 listType));

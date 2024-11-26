@@ -164,7 +164,7 @@ QQmlJSTypeResolver::QQmlJSTypeResolver(QQmlJSImporter *importer)
     m_forOfIteratorPtr = forOfIteratorPtr;
 
     // We use this as scope type quite often, and it should always be the same scope type.
-    m_jsGlobalObjectContent = m_pool->create(
+    m_jsGlobalObjectContent = m_pool->createType(
             m_jsGlobalObject, QQmlJSRegisterContent::InvalidLookupIndex,
             QQmlJSRegisterContent::ScopeObject);
 }
@@ -413,18 +413,18 @@ QQmlJSRegisterContent QQmlJSTypeResolver::registerContentForName(
         return QQmlJSRegisterContent();
 
     if (type->isSingleton()) {
-        return m_pool->create(
+        return m_pool->createType(
                 type, QQmlJSRegisterContent::InvalidLookupIndex,
                 QQmlJSRegisterContent::Singleton, scopeType);
     }
 
     if (type->isScript()) {
-        return m_pool->create(
+        return m_pool->createType(
                 type, QQmlJSRegisterContent::InvalidLookupIndex,
                 QQmlJSRegisterContent::Script, scopeType);
     }
 
-    const QQmlJSRegisterContent namedType = m_pool->create(
+    const QQmlJSRegisterContent namedType = m_pool->createType(
             type, QQmlJSRegisterContent::InvalidLookupIndex, QQmlJSRegisterContent::TypeByName,
             scopeType);
 
@@ -443,7 +443,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::registerContentForName(
             // We don't know yet whether we need the attached or the plain object. In direct
             // mode, we will figure this out using the scope type and access any enums of the
             // plain type directly. In indirect mode, we can use enum lookups.
-            return m_pool->create(
+            return m_pool->createType(
                         attached, QQmlJSRegisterContent::InvalidLookupIndex,
                         QQmlJSRegisterContent::Attachment, namedType);
         }
@@ -456,13 +456,13 @@ QQmlJSRegisterContent QQmlJSTypeResolver::registerContentForName(
         // We may still need the plain type reference for enum lookups,
         // Store it as QMetaObject.
         // This only works with namespaces and object types.
-        return m_pool->create(
+        return m_pool->createType(
                 metaObjectType(), QQmlJSRegisterContent::InvalidLookupIndex,
                 QQmlJSRegisterContent::MetaType, namedType);
     case QQmlJSScope::AccessSemantics::Sequence:
     case QQmlJSScope::AccessSemantics::Value:
         if (scopeType.isImportNamespace() || canAddressValueTypes()) {
-            return m_pool->create(
+            return m_pool->createType(
                     metaObjectType(), QQmlJSRegisterContent::InvalidLookupIndex,
                     QQmlJSRegisterContent::MetaType, namedType);
         }
@@ -634,7 +634,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::merge(
         return (a == b) ? a : merge(a, b);
     };
 
-    return m_pool->create(
+    return m_pool->createConversion(
             origins.values(),
             merge(a.containedType(), b.containedType()),
             mergeScopes(aResultScope, bResultScope),
@@ -894,7 +894,7 @@ QQmlJSScope::ConstPtr QQmlJSTypeResolver::genericType(
  */
 QQmlJSRegisterContent QQmlJSTypeResolver::literalType(const QQmlJSScope::ConstPtr &type) const
 {
-    return m_pool->create(
+    return m_pool->createType(
             type, QQmlJSRegisterContent::InvalidLookupIndex, QQmlJSRegisterContent::Literal);
 }
 
@@ -904,7 +904,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::literalType(const QQmlJSScope::ConstPt
  */
 QQmlJSRegisterContent QQmlJSTypeResolver::operationType(const QQmlJSScope::ConstPtr &type) const
 {
-    return m_pool->create(
+    return m_pool->createType(
             type, QQmlJSRegisterContent::InvalidLookupIndex, QQmlJSRegisterContent::Operation);
 }
 
@@ -914,13 +914,13 @@ QQmlJSRegisterContent QQmlJSTypeResolver::operationType(const QQmlJSScope::Const
  */
 QQmlJSRegisterContent QQmlJSTypeResolver::namedType(const QQmlJSScope::ConstPtr &type) const
 {
-    return m_pool->create(
+    return m_pool->createType(
             type, QQmlJSRegisterContent::InvalidLookupIndex, QQmlJSRegisterContent::TypeByName);
 }
 
 QQmlJSRegisterContent QQmlJSTypeResolver::syntheticType(const QQmlJSScope::ConstPtr &type) const
 {
-    return m_pool->create(
+    return m_pool->createType(
             type, QQmlJSRegisterContent::InvalidLookupIndex, QQmlJSRegisterContent::Unknown);
 }
 
@@ -1076,7 +1076,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::scopedType(const QQmlJSRegisterContent
 {
     const QQmlJSScope::ConstPtr contained = scope.containedType();
     if (QQmlJSScope::ConstPtr identified = m_objectsById.scope(name, contained, options)) {
-        return m_pool->create(
+        return m_pool->createType(
                 identified, lookupIndex, QQmlJSRegisterContent::ObjectById, scope);
     }
 
@@ -1097,7 +1097,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::scopedType(const QQmlJSRegisterContent
                     return false;
 
                 prop.setType(resolveParentProperty(name, base, prop.type()));
-                result = m_pool->create(
+                result = m_pool->createProperty(
                         prop, QQmlJSRegisterContent::InvalidLookupIndex, lookupIndex,
                         scopeContentVariant(mode, false), resultScope);
                 return true;
@@ -1113,7 +1113,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::scopedType(const QQmlJSRegisterContent
                 }
                 if (methods.isEmpty())
                     return false;
-                result = m_pool->create(
+                result = m_pool->createMethod(
                         methods, jsValueType(), scopeContentVariant(mode, true), resultScope);
                 return true;
             }
@@ -1131,11 +1131,11 @@ QQmlJSRegisterContent QQmlJSTypeResolver::scopedType(const QQmlJSRegisterContent
         return result;
 
     if (m_jsGlobalObject->hasProperty(name)) {
-        return m_pool->create(
+        return m_pool->createProperty(
                 m_jsGlobalObject->property(name), QQmlJSRegisterContent::InvalidLookupIndex,
                 lookupIndex, QQmlJSRegisterContent::Property, m_jsGlobalObjectContent);
     } else if (m_jsGlobalObject->hasMethod(name)) {
-        return m_pool->create(
+        return m_pool->createMethod(
                 m_jsGlobalObject->methods(name), jsValueType(),
                 QQmlJSRegisterContent::Property, m_jsGlobalObjectContent);
     }
@@ -1167,7 +1167,7 @@ bool QQmlJSTypeResolver::checkEnums(
     const auto enums = scope.containedType()->ownEnumerations();
     for (const auto &enumeration : enums) {
         if ((enumeration.isScoped() || enumeration.isQml()) && enumeration.name() == name) {
-            *result = m_pool->create(
+            *result = m_pool->createEnumeration(
                     enumeration, QString(),
                     QQmlJSRegisterContent::Enum,
                     scope);
@@ -1176,7 +1176,7 @@ bool QQmlJSTypeResolver::checkEnums(
 
         if ((!enumeration.isScoped() || enumeration.isQml()
              || !scope.containedType()->enforcesScopedEnums()) && enumeration.hasKey(name)) {
-            *result = m_pool->create(
+            *result = m_pool->createEnumeration(
                     enumeration, name,
                     QQmlJSRegisterContent::Enum,
                     scope);
@@ -1440,7 +1440,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::lengthProperty(
     prop.setTypeName(u"qsizetype"_s);
     prop.setType(sizeType());
     prop.setIsWritable(isWritable);
-    return m_pool->create(
+    return m_pool->createProperty(
             prop, QQmlJSRegisterContent::InvalidLookupIndex,
             QQmlJSRegisterContent::InvalidLookupIndex, QQmlJSRegisterContent::Property, scope);
 }
@@ -1462,7 +1462,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::memberType(
         prop.setTypeName(u"QVariant"_s);
         prop.setType(varType());
         prop.setIsWritable(true);
-        return m_pool->create(
+        return m_pool->createProperty(
                 prop, baseLookupIndex, resultLookupIndex,
                 QQmlJSRegisterContent::Property, type);
     }
@@ -1473,7 +1473,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::memberType(
         prop.setTypeName(u"QJSValue"_s);
         prop.setType(jsValueType());
         prop.setIsWritable(true);
-        return m_pool->create(
+        return m_pool->createProperty(
                 prop, baseLookupIndex, resultLookupIndex,
                 QQmlJSRegisterContent::Property, type);
     }
@@ -1492,7 +1492,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::memberType(
         if (mode != QQmlJSScope::ExtensionNamespace) {
             if (scope->hasOwnProperty(name)) {
                 const auto prop = scope->ownProperty(name);
-                result = m_pool->create(
+                result = m_pool->createProperty(
                         prop, baseLookupIndex, resultLookupIndex,
                         QQmlJSRegisterContent::Property, resultScope);
                 return true;
@@ -1500,7 +1500,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::memberType(
 
             if (scope->hasOwnMethod(name)) {
                 const auto methods = scope->ownMethods(name);
-                result = m_pool->create(
+                result = m_pool->createMethod(
                         methods, jsValueType(), QQmlJSRegisterContent::Method, resultScope);
                 return true;
             }
@@ -1523,7 +1523,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::memberType(
             prop.setType(jsValueType());
             prop.setIsWritable(!(ownIdentifier.value().isConst));
 
-            return m_pool->create(
+            return m_pool->createProperty(
                     prop, baseLookupIndex, resultLookupIndex,
                     QQmlJSRegisterContent::Property,
                     parentScope(scope, type));
@@ -1543,11 +1543,11 @@ QQmlJSRegisterContent QQmlJSTypeResolver::memberType(
                               qmlCompiler, contained->sourceLocation());
                 return {};
             } else {
-                const QQmlJSRegisterContent namedType = m_pool->create(
+                const QQmlJSRegisterContent namedType = m_pool->createType(
                         attachedBase, QQmlJSRegisterContent::InvalidLookupIndex,
                         QQmlJSRegisterContent::TypeByName, type);
 
-                return m_pool->create(
+                return m_pool->createType(
                         attached, resultLookupIndex, QQmlJSRegisterContent::Attachment,
                         namedType);
             }
@@ -1594,7 +1594,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::memberType(
         const auto enumeration = type.enumeration();
         if (!type.enumMember().isEmpty() || !enumeration.hasKey(name))
             return {};
-        return m_pool->create(
+        return m_pool->createEnumeration(
                 enumeration, name, QQmlJSRegisterContent::Enum, type.scope());
     }
     if (type.isMethod()) {
@@ -1603,7 +1603,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::memberType(
         prop.setPropertyName(name);
         prop.setType(jsValueType());
         prop.setIsWritable(true);
-        return m_pool->create(
+        return m_pool->createProperty(
                 prop, QQmlJSRegisterContent::InvalidLookupIndex, lookupIndex,
                 QQmlJSRegisterContent::Property, type);
     }
@@ -1677,7 +1677,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::valueType(const QQmlJSRegisterContent 
     property.setTypeName(value->internalName());
     property.setType(value);
 
-    return m_pool->create(
+    return m_pool->createProperty(
             property, QQmlJSRegisterContent::InvalidLookupIndex,
             QQmlJSRegisterContent::InvalidLookupIndex, QQmlJSRegisterContent::ListValue,
             list);
@@ -1687,13 +1687,13 @@ QQmlJSRegisterContent QQmlJSTypeResolver::returnType(
         const QQmlJSMetaMethod &method, const QQmlJSScope::ConstPtr &returnType,
         const QQmlJSRegisterContent &scope) const
 {
-    return m_pool->create(method, returnType, scope);
+    return m_pool->createMethodCall(method, returnType, scope);
 }
 
 QQmlJSRegisterContent QQmlJSTypeResolver::extensionType(
         const QQmlJSScope::ConstPtr &extension, const QQmlJSRegisterContent &base) const
 {
-    return m_pool->create(
+    return m_pool->createType(
             extension, base.resultLookupIndex(), QQmlJSRegisterContent::Extension, base);
 }
 
@@ -1707,7 +1707,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::extensionType(
 QQmlJSRegisterContent QQmlJSTypeResolver::baseType(
         const QQmlJSScope::ConstPtr &base, const QQmlJSRegisterContent &derived) const
 {
-    return m_pool->create(
+    return m_pool->createType(
             base, derived.resultLookupIndex(), QQmlJSRegisterContent::BaseType, derived);
 }
 
@@ -1721,7 +1721,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::baseType(
 QQmlJSRegisterContent QQmlJSTypeResolver::parentScope(
         const QQmlJSScope::ConstPtr &parent, const QQmlJSRegisterContent &child) const
 {
-    return m_pool->create(
+    return m_pool->createType(
             parent, child.resultLookupIndex(), QQmlJSRegisterContent::ParentScope, child);
 }
 
@@ -1741,7 +1741,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::iteratorPointer(
     prop.setPropertyName(u"<>"_s);
     prop.setTypeName(iteratorPointer->internalName());
     prop.setType(iteratorPointer);
-    return m_pool->create(
+    return m_pool->createProperty(
             prop, lookupIndex,
             QQmlJSRegisterContent::InvalidLookupIndex, QQmlJSRegisterContent::ListIterator,
             listType);
@@ -1772,13 +1772,13 @@ static QQmlJSRegisterContent doConvert(
         const QQmlJSRegisterContent &scope, QQmlJSRegisterContentPool *pool)
 {
     if (from.isConversion()) {
-        return pool->create(
+        return pool->createConversion(
                 from.conversionOrigins(), to,
                 scope.isValid() ? scope : from.conversionResultScope(),
                 from.variant(), from.scope());
     }
 
-    return pool->create(
+    return pool->createConversion(
             QList<QQmlJSRegisterContent>{from},
             to, scope, from.variant(),
             from.scope());

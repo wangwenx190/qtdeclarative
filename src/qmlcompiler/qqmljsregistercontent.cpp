@@ -535,7 +535,7 @@ QQmlJSRegisterContent QQmlJSRegisterContent::shadowed() const
 QQmlJSRegisterContentPool::QQmlJSRegisterContentPool() = default;
 QQmlJSRegisterContentPool::~QQmlJSRegisterContentPool() = default;
 
-QQmlJSRegisterContent QQmlJSRegisterContentPool::create(
+QQmlJSRegisterContent QQmlJSRegisterContentPool::createType(
         const QQmlJSScope::ConstPtr &type, int resultLookupIndex,
         QQmlJSRegisterContent::ContentVariant variant, const QQmlJSRegisterContent &scope)
 {
@@ -544,7 +544,7 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::create(
     return result;
 }
 
-QQmlJSRegisterContent QQmlJSRegisterContentPool::create(
+QQmlJSRegisterContent QQmlJSRegisterContentPool::createProperty(
         const QQmlJSMetaProperty &property, int baseLookupIndex, int resultLookupIndex,
         QQmlJSRegisterContent::ContentVariant variant, const QQmlJSRegisterContent &scope)
 {
@@ -557,7 +557,7 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::create(
     return result;
 }
 
-QQmlJSRegisterContent QQmlJSRegisterContentPool::create(
+QQmlJSRegisterContent QQmlJSRegisterContentPool::createEnumeration(
         const QQmlJSMetaEnum &enumeration, const QString &enumMember,
         QQmlJSRegisterContent::ContentVariant variant, const QQmlJSRegisterContent &scope)
 {
@@ -566,7 +566,7 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::create(
     return result;
 }
 
-QQmlJSRegisterContent QQmlJSRegisterContentPool::create(
+QQmlJSRegisterContent QQmlJSRegisterContentPool::createMethod(
         const QList<QQmlJSMetaMethod> &methods, const QQmlJSScope::ConstPtr &methodType,
         QQmlJSRegisterContent::ContentVariant variant, const QQmlJSRegisterContent &scope)
 {
@@ -577,7 +577,7 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::create(
     return result;
 }
 
-QQmlJSRegisterContent QQmlJSRegisterContentPool::create(
+QQmlJSRegisterContent QQmlJSRegisterContentPool::createMethodCall(
         const QQmlJSMetaMethod &method, const QQmlJSScope::ConstPtr &returnType,
         const QQmlJSRegisterContent &scope)
 {
@@ -591,7 +591,7 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::create(
     return result;
 }
 
-QQmlJSRegisterContent QQmlJSRegisterContentPool::create(
+QQmlJSRegisterContent QQmlJSRegisterContentPool::createImportNamespace(
         uint importNamespaceStringId, const QQmlJSScope::ConstPtr &importNamespaceType,
         QQmlJSRegisterContent::ContentVariant variant, const QQmlJSRegisterContent &scope)
 {
@@ -600,7 +600,7 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::create(
     return result;
 }
 
-QQmlJSRegisterContent QQmlJSRegisterContentPool::create(
+QQmlJSRegisterContent QQmlJSRegisterContentPool::createConversion(
         const QList<QQmlJSRegisterContent> &origins, const QQmlJSScope::ConstPtr &conversion,
         const QQmlJSRegisterContent &conversionScope, ContentVariant variant,
         const QQmlJSRegisterContent &scope)
@@ -621,7 +621,7 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::storedIn(
 {
     Q_ASSERT(content.d);
     QQmlJSRegisterContentPrivate *result = clone(content.d);
-    result->m_storage = create(
+    result->m_storage = createType(
             newStoredType, QQmlJSRegisterContent::InvalidLookupIndex, ContentVariant::Storage);
     return result;
 }

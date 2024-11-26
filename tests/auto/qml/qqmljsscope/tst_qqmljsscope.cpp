@@ -358,7 +358,7 @@ void tst_qqmljsscope::descriptiveNameOfNull()
     QQmlJSMetaProperty property;
     property.setPropertyName(u"foo"_s);
     property.setTypeName(u"baz"_s);
-    QQmlJSRegisterContent unscoped = pool.storedIn(pool.create(
+    QQmlJSRegisterContent unscoped = pool.storedIn(pool.createProperty(
             property, QQmlJSRegisterContent::InvalidLookupIndex,
             QQmlJSRegisterContent::InvalidLookupIndex, QQmlJSRegisterContent::Property,
             QQmlJSRegisterContent()), stored);

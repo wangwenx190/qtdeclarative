@@ -169,38 +169,34 @@ public:
     QQmlJSRegisterContentPool();
     ~QQmlJSRegisterContentPool();
 
-    QQmlJSRegisterContent create(const QQmlJSScope::ConstPtr &type,
-                                 int resultLookupIndex, ContentVariant variant,
-                                 const QQmlJSRegisterContent &scope = {});
+    QQmlJSRegisterContent createType(
+            const QQmlJSScope::ConstPtr &type, int resultLookupIndex, ContentVariant variant,
+            const QQmlJSRegisterContent &scope = {});
 
-    QQmlJSRegisterContent create(const QQmlJSMetaProperty &property,
-                                 int baseLookupIndex, int resultLookupIndex,
-                                 ContentVariant variant,
-                                 const QQmlJSRegisterContent &scope);
+    QQmlJSRegisterContent createProperty(
+            const QQmlJSMetaProperty &property, int baseLookupIndex, int resultLookupIndex,
+            ContentVariant variant, const QQmlJSRegisterContent &scope);
 
-    QQmlJSRegisterContent create(const QQmlJSMetaEnum &enumeration,
-                                 const QString &enumMember, ContentVariant variant,
-                                 const QQmlJSRegisterContent &scope);
+    QQmlJSRegisterContent createEnumeration(
+            const QQmlJSMetaEnum &enumeration, const QString &enumMember, ContentVariant variant,
+            const QQmlJSRegisterContent &scope);
 
-    QQmlJSRegisterContent create(const QList<QQmlJSMetaMethod> &methods,
-                                 const QQmlJSScope::ConstPtr &methodType,
-                                 ContentVariant variant,
-                                 const QQmlJSRegisterContent &scope);
+    QQmlJSRegisterContent createMethod(
+            const QList<QQmlJSMetaMethod> &methods, const QQmlJSScope::ConstPtr &methodType,
+            ContentVariant variant, const QQmlJSRegisterContent &scope);
 
-    QQmlJSRegisterContent create(const QQmlJSMetaMethod &method,
-                                 const QQmlJSScope::ConstPtr &returnType,
-                                 const QQmlJSRegisterContent &scope);
+    QQmlJSRegisterContent createMethodCall(
+            const QQmlJSMetaMethod &method, const QQmlJSScope::ConstPtr &returnType,
+            const QQmlJSRegisterContent &scope);
 
-    QQmlJSRegisterContent create(uint importNamespaceStringId,
-                                 const QQmlJSScope::ConstPtr &importNamespaceType,
-                                 ContentVariant variant,
-                                 const QQmlJSRegisterContent &scope = {});
+    QQmlJSRegisterContent createImportNamespace(
+            uint importNamespaceStringId, const QQmlJSScope::ConstPtr &importNamespaceType,
+            ContentVariant variant, const QQmlJSRegisterContent &scope);
 
-    QQmlJSRegisterContent create(const QList<QQmlJSRegisterContent> &origins,
-                                 const QQmlJSScope::ConstPtr &conversion,
-                                 const QQmlJSRegisterContent &conversionScope,
-                                 ContentVariant variant,
-                                 const QQmlJSRegisterContent &scope = {});
+    QQmlJSRegisterContent createConversion(
+            const QList<QQmlJSRegisterContent> &origins, const QQmlJSScope::ConstPtr &conversion,
+            const QQmlJSRegisterContent &conversionScope, ContentVariant variant,
+            const QQmlJSRegisterContent &scope);
 
     QQmlJSRegisterContent storedIn(
             const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &newStoredType);
@@ -214,7 +210,6 @@ public:
             const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &adjusted);
     void generalizeType(
             const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &generalized);
-
 
 private:
     struct Deleter {
