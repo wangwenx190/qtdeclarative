@@ -180,8 +180,10 @@ QT_WARNING_POP
     // over into any further basic blocks automatically.
     m_state.State::operator=(initialState(m_function));
 
+    m_pool->setAllocationMode(QQmlJSRegisterContentPool::Temporary);
     const QByteArray byteCode = function->code;
     decode(byteCode.constData(), static_cast<uint>(byteCode.size()));
+    m_pool->setAllocationMode(QQmlJSRegisterContentPool::Permanent);
 
     QQmlJSAotFunction result;
     result.includes.swap(m_includes);
@@ -3441,6 +3443,7 @@ void QQmlJSCodeGenerator::endInstruction(QV4::Moth::Instr::Type)
 {
     if (!m_skipUntilNextLabel)
         generateJumpCodeWithTypeConversions(0);
+    m_pool->clearTemporaries();
 }
 
 void QQmlJSCodeGenerator::generateSetInstructionPointer()

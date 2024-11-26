@@ -225,6 +225,10 @@ public:
     void generalizeType(
             QQmlJSRegisterContent content, const QQmlJSScope::ConstPtr &generalized);
 
+    enum AllocationMode { Permanent, Temporary };
+    void setAllocationMode(AllocationMode mode);
+    void clearTemporaries();
+
 private:
     struct Deleter {
         // It's a template so that we only need the QQmlJSRegisterContentPrivate dtor on usage.
@@ -239,6 +243,7 @@ private:
     QQmlJSRegisterContentPrivate *create(QQmlJSRegisterContent scope, ContentVariant variant);
 
     Pool m_pool;
+    qsizetype m_checkpoint = -1;
 };
 
 QT_END_NAMESPACE

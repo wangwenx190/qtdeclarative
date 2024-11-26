@@ -668,6 +668,17 @@ void QQmlJSRegisterContentPool::generalizeType(
     d->setType(generalized);
 }
 
+void QQmlJSRegisterContentPool::setAllocationMode(AllocationMode mode)
+{
+    m_checkpoint = (mode == Temporary) ? m_pool.size() : -1;
+}
+
+void QQmlJSRegisterContentPool::clearTemporaries()
+{
+    if (m_checkpoint != -1)
+        m_pool.resize(m_checkpoint);
+}
+
 QQmlJSRegisterContentPrivate *QQmlJSRegisterContentPool::clone(
         const QQmlJSRegisterContentPrivate *from)
 {
