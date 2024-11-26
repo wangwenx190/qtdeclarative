@@ -4,6 +4,7 @@
 #include "qqmlthread_p.h"
 
 #include <private/qfieldlist_p.h>
+#include <private/qtqmlglobal_p.h>
 
 #include <QtCore/qmutex.h>
 #include <QtCore/qthread.h>
@@ -11,8 +12,7 @@
 #include <QtCore/qwaitcondition.h>
 #include <QtCore/qcoreapplication.h>
 
-#include <QtCore/private/qthread_p.h>
-#include <QtQml/private/qtqml-config_p.h>
+QT_REQUIRE_CONFIG(qml_type_loader_thread);
 
 QT_BEGIN_NAMESPACE
 
@@ -22,7 +22,6 @@ public:
     QQmlThreadPrivate(QQmlThread *);
     QQmlThread *q;
 
-    inline QMutex &mutex() { return _mutex; }
     inline void lock() { _mutex.lock(); }
     inline void unlock() { _mutex.unlock(); }
     inline void wait() { _wait.wait(&_mutex); }
@@ -68,18 +67,14 @@ QQmlThreadPrivate::MainObject::MainObject(QQmlThreadPrivate *p)
 // Trigger mainEvent in main thread.  Must be called from thread.
 void QQmlThreadPrivate::triggerMainEvent()
 {
-#if QT_CONFIG(qml_type_loader_thread)
     Q_ASSERT(q->isThisThread());
-#endif
     QCoreApplication::postEvent(&m_mainObject, new QEvent(QEvent::User));
 }
 
 // Trigger even in thread.  Must be called from main thread.
 void QQmlThreadPrivate::triggerThreadEvent()
 {
-#if QT_CONFIG(qml_type_loader_thread)
     Q_ASSERT(!q->isThisThread());
-#endif
     QCoreApplication::postEvent(this, new QEvent(QEvent::User));
 }
 
@@ -217,11 +212,6 @@ bool QQmlThread::isShutdown() const
     return d->m_shutdown;
 }
 
-QMutex &QQmlThread::mutex()
-{
-    return d->mutex();
-}
-
 void QQmlThread::lock()
 {
     d->lock();
@@ -252,14 +242,16 @@ QThread *QQmlThread::thread() const
     return const_cast<QThread *>(static_cast<const QThread *>(d));
 }
 
+/*!
+ * And object living in the QML thread, in case you want to parent other objects to it.
+ */
+QObject *QQmlThread::threadObject() const
+{
+    return d;
+}
+
 void QQmlThread::internalCallMethodInThread(Message *message)
 {
-#if !QT_CONFIG(qml_type_loader_thread)
-    message->call(this);
-    delete message;
-    return;
-#endif
-
     Q_ASSERT(!isThisThread());
     d->lock();
     Q_ASSERT(d->m_mainThreadWaiting == false);
@@ -298,14 +290,7 @@ void QQmlThread::internalCallMethodInThread(Message *message)
  */
 void QQmlThread::internalCallMethodInMain(Message *message)
 {
-#if !QT_CONFIG(qml_type_loader_thread)
-    message->call(this);
-    delete message;
-    return;
-#endif
-
     Q_ASSERT(isThisThread());
-
     d->lock();
 
     Q_ASSERT(d->mainSync == nullptr);
@@ -333,10 +318,6 @@ void QQmlThread::internalCallMethodInMain(Message *message)
 
 void QQmlThread::internalPostMethodToThread(Message *message)
 {
-#if !QT_CONFIG(qml_type_loader_thread)
-    internalPostMethodToMain(message);
-    return;
-#endif
     Q_ASSERT(!isThisThread());
     d->lock();
     bool wasEmpty = d->threadList.isEmpty();
@@ -348,9 +329,7 @@ void QQmlThread::internalPostMethodToThread(Message *message)
 
 void QQmlThread::internalPostMethodToMain(Message *message)
 {
-#if QT_CONFIG(qml_type_loader_thread)
     Q_ASSERT(isThisThread());
-#endif
     d->lock();
     bool wasEmpty = d->mainList.isEmpty();
     d->mainList.append(message);
@@ -372,9 +351,7 @@ void QQmlThread::internalPostMethodToMain(Message *message)
  */
 void QQmlThread::waitForNextMessage()
 {
-#if QT_CONFIG(qml_type_loader_thread)
     Q_ASSERT(!isThisThread());
-#endif
     Q_ASSERT(d->m_mainThreadWaiting == false);
 
     d->m_mainThreadWaiting = true;

@@ -83,9 +83,19 @@ void tst_QQMLTypeLoader::testLoadComplete()
 void tst_QQMLTypeLoader::loadComponentSynchronously()
 {
     QQmlEngine engine;
+    const QUrl url = testFileUrl("load_synchronous.qml");
+#if QT_CONFIG(qml_type_loader_thread)
     QTest::ignoreMessage(QtWarningMsg, QRegularExpression(
                              QLatin1String(".*nonprotocol::1:1: QtObject is not a type.*")));
-    QQmlComponent component(&engine, testFileUrl("load_synchronous.qml"));
+#else
+    QTest::ignoreMessage(
+            QtWarningMsg,
+            qPrintable(
+                    url.toString()
+                    + QLatin1String(":10: Error: Qt.createQmlObject(): Failed to force synchronous "
+                                    "loading of asynchronous URL 'nonprotocol:'")));
+#endif
+    QQmlComponent component(&engine, url);
     QScopedPointer<QObject> o(component.create());
     QVERIFY(o);
 }
@@ -452,6 +462,10 @@ void tst_QQMLTypeLoader::importAndDestroy()
                     .isValid()) {
         // busy wait for type to be registered
         QVERIFY2(!component.isError(), qPrintable(component.errorString()));
+#if !QT_CONFIG(qml_type_loader_thread)
+        // The loading takes place on the main thread. Nudge it along by processing events.
+        QCoreApplication::processEvents();
+#endif
     }
 
     // Now the type loader thread is likely waiting for the main thread to process the
@@ -802,7 +816,11 @@ void tst_QQMLTypeLoader::loadTypeOnShutdown()
         });
 
         QObject::connect(good, &QQmlComponent::destroyed, good, [&]() { dead1 = true; });
+#if QT_CONFIG(qml_type_loader_thread)
         QVERIFY(good->isLoading());
+#else
+        QVERIFY(good->isReady());
+#endif
 
         auto bad = new QQmlComponent(
                 &engine, testFileUrl("doesNotExist.qml"),
@@ -818,7 +836,11 @@ void tst_QQMLTypeLoader::loadTypeOnShutdown()
         });
 
         QObject::connect(bad, &QQmlComponent::destroyed, bad, [&]() { dead2 = true; });
+#if QT_CONFIG(qml_type_loader_thread)
         QVERIFY(bad->isLoading());
+#else
+        QVERIFY(bad->isError());
+#endif
     }
 
     QVERIFY(dead1);

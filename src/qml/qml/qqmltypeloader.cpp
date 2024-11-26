@@ -959,7 +959,6 @@ Constructs a new type loader that uses the given \a engine.
 QQmlTypeLoader::QQmlTypeLoader(QQmlEngine *engine)
     : m_engine(engine)
     , m_thread(new QQmlTypeLoaderThread(this))
-    , m_mutex(m_thread->mutex())
     , m_typeCacheTrimThreshold(TYPELOADER_MINIMUM_TRIM_THRESHOLD)
 {
 }
@@ -1037,16 +1036,16 @@ QQmlRefPointer<QQmlTypeData> QQmlTypeLoader::getType(const QUrl &unNormalizedUrl
         // this was started Asynchronous, but we need to force Synchronous
         // completion now (if at all possible with this type of URL).
 
-#if QT_CONFIG(qml_type_loader_thread)
-        if (!m_thread->isThisThread()) {
-            // this only works when called directly from the UI thread, but not
-            // when recursively called on the QML thread via resolveTypes()
+        // This only works when called directly from e.g. the UI thread, but not
+        // when recursively called on the QML thread via resolveTypes()
 
-            while (!typeData->isCompleteOrError()) {
+        // NB: We do not want to know whether the thread is the main thread, but specifically that
+        //     the thread is _not_ the thread we're waiting for.
+        //     If !QT_CONFIG(qml_type_loader_thread) the QML thread is the main thread.
+        if (!m_thread->isThisThread()) {
+            while (!typeData->isCompleteOrError())
                 m_thread->waitForNextMessage();
-            }
         }
-#endif
     }
 
     return typeData;

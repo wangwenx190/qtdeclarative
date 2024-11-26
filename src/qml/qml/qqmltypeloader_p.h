@@ -18,6 +18,7 @@
 #include <private/qqmldatablob_p.h>
 #include <private/qqmlimport_p.h>
 #include <private/qqmlmetatype_p.h>
+#include <private/qqmltypeloaderthread_p.h>
 #include <private/qv4compileddata_p.h>
 
 #include <QtQml/qtqmlglobal.h>
@@ -175,8 +176,8 @@ public:
     bool isTypeLoaded(const QUrl &url) const;
     bool isScriptLoaded(const QUrl &url) const;
 
-    void lock() { m_mutex.lock(); }
-    void unlock() { m_mutex.unlock(); }
+    void lock() { m_thread->lock(); }
+    void unlock() { m_thread->unlock(); }
 
     void load(const QQmlDataBlob::Ptr &,  Mode = PreferSynchronous);
     void loadWithStaticData(const QQmlDataBlob::Ptr &blob, const QByteArray &, Mode = PreferSynchronous);
@@ -229,7 +230,6 @@ private:
 
     QQmlEngine *m_engine;
     QQmlTypeLoaderThread *m_thread;
-    QMutex &m_mutex;
 
 #if QT_CONFIG(qml_debug)
     QScopedPointer<QQmlProfiler> m_profiler;

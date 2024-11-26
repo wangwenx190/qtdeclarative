@@ -246,7 +246,7 @@ qt_internal_add_qml_module(Qml
         qml/ftw/qprimefornumbits_p.h
         qml/ftw/qqmlnullablevalue_p.h
         qml/ftw/qqmlrefcount_p.h
-        qml/ftw/qqmlthread.cpp qml/ftw/qqmlthread_p.h
+        qml/ftw/qqmlthread_p.h
         qml/ftw/qrecursionwatcher_p.h
         qml/ftw/qrecyclepool_p.h
         qml/ftw/qstringhash_p.h
@@ -516,6 +516,16 @@ qt_internal_extend_target(Qml CONDITION QT_FEATURE_qml_network
         qml/qqmltypeloadernetworkreplyproxy.cpp qml/qqmltypeloadernetworkreplyproxy_p.h
     PUBLIC_LIBRARIES
         Qt::Network
+)
+
+qt_internal_extend_target(Qml CONDITION QT_FEATURE_qml_type_loader_thread
+    SOURCES
+        qml/ftw/qqmlthread_impl.cpp
+)
+
+qt_internal_extend_target(Qml CONDITION NOT QT_FEATURE_qml_type_loader_thread
+    SOURCES
+        qml/ftw/qqmlthread_stub.cpp
 )
 
 qt_internal_extend_target(Qml CONDITION MSVC AND (TEST_architecture_arch STREQUAL "i386")

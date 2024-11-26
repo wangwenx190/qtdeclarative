@@ -1369,7 +1369,14 @@ QObject *QtObject::createQmlObject(const QString &qml, QObject *parent, const QU
 
     QQmlRefPointer<QQmlTypeData> typeData = QQmlEnginePrivate::get(engine)->typeLoader.getType(
                 qml.toUtf8(), resolvedUrl, QQmlTypeLoader::Synchronous);
-    Q_ASSERT(typeData->isCompleteOrError());
+
+    if (!typeData->isCompleteOrError()) {
+        v4Engine()->throwError(
+                QStringLiteral("Qt.createQmlObject(): Failed to force synchronous loading "
+                               "of asynchronous URL '%1'").arg(resolvedUrl.toString()));
+        return nullptr;
+    }
+
     QQmlComponent component(engine);
     QQmlComponentPrivate *componentPrivate = QQmlComponentPrivate::get(&component);
     componentPrivate->fromTypeData(typeData);
