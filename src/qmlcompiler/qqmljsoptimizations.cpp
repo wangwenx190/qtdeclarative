@@ -82,7 +82,7 @@ void QQmlJSOptimizations::populateReaderLocations()
             // instruction must be optimized out if none of the types it can hold is read anymore.
             access.trackedTypes.clear();
             const auto origins = writeIt->second.changedRegister.conversionOrigins();
-            for (const QQmlJSRegisterContent &origin : origins)
+            for (QQmlJSRegisterContent origin : origins)
                 access.trackedTypes.append(origin);
         } else {
             access.trackedTypes.append(writeIt->second.changedRegister);
@@ -128,7 +128,7 @@ void QQmlJSOptimizations::populateReaderLocations()
                     } else if (readIt->second.content.isConversion()) {
                         const QList<QQmlJSRegisterContent> conversionOrigins
                                 = readIt->second.content.conversionOrigins();
-                        for (const QQmlJSRegisterContent &origin : conversionOrigins) {
+                        for (QQmlJSRegisterContent origin : conversionOrigins) {
                             if (!access.trackedTypes.contains(origin))
                                 continue;
 
@@ -282,24 +282,24 @@ QQmlJSBasicBlocks::objectAndArrayDefinitions() const
 }
 
 static QString adjustErrorMessage(
-        const QQmlJSRegisterContent &origin, const QQmlJSScope::ConstPtr &conversion) {
+        QQmlJSRegisterContent origin, const QQmlJSScope::ConstPtr &conversion) {
     return QLatin1String("Cannot convert from ")
             + origin.containedType()->internalName() + QLatin1String(" to ")
             + conversion->internalName();
 }
 
 static QString adjustErrorMessage(
-        const QQmlJSRegisterContent &origin, const QQmlJSRegisterContent &conversion) {
+        QQmlJSRegisterContent origin, QQmlJSRegisterContent conversion) {
     return adjustErrorMessage(origin, conversion.containedType());
 }
 
 static QString adjustErrorMessage(
-        const QQmlJSRegisterContent &origin, const QList<QQmlJSRegisterContent> &conversions) {
+        QQmlJSRegisterContent origin, const QList<QQmlJSRegisterContent> &conversions) {
     if (conversions.size() == 1)
         return adjustErrorMessage(origin, conversions[0]);
 
     QString types;
-    for (const QQmlJSRegisterContent &type : conversions) {
+    for (QQmlJSRegisterContent type : conversions) {
         if (!types.isEmpty())
             types += QLatin1String(", ");
         types += type.containedType()->internalName();

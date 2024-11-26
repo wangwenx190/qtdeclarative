@@ -537,7 +537,7 @@ QQmlJSRegisterContentPool::~QQmlJSRegisterContentPool() = default;
 
 QQmlJSRegisterContent QQmlJSRegisterContentPool::createType(
         const QQmlJSScope::ConstPtr &type, int resultLookupIndex,
-        QQmlJSRegisterContent::ContentVariant variant, const QQmlJSRegisterContent &scope)
+        QQmlJSRegisterContent::ContentVariant variant, QQmlJSRegisterContent scope)
 {
     QQmlJSRegisterContentPrivate *result = create(scope, variant);
     result->m_content = std::make_pair(type, resultLookupIndex);
@@ -546,7 +546,7 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::createType(
 
 QQmlJSRegisterContent QQmlJSRegisterContentPool::createProperty(
         const QQmlJSMetaProperty &property, int baseLookupIndex, int resultLookupIndex,
-        QQmlJSRegisterContent::ContentVariant variant, const QQmlJSRegisterContent &scope)
+        QQmlJSRegisterContent::ContentVariant variant, QQmlJSRegisterContent scope)
 {
     QQmlJSRegisterContentPrivate *result = create(scope, variant);
     result->m_content = QQmlJSRegisterContentPrivate::PropertyLookup {
@@ -559,7 +559,7 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::createProperty(
 
 QQmlJSRegisterContent QQmlJSRegisterContentPool::createEnumeration(
         const QQmlJSMetaEnum &enumeration, const QString &enumMember,
-        QQmlJSRegisterContent::ContentVariant variant, const QQmlJSRegisterContent &scope)
+        QQmlJSRegisterContent::ContentVariant variant, QQmlJSRegisterContent scope)
 {
     QQmlJSRegisterContentPrivate *result = create(scope, variant);
     result->m_content = std::make_pair(enumeration, enumMember);
@@ -568,7 +568,7 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::createEnumeration(
 
 QQmlJSRegisterContent QQmlJSRegisterContentPool::createMethod(
         const QList<QQmlJSMetaMethod> &methods, const QQmlJSScope::ConstPtr &methodType,
-        QQmlJSRegisterContent::ContentVariant variant, const QQmlJSRegisterContent &scope)
+        QQmlJSRegisterContent::ContentVariant variant, QQmlJSRegisterContent scope)
 {
     // Methods can only be stored in QJSValue.
     Q_ASSERT(methodType->internalName() == u"QJSValue"_s);
@@ -579,7 +579,7 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::createMethod(
 
 QQmlJSRegisterContent QQmlJSRegisterContentPool::createMethodCall(
         const QQmlJSMetaMethod &method, const QQmlJSScope::ConstPtr &returnType,
-        const QQmlJSRegisterContent &scope)
+        QQmlJSRegisterContent scope)
 {
     QQmlJSRegisterContentPrivate *result = create(scope, ContentVariant::MethodCall);
 
@@ -593,7 +593,7 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::createMethodCall(
 
 QQmlJSRegisterContent QQmlJSRegisterContentPool::createImportNamespace(
         uint importNamespaceStringId, const QQmlJSScope::ConstPtr &importNamespaceType,
-        QQmlJSRegisterContent::ContentVariant variant, const QQmlJSRegisterContent &scope)
+        QQmlJSRegisterContent::ContentVariant variant, QQmlJSRegisterContent scope)
 {
     QQmlJSRegisterContentPrivate *result = create(scope, variant);
     result->m_content = std::make_pair(importNamespaceStringId, importNamespaceType);
@@ -602,8 +602,8 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::createImportNamespace(
 
 QQmlJSRegisterContent QQmlJSRegisterContentPool::createConversion(
         const QList<QQmlJSRegisterContent> &origins, const QQmlJSScope::ConstPtr &conversion,
-        const QQmlJSRegisterContent &conversionScope, ContentVariant variant,
-        const QQmlJSRegisterContent &scope)
+        QQmlJSRegisterContent conversionScope, ContentVariant variant,
+        QQmlJSRegisterContent scope)
 {
     QQmlJSRegisterContentPrivate *result = create(scope, variant);
 
@@ -617,7 +617,7 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::createConversion(
 }
 
 QQmlJSRegisterContent QQmlJSRegisterContentPool::storedIn(
-        const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &newStoredType)
+        QQmlJSRegisterContent content, const QQmlJSScope::ConstPtr &newStoredType)
 {
     Q_ASSERT(content.d);
     QQmlJSRegisterContentPrivate *result = clone(content.d);
@@ -627,7 +627,7 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::storedIn(
 }
 
 QQmlJSRegisterContent QQmlJSRegisterContentPool::castTo(
-        const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &newContainedType)
+        QQmlJSRegisterContent content, const QQmlJSScope::ConstPtr &newContainedType)
 {
     // This is not a conversion but a run time cast. It may result in null or undefined.
     QQmlJSRegisterContentPrivate *result = create(content, ContentVariant::Cast);
@@ -636,7 +636,7 @@ QQmlJSRegisterContent QQmlJSRegisterContentPool::castTo(
 }
 
 void QQmlJSRegisterContentPool::adjustType(
-        const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &adjusted)
+        QQmlJSRegisterContent content, const QQmlJSScope::ConstPtr &adjusted)
 {
     QQmlJSRegisterContentPrivate *d = content.d;
 
@@ -647,7 +647,7 @@ void QQmlJSRegisterContentPool::adjustType(
 }
 
 void QQmlJSRegisterContentPool::generalizeType(
-        const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &generalized)
+        QQmlJSRegisterContent content, const QQmlJSScope::ConstPtr &generalized)
 {
     QQmlJSRegisterContentPrivate *d = content.d;
 
@@ -667,7 +667,7 @@ QQmlJSRegisterContentPrivate *QQmlJSRegisterContentPool::clone(
 }
 
 QQmlJSRegisterContentPrivate *QQmlJSRegisterContentPool::create(
-        const QQmlJSRegisterContent &scope, ContentVariant variant)
+        QQmlJSRegisterContent scope, ContentVariant variant)
 {
     QQmlJSRegisterContentPrivate *result = create();
     result->m_scope = scope;

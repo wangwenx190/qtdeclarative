@@ -35,7 +35,7 @@ QQmlJSCompilePass::BlocksAndAnnotations QQmlJSStorageGeneralizer::run(Function *
     }
 
     const auto transformRegister = [&](QQmlJSRegisterContent &content) {
-        const QQmlJSRegisterContent &specific = content.storage();
+        QQmlJSRegisterContent specific = content.storage();
         if (specific.isValid())
             m_typeResolver->generalizeType(specific);
     };

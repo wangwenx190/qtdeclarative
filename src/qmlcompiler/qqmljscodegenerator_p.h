@@ -209,12 +209,12 @@ protected:
         m_includes.append(include);
     }
 
-    QString conversion(const QQmlJSRegisterContent &from,
-                       const QQmlJSRegisterContent &to,
+    QString conversion(QQmlJSRegisterContent from,
+                       QQmlJSRegisterContent to,
                        const QString &variable);
 
     QString conversion(const QQmlJSScope::ConstPtr &from,
-                       const QQmlJSRegisterContent &to,
+                       QQmlJSRegisterContent to,
                        const QString &variable)
     {
         const QQmlJSScope::ConstPtr contained = to.containedType();
@@ -237,7 +237,7 @@ protected:
         }
     }
 
-    QString conversion(const QQmlJSRegisterContent &from,
+    QString conversion(QQmlJSRegisterContent from,
                        const QQmlJSScope::ConstPtr &to,
                        const QString &variable)
     {
@@ -256,8 +256,8 @@ protected:
                           const QQmlJSScope::ConstPtr &to,
                           const QString &variable);
 
-    QString convertContained(const QQmlJSRegisterContent &from,
-                             const QQmlJSRegisterContent &to,
+    QString convertContained(QQmlJSRegisterContent from,
+                             QQmlJSRegisterContent to,
                              const QString &variable);
 
     void generateReturnError();
@@ -268,14 +268,14 @@ protected:
     QString compositeMetaType(const QString &elementName) const;
     QString compositeListMetaType(const QString &elementName) const;
 
-    QString contentPointer(const QQmlJSRegisterContent &content, const QString &var);
-    QString contentType(const QQmlJSRegisterContent &content, const QString &var);
+    QString contentPointer(QQmlJSRegisterContent content, const QString &var);
+    QString contentType(QQmlJSRegisterContent content, const QString &var);
 
     void generateSetInstructionPointer();
     void generateLookup(const QString &lookup, const QString &initialization,
                         const QString &resultPreparation = QString());
     QString getLookupPreparation(
-            const QQmlJSRegisterContent &content, const QString &var, int lookup);
+            QQmlJSRegisterContent content, const QString &var, int lookup);
     void generateEnumLookup(int index);
 
     QString registerVariable(int index) const;
@@ -297,7 +297,7 @@ private:
     void generateExceptionCheck();
 
     void generateEqualityOperation(
-            const QQmlJSRegisterContent &lhsContent, const QString &lhsName,
+            QQmlJSRegisterContent lhsContent, const QString &lhsName,
             const QString &function, bool invert) {
         generateEqualityOperation(
                 lhsContent, m_state.accumulatorIn(), lhsName, m_state.accumulatorVariableIn,
@@ -305,7 +305,7 @@ private:
     }
 
     void generateEqualityOperation(
-            const QQmlJSRegisterContent &lhsContent, const QQmlJSRegisterContent &rhsContent,
+            QQmlJSRegisterContent lhsContent, QQmlJSRegisterContent rhsContent,
             const QString &lhsName, const QString &rhsName, const QString &function, bool invert);
     void generateCompareOperation(int lhs, const QString &cppOperator);
     void generateArithmeticOperation(int lhs, const QString &cppOperator);
@@ -319,9 +319,9 @@ private:
     void generateMoveOutVar(const QString &outVar);
     void generateTypeLookup(int index);
     void generateVariantEqualityComparison(
-            const QQmlJSRegisterContent &nonStorable, const QString &registerName, bool invert);
+            QQmlJSRegisterContent nonStorable, const QString &registerName, bool invert);
     void generateVariantEqualityComparison(
-            const QQmlJSRegisterContent &storableContent, const QString &typedRegisterName,
+            QQmlJSRegisterContent storableContent, const QString &typedRegisterName,
             const QString &varRegisterName, bool invert);
     void generateArrayInitializer(int argc, int argv);
     void generateWriteBack(int registerIndex);
@@ -346,20 +346,20 @@ private:
     void generate_GetLookupHelper(int index);
 
     QString resolveValueTypeContentPointer(
-            const QQmlJSScope::ConstPtr &required, const QQmlJSRegisterContent &actual,
+            const QQmlJSScope::ConstPtr &required, QQmlJSRegisterContent actual,
             const QString &variable, const QString &errorMessage);
     QString resolveQObjectPointer(
-            const QQmlJSScope::ConstPtr &required, const QQmlJSRegisterContent &actual,
+            const QQmlJSScope::ConstPtr &required, QQmlJSRegisterContent actual,
             const QString &variable, const QString &errorMessage);
     bool generateContentPointerCheck(
-            const QQmlJSScope::ConstPtr &required, const QQmlJSRegisterContent &actual,
+            const QQmlJSScope::ConstPtr &required, QQmlJSRegisterContent actual,
             const QString &variable, const QString &errorMessage);
 
     QString generateCallConstructor(
             const QQmlJSMetaMethod &ctor, const QList<QQmlJSRegisterContent> &argumentTypes,
             const QStringList &arguments, const QString &metaType, const QString &metaObject);
 
-    QQmlJSRegisterContent originalType(const QQmlJSRegisterContent &tracked)
+    QQmlJSRegisterContent originalType(QQmlJSRegisterContent tracked)
     {
         const QQmlJSRegisterContent restored = m_typeResolver->original(tracked);
         return m_pool->storedIn(

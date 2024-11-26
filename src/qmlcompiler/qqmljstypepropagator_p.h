@@ -171,7 +171,7 @@ struct Q_QMLCOMPILER_EXPORT QQmlJSTypePropagator : public QQmlJSCompilePass
     void generate_ThrowOnNullOrUndefined() override;
     void generate_GetTemplateObject(int index) override;
 
-    bool checkForEnumProblems(const QQmlJSRegisterContent &base, const QString &propertyName);
+    bool checkForEnumProblems(QQmlJSRegisterContent base, const QString &propertyName);
 
     Verdict startInstruction(QV4::Moth::Instr::Type instr) override;
     void endInstruction(QV4::Moth::Instr::Type instr) override;
@@ -207,7 +207,7 @@ private:
     QQmlJS::SourceLocation getCurrentBindingSourceLocation() const;
     QQmlJS::SourceLocation getCurrentNonEmptySourceLocation() const;
 
-    void checkConversion(const QQmlJSRegisterContent &from, const QQmlJSRegisterContent &to);
+    void checkConversion(QQmlJSRegisterContent from, QQmlJSRegisterContent to);
     void generateUnaryArithmeticOperation(QQmlJSTypeResolver::UnaryOperator op);
 
     QQmlJSRegisterContent propagateBinaryOperation(QSOperator::Op op, int lhs);
@@ -216,17 +216,17 @@ private:
 
     void propagateCall(
             const QList<QQmlJSMetaMethod> &methods, int argc, int argv,
-            const QQmlJSRegisterContent &scope);
+            QQmlJSRegisterContent scope);
     void propagateTranslationMethod_SAcheck(const QString &methodName);
     bool propagateTranslationMethod(const QList<QQmlJSMetaMethod> &methods, int argc, int argv);
-    void propagateStringArgCall(const QQmlJSRegisterContent &base, int argv);
-    bool propagateArrayMethod(const QString &name, int argc, int argv, const QQmlJSRegisterContent &valueType);
+    void propagateStringArgCall(QQmlJSRegisterContent base, int argv);
+    bool propagateArrayMethod(const QString &name, int argc, int argv, QQmlJSRegisterContent valueType);
     void propagatePropertyLookup(
             const QString &name, int lookupIndex = QQmlJSRegisterContent::InvalidLookupIndex);
     void propagateScopeLookupCall(const QString &functionName, int argc, int argv);
     void saveRegisterStateForJump(int offset);
-    bool canConvertFromTo(const QQmlJSRegisterContent &from, const QQmlJSRegisterContent &to);
-    bool canConvertFromTo(const QQmlJSRegisterContent &from, const QQmlJSScope::ConstPtr &to);
+    bool canConvertFromTo(QQmlJSRegisterContent from, QQmlJSRegisterContent to);
+    bool canConvertFromTo(QQmlJSRegisterContent from, const QQmlJSScope::ConstPtr &to);
 
     QString registerName(int registerIndex) const;
 
@@ -234,12 +234,12 @@ private:
     QQmlJSMetaMethod bestMatchForCall(const QList<QQmlJSMetaMethod> &methods, int argc, int argv,
                                       QStringList *errors);
 
-    void setAccumulator(const QQmlJSRegisterContent &content);
-    void setRegister(int index, const QQmlJSRegisterContent &content);
-    void mergeRegister(int index, const QQmlJSRegisterContent &a, const QQmlJSRegisterContent &b);
+    void setAccumulator(QQmlJSRegisterContent content);
+    void setRegister(int index, QQmlJSRegisterContent content);
+    void mergeRegister(int index, QQmlJSRegisterContent a, QQmlJSRegisterContent b);
 
     void addReadRegister(int index);
-    void addReadRegister(int index, const QQmlJSRegisterContent &convertTo);
+    void addReadRegister(int index, QQmlJSRegisterContent convertTo);
     void addReadRegister(int index, const QQmlJSScope::ConstPtr &convertTo);
 
     void addReadAccumulator()
@@ -247,7 +247,7 @@ private:
         addReadRegister(Accumulator);
     }
 
-    void addReadAccumulator(const QQmlJSRegisterContent &convertTo)
+    void addReadAccumulator(QQmlJSRegisterContent convertTo)
     {
         addReadRegister(Accumulator, convertTo);
     }
@@ -274,9 +274,9 @@ private:
     // helper functions to perform QQmlSA checks
     void generate_ret_SAcheck();
     void generate_LoadQmlContextPropertyLookup_SAcheck(const QString &name);
-    void generate_StoreNameCommon_SAcheck(const QQmlJSRegisterContent &in, const QString &name);
+    void generate_StoreNameCommon_SAcheck(QQmlJSRegisterContent in, const QString &name);
     void propagatePropertyLookup_SAcheck(const QString &propertyName);
-    void generate_StoreProperty_SAcheck(const QString &propertyName, const QQmlJSRegisterContent &callBase);
+    void generate_StoreProperty_SAcheck(const QString &propertyName, QQmlJSRegisterContent callBase);
     void generate_callProperty_SAcheck(const QString &propertyName,
                                        const QQmlJSScope::ConstPtr &callBase);
     void propagateCall_SAcheck(const QQmlJSMetaMethod &method,

@@ -1008,7 +1008,7 @@ void QQmlJSCodeGenerator::generateTypeLookup(int index)
 }
 
 void QQmlJSCodeGenerator::generateVariantEqualityComparison(
-        const QQmlJSRegisterContent &nonStorableContent, const QString &registerName, bool invert)
+        QQmlJSRegisterContent nonStorableContent, const QString &registerName, bool invert)
 {
     const auto nonStorableType = nonStorableContent.containedType();
     QQmlJSScope::ConstPtr comparedType = (nonStorableType == m_typeResolver->nullType())
@@ -1064,7 +1064,7 @@ void QQmlJSCodeGenerator::generateVariantEqualityComparison(
 }
 
 void QQmlJSCodeGenerator::generateVariantEqualityComparison(
-        const QQmlJSRegisterContent &storableContent, const QString &typedRegisterName,
+        QQmlJSRegisterContent storableContent, const QString &typedRegisterName,
         const QString &varRegisterName, bool invert)
 {
     // enumerations are ===-equal to their underlying type and they are stored as such.
@@ -1249,7 +1249,7 @@ void QQmlJSCodeGenerator::rejectIfBadArray()
  * false if the variable can be used as-is.
  */
 bool QQmlJSCodeGenerator::generateContentPointerCheck(
-        const QQmlJSScope::ConstPtr &required, const QQmlJSRegisterContent &actual,
+        const QQmlJSScope::ConstPtr &required, QQmlJSRegisterContent actual,
         const QString &variable, const QString &errorMessage)
 {
     const QQmlJSScope::ConstPtr scope = required;
@@ -1331,7 +1331,7 @@ QString QQmlJSCodeGenerator::generateCallConstructor(
 }
 
 QString QQmlJSCodeGenerator::resolveValueTypeContentPointer(
-        const QQmlJSScope::ConstPtr &required, const QQmlJSRegisterContent &actual,
+        const QQmlJSScope::ConstPtr &required, QQmlJSRegisterContent actual,
         const QString &variable, const QString &errorMessage)
 {
     if (generateContentPointerCheck(required, actual, variable, errorMessage))
@@ -1340,7 +1340,7 @@ QString QQmlJSCodeGenerator::resolveValueTypeContentPointer(
 }
 
 QString QQmlJSCodeGenerator::resolveQObjectPointer(
-        const QQmlJSScope::ConstPtr &required, const QQmlJSRegisterContent &actual,
+        const QQmlJSScope::ConstPtr &required, QQmlJSRegisterContent actual,
         const QString &variable, const QString &errorMessage)
 {
     if (generateContentPointerCheck(required, actual, variable, errorMessage))
@@ -2982,7 +2982,7 @@ void QQmlJSCodeGenerator::generate_CmpNeNull()
 }
 
 QString QQmlJSCodeGenerator::getLookupPreparation(
-        const QQmlJSRegisterContent &content, const QString &var, int lookup)
+        QQmlJSRegisterContent content, const QString &var, int lookup)
 {
     if (content.contains(content.storedType()))
         return QString();
@@ -3001,7 +3001,7 @@ QString QQmlJSCodeGenerator::getLookupPreparation(
     return QString();
 }
 
-QString QQmlJSCodeGenerator::contentPointer(const QQmlJSRegisterContent &content, const QString &var)
+QString QQmlJSCodeGenerator::contentPointer(QQmlJSRegisterContent content, const QString &var)
 {
     const QQmlJSScope::ConstPtr stored = content.storedType();
     if (content.contains(stored))
@@ -3027,7 +3027,7 @@ QString QQmlJSCodeGenerator::contentPointer(const QQmlJSRegisterContent &content
     return QString();
 }
 
-QString QQmlJSCodeGenerator::contentType(const QQmlJSRegisterContent &content, const QString &var)
+QString QQmlJSCodeGenerator::contentType(QQmlJSRegisterContent content, const QString &var)
 {
     const QQmlJSScope::ConstPtr stored = content.storedType();
     const QQmlJSScope::ConstPtr contained = content.containedType();
@@ -3395,7 +3395,7 @@ QV4::Moth::ByteCodeHandler::Verdict QQmlJSCodeGenerator::startInstruction(
     const auto accumulatorIn = m_state.registers.find(Accumulator);
     if (accumulatorIn != m_state.registers.end()
             && isTypeStorable(m_typeResolver, accumulatorIn.value().content.storedType())) {
-        const QQmlJSRegisterContent &content = accumulatorIn.value().content;
+        QQmlJSRegisterContent content = accumulatorIn.value().content;
         m_state.accumulatorVariableIn = m_registerVariables.value(RegisterVariablesKey {
             content.storedType()->internalName(),
             Accumulator,
@@ -3457,7 +3457,7 @@ void QQmlJSCodeGenerator::generateExceptionCheck()
 }
 
 void QQmlJSCodeGenerator::generateEqualityOperation(
-        const QQmlJSRegisterContent &lhsContent, const QQmlJSRegisterContent &rhsContent,
+        QQmlJSRegisterContent lhsContent, QQmlJSRegisterContent rhsContent,
         const QString &lhsName, const QString &rhsName, const QString &function, bool invert)
 {
     const bool lhsIsOptional = m_typeResolver->isOptionalType(lhsContent);
@@ -3490,7 +3490,7 @@ void QQmlJSCodeGenerator::generateEqualityOperation(
         return false;
     };
 
-    const auto retrieveOriginal = [this](const QQmlJSRegisterContent &content) {
+    const auto retrieveOriginal = [this](QQmlJSRegisterContent content) {
         const auto contained = content.containedType();
         const auto originalContent = originalType(content);
         const auto containedOriginal = originalContent.containedType();
@@ -3881,7 +3881,7 @@ void QQmlJSCodeGenerator::generateJumpCodeWithTypeConversions(int relativeOffset
 
 QString QQmlJSCodeGenerator::registerVariable(int index) const
 {
-    const QQmlJSRegisterContent &content = registerType(index);
+    QQmlJSRegisterContent content = registerType(index);
     const auto it = m_registerVariables.constFind(RegisterVariablesKey {
         content.storedType()->internalName(),
         index,
@@ -3919,7 +3919,7 @@ QString QQmlJSCodeGenerator::consumedAccumulatorVariableIn() const
 
 QString QQmlJSCodeGenerator::changedRegisterVariable() const
 {
-    const QQmlJSRegisterContent &changedRegister = m_state.changedRegister();
+    QQmlJSRegisterContent changedRegister = m_state.changedRegister();
 
     const QQmlJSScope::ConstPtr storedType = changedRegister.storedType();
     if (storedType.isNull())
@@ -3957,7 +3957,7 @@ bool QQmlJSCodeGenerator::shouldMoveRegister(int index) const
 }
 
 QString QQmlJSCodeGenerator::conversion(
-        const QQmlJSRegisterContent &from, const QQmlJSRegisterContent &to, const QString &variable)
+        QQmlJSRegisterContent from, QQmlJSRegisterContent to, const QString &variable)
 {
     const QQmlJSScope::ConstPtr contained = to.containedType();
 
@@ -4288,7 +4288,7 @@ QString QQmlJSCodeGenerator::convertStored(
     return QString();
 }
 
-QString QQmlJSCodeGenerator::convertContained(const QQmlJSRegisterContent &from, const QQmlJSRegisterContent &to, const QString &variable)
+QString QQmlJSCodeGenerator::convertContained(QQmlJSRegisterContent from, QQmlJSRegisterContent to, const QString &variable)
 {
     const QQmlJSScope::ConstPtr containedFrom = from.containedType();
     const QQmlJSScope::ConstPtr containedTo = to.containedType();

@@ -134,7 +134,7 @@ public:
             the type may differ from what was seen or requested ealier. See \l {readAccumulator()}.
             The input type may then need to be converted to the expected type.
         */
-        const QQmlJSRegisterContent &accumulatorIn() const
+        QQmlJSRegisterContent accumulatorIn() const
         {
             auto it = registers.find(Accumulator);
             Q_ASSERT(it != registers.end());
@@ -145,7 +145,7 @@ public:
             \internal
             \brief The accumulatorOut is the output register of the current instruction.
         */
-        const QQmlJSRegisterContent &accumulatorOut() const
+        QQmlJSRegisterContent accumulatorOut() const
         {
             Q_ASSERT(m_changedRegisterIndex == Accumulator);
             return m_changedRegister;
@@ -168,9 +168,9 @@ public:
         }
 
         int changedRegisterIndex() const { return m_changedRegisterIndex; }
-        const QQmlJSRegisterContent &changedRegister() const { return m_changedRegister; }
+        QQmlJSRegisterContent changedRegister() const { return m_changedRegister; }
 
-        void addReadRegister(int registerIndex, const QQmlJSRegisterContent &reg)
+        void addReadRegister(int registerIndex, QQmlJSRegisterContent reg)
         {
             const VirtualRegister &source = registers[registerIndex];
             VirtualRegister &target = m_readRegisters[registerIndex];
@@ -179,7 +179,7 @@ public:
             target.affectedBySideEffects = source.affectedBySideEffects;
         }
 
-        void addReadAccumulator(const QQmlJSRegisterContent &reg)
+        void addReadAccumulator(QQmlJSRegisterContent reg)
         {
             addReadRegister(Accumulator, reg);
         }
@@ -316,7 +316,7 @@ protected:
      * The module prefixes don't actually add anything unless they
      * are the prefix to an attachment.
      */
-    bool isQmlScopeObject(const QQmlJSRegisterContent &content)
+    bool isQmlScopeObject(QQmlJSRegisterContent content)
     {
         switch (content.variant()) {
         case QQmlJSRegisterContent::ScopeObject:

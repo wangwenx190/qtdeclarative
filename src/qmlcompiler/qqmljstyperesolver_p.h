@@ -155,13 +155,13 @@ public:
 
     // Classification of types
 
-    bool isPrimitive(const QQmlJSRegisterContent &type) const;
+    bool isPrimitive(QQmlJSRegisterContent type) const;
     bool isPrimitive(const QQmlJSScope::ConstPtr &type) const;
 
-    bool isNumeric(const QQmlJSRegisterContent &type) const;
+    bool isNumeric(QQmlJSRegisterContent type) const;
     bool isNumeric(const QQmlJSScope::ConstPtr &type) const;
 
-    bool isIntegral(const QQmlJSRegisterContent &type) const;
+    bool isIntegral(QQmlJSRegisterContent type) const;
     bool isIntegral(const QQmlJSScope::ConstPtr &type) const;
 
     bool isSignedInteger(const QQmlJSScope::ConstPtr &type) const;
@@ -170,15 +170,15 @@ public:
 
     bool canHold(const QQmlJSScope::ConstPtr &container,
                  const QQmlJSScope::ConstPtr &contained) const;
-    bool canHoldUndefined(const QQmlJSRegisterContent &content) const;
-    bool isOptionalType(const QQmlJSRegisterContent &content) const;
+    bool canHoldUndefined(QQmlJSRegisterContent content) const;
+    bool isOptionalType(QQmlJSRegisterContent content) const;
 
     bool canPopulate(
             const QQmlJSScope::ConstPtr &type, const QQmlJSScope::ConstPtr &argument,
             bool *isExtension) const;
 
     bool canConvertFromTo(const QQmlJSScope::ConstPtr &from, const QQmlJSScope::ConstPtr &to) const;
-    bool canConvertFromTo(const QQmlJSRegisterContent &from, const QQmlJSRegisterContent &to) const;
+    bool canConvertFromTo(QQmlJSRegisterContent from, QQmlJSRegisterContent to) const;
 
     bool areEquivalentLists(const QQmlJSScope::ConstPtr &a, const QQmlJSScope::ConstPtr &b) const;
 
@@ -196,14 +196,14 @@ public:
 
     QQmlJSScope::ConstPtr storedType(const QQmlJSScope::ConstPtr &type) const;
 
-    QQmlJSRegisterContent original(const QQmlJSRegisterContent &type) const;
-    QQmlJSScope::ConstPtr originalContainedType(const QQmlJSRegisterContent &container) const;
+    QQmlJSRegisterContent original(QQmlJSRegisterContent type) const;
+    QQmlJSScope::ConstPtr originalContainedType(QQmlJSRegisterContent container) const;
 
     QQmlJSScope::ConstPtr merge(
             const QQmlJSScope::ConstPtr &a, const QQmlJSScope::ConstPtr &b) const;
 
     QQmlJSRegisterContent extractNonVoidFromOptionalType(
-            const QQmlJSRegisterContent &content) const;
+            QQmlJSRegisterContent content) const;
 
     QQmlJSMetaMethod selectConstructor(
             const QQmlJSScope::ConstPtr &type, const QQmlJSScope::ConstPtr &argument,
@@ -213,15 +213,15 @@ public:
     // Creation of "tracked" QQmlJSRegisterContents
 
     QQmlJSRegisterContent typeForBinaryOperation(
-            QSOperator::Op oper, const QQmlJSRegisterContent &left,
-            const QQmlJSRegisterContent &right) const;
+            QSOperator::Op oper, QQmlJSRegisterContent left,
+            QQmlJSRegisterContent right) const;
 
     enum class UnaryOperator { Not, Plus, Minus, Increment, Decrement, Complement };
     QQmlJSRegisterContent typeForArithmeticUnaryOperation(
-            UnaryOperator op, const QQmlJSRegisterContent &operand) const;
+            UnaryOperator op, QQmlJSRegisterContent operand) const;
 
     QQmlJSRegisterContent merge(
-            const QQmlJSRegisterContent &a, const QQmlJSRegisterContent &b) const;
+            QQmlJSRegisterContent a, QQmlJSRegisterContent b) const;
 
     QQmlJSRegisterContent literalType(const QQmlJSScope::ConstPtr &type) const;
     QQmlJSRegisterContent operationType(const QQmlJSScope::ConstPtr &type) const;
@@ -229,68 +229,68 @@ public:
     QQmlJSRegisterContent syntheticType(const QQmlJSScope::ConstPtr &type) const;
 
     QQmlJSRegisterContent scopedType(
-            const QQmlJSRegisterContent &scope, const QString &name,
+            QQmlJSRegisterContent scope, const QString &name,
             int lookupIndex = QQmlJSRegisterContent::InvalidLookupIndex,
             QQmlJSScopesByIdOptions options = Default) const;
 
     QQmlJSRegisterContent memberType(
-            const QQmlJSRegisterContent &type, const QString &name,
+            QQmlJSRegisterContent type, const QString &name,
             int lookupIndex = QQmlJSRegisterContent::InvalidLookupIndex) const;
 
-    QQmlJSRegisterContent valueType(const QQmlJSRegisterContent &list) const;
+    QQmlJSRegisterContent valueType(QQmlJSRegisterContent list) const;
 
     QQmlJSRegisterContent returnType(
             const QQmlJSMetaMethod &method, const QQmlJSScope::ConstPtr &returnType,
-            const QQmlJSRegisterContent &scope) const;
+            QQmlJSRegisterContent scope) const;
 
     QQmlJSRegisterContent extensionType(
-            const QQmlJSScope::ConstPtr &extension, const QQmlJSRegisterContent &base) const;
+            const QQmlJSScope::ConstPtr &extension, QQmlJSRegisterContent base) const;
 
     QQmlJSRegisterContent baseType(
-            const QQmlJSScope::ConstPtr &base, const QQmlJSRegisterContent &derived) const;
+            const QQmlJSScope::ConstPtr &base, QQmlJSRegisterContent derived) const;
 
     QQmlJSRegisterContent parentScope(
-            const QQmlJSScope::ConstPtr &parent, const QQmlJSRegisterContent &child) const;
+            const QQmlJSScope::ConstPtr &parent, QQmlJSRegisterContent child) const;
 
     QQmlJSRegisterContent iteratorPointer(
-            const QQmlJSRegisterContent &listType, QQmlJS::AST::ForEachType type,
+            QQmlJSRegisterContent listType, QQmlJS::AST::ForEachType type,
             int lookupIndex) const;
 
     QQmlJSRegisterContent convert(
-            const QQmlJSRegisterContent &from, const QQmlJSRegisterContent &to) const;
+            QQmlJSRegisterContent from, QQmlJSRegisterContent to) const;
     QQmlJSRegisterContent convert(
-            const QQmlJSRegisterContent &from, const QQmlJSScope::ConstPtr &to) const;
+            QQmlJSRegisterContent from, const QQmlJSScope::ConstPtr &to) const;
 
 
     // Type adjustment
 
     [[nodiscard]] bool adjustTrackedType(
-            const QQmlJSRegisterContent &tracked, const QQmlJSScope::ConstPtr &conversion) const;
+            QQmlJSRegisterContent tracked, const QQmlJSScope::ConstPtr &conversion) const;
     [[nodiscard]] bool adjustTrackedType(
-            const QQmlJSRegisterContent &tracked, const QQmlJSRegisterContent &conversion) const;
+            QQmlJSRegisterContent tracked, QQmlJSRegisterContent conversion) const;
     [[nodiscard]] bool adjustTrackedType(
-            const QQmlJSRegisterContent &tracked,
+            QQmlJSRegisterContent tracked,
             const QList<QQmlJSRegisterContent> &conversions) const;
     void adjustOriginalType(
-            const QQmlJSRegisterContent &tracked, const QQmlJSScope::ConstPtr &conversion) const;
-    void generalizeType(const QQmlJSRegisterContent &type) const;
+            QQmlJSRegisterContent tracked, const QQmlJSScope::ConstPtr &conversion) const;
+    void generalizeType(QQmlJSRegisterContent type) const;
 
 
 protected:
 
-    QQmlJSRegisterContent memberType(const QQmlJSRegisterContent &type, const QString &name,
+    QQmlJSRegisterContent memberType(QQmlJSRegisterContent type, const QString &name,
                                      int baseLookupIndex, int resultLookupIndex) const;
-    QQmlJSRegisterContent memberEnumType(const QQmlJSRegisterContent &type,
+    QQmlJSRegisterContent memberEnumType(QQmlJSRegisterContent type,
                                          const QString &name) const;
-    bool checkEnums(const QQmlJSRegisterContent &scope, const QString &name,
+    bool checkEnums(QQmlJSRegisterContent scope, const QString &name,
                     QQmlJSRegisterContent *result) const;
     bool canPrimitivelyConvertFromTo(
             const QQmlJSScope::ConstPtr &from, const QQmlJSScope::ConstPtr &to) const;
-    QQmlJSRegisterContent lengthProperty(bool isWritable, const QQmlJSRegisterContent &scope) const;
+    QQmlJSRegisterContent lengthProperty(bool isWritable, QQmlJSRegisterContent scope) const;
 
     QQmlJSScope::ConstPtr containedTypeForName(const QString &name) const;
     QQmlJSRegisterContent registerContentForName(
-            const QString &name, const QQmlJSRegisterContent &scopeType = {}) const;
+            const QString &name, QQmlJSRegisterContent scopeType = {}) const;
 
     QQmlJSScope::ConstPtr resolveParentProperty(
             const QString &name, const QQmlJSScope::ConstPtr &base,

@@ -142,17 +142,17 @@ private:
 
     QQmlJSRegisterContent(QQmlJSRegisterContentPrivate *dd) : d(dd) {};
 
-    friend bool operator==(const QQmlJSRegisterContent &a, const QQmlJSRegisterContent &b)
+    friend bool operator==(QQmlJSRegisterContent a, QQmlJSRegisterContent b)
     {
         return a.d == b.d;
     }
 
-    friend bool operator!=(const QQmlJSRegisterContent &a, const QQmlJSRegisterContent &b)
+    friend bool operator!=(QQmlJSRegisterContent a, QQmlJSRegisterContent b)
     {
         return !(a == b);
     }
 
-    friend size_t qHash(const QQmlJSRegisterContent &registerContent, size_t seed = 0)
+    friend size_t qHash(QQmlJSRegisterContent registerContent, size_t seed = 0)
     {
         return qHash(registerContent.d, seed);
     }
@@ -171,45 +171,45 @@ public:
 
     QQmlJSRegisterContent createType(
             const QQmlJSScope::ConstPtr &type, int resultLookupIndex, ContentVariant variant,
-            const QQmlJSRegisterContent &scope = {});
+            QQmlJSRegisterContent scope = {});
 
     QQmlJSRegisterContent createProperty(
             const QQmlJSMetaProperty &property, int baseLookupIndex, int resultLookupIndex,
-            ContentVariant variant, const QQmlJSRegisterContent &scope);
+            ContentVariant variant, QQmlJSRegisterContent scope);
 
     QQmlJSRegisterContent createEnumeration(
             const QQmlJSMetaEnum &enumeration, const QString &enumMember, ContentVariant variant,
-            const QQmlJSRegisterContent &scope);
+            QQmlJSRegisterContent scope);
 
     QQmlJSRegisterContent createMethod(
             const QList<QQmlJSMetaMethod> &methods, const QQmlJSScope::ConstPtr &methodType,
-            ContentVariant variant, const QQmlJSRegisterContent &scope);
+            ContentVariant variant, QQmlJSRegisterContent scope);
 
     QQmlJSRegisterContent createMethodCall(
             const QQmlJSMetaMethod &method, const QQmlJSScope::ConstPtr &returnType,
-            const QQmlJSRegisterContent &scope);
+            QQmlJSRegisterContent scope);
 
     QQmlJSRegisterContent createImportNamespace(
             uint importNamespaceStringId, const QQmlJSScope::ConstPtr &importNamespaceType,
-            ContentVariant variant, const QQmlJSRegisterContent &scope);
+            ContentVariant variant, QQmlJSRegisterContent scope);
 
     QQmlJSRegisterContent createConversion(
             const QList<QQmlJSRegisterContent> &origins, const QQmlJSScope::ConstPtr &conversion,
-            const QQmlJSRegisterContent &conversionScope, ContentVariant variant,
-            const QQmlJSRegisterContent &scope);
+            QQmlJSRegisterContent conversionScope, ContentVariant variant,
+            QQmlJSRegisterContent scope);
 
     QQmlJSRegisterContent storedIn(
-            const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &newStoredType);
+            QQmlJSRegisterContent content, const QQmlJSScope::ConstPtr &newStoredType);
 
     QQmlJSRegisterContent castTo(
-            const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &newContainedType);
+            QQmlJSRegisterContent content, const QQmlJSScope::ConstPtr &newContainedType);
 
-    QQmlJSRegisterContent clone(const QQmlJSRegisterContent from) { return clone(from.d); }
+    QQmlJSRegisterContent clone(QQmlJSRegisterContent from) { return clone(from.d); }
 
     void adjustType(
-            const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &adjusted);
+            QQmlJSRegisterContent content, const QQmlJSScope::ConstPtr &adjusted);
     void generalizeType(
-            const QQmlJSRegisterContent &content, const QQmlJSScope::ConstPtr &generalized);
+            QQmlJSRegisterContent content, const QQmlJSScope::ConstPtr &generalized);
 
 private:
     struct Deleter {
@@ -222,8 +222,7 @@ private:
 
     QQmlJSRegisterContentPrivate *clone(const QQmlJSRegisterContentPrivate *from);
     QQmlJSRegisterContentPrivate *create() { return clone(nullptr); }
-    QQmlJSRegisterContentPrivate *create(
-            const QQmlJSRegisterContent &scope, ContentVariant variant);
+    QQmlJSRegisterContentPrivate *create(QQmlJSRegisterContent scope, ContentVariant variant);
 
     Pool m_pool;
 };

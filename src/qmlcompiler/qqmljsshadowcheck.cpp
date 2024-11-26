@@ -86,7 +86,7 @@ void QQmlJSShadowCheck::generate_GetOptionalLookup(int index, int offset)
 void QQmlJSShadowCheck::handleStore(int base, const QString &memberName)
 {
     const int instructionOffset = currentInstructionOffset();
-    const QQmlJSRegisterContent &readAccumulator
+    QQmlJSRegisterContent readAccumulator
             = m_annotations[instructionOffset].readRegisters[Accumulator].content;
     const auto baseType = m_state.registers[base].content;
 
@@ -145,7 +145,7 @@ void QQmlJSShadowCheck::endInstruction(QV4::Moth::Instr::Type)
 }
 
 QQmlJSShadowCheck::Shadowability QQmlJSShadowCheck::checkShadowing(
-        const QQmlJSRegisterContent &baseType, const QString &memberName, int baseRegister)
+        QQmlJSRegisterContent baseType, const QString &memberName, int baseRegister)
 {
     if (checkBaseType(baseType) == Shadowable)
         return Shadowable;
@@ -215,7 +215,7 @@ QQmlJSShadowCheck::Shadowability QQmlJSShadowCheck::checkShadowing(
 }
 
 void QQmlJSShadowCheck::checkResettable(
-        const QQmlJSRegisterContent &accumulatorIn, int instructionOffset)
+        QQmlJSRegisterContent accumulatorIn, int instructionOffset)
 {
     const QQmlJSScope::ConstPtr varType = m_typeResolver->varType();
 
@@ -232,7 +232,7 @@ void QQmlJSShadowCheck::checkResettable(
 }
 
 QQmlJSShadowCheck::Shadowability QQmlJSShadowCheck::checkBaseType(
-        const QQmlJSRegisterContent &baseType)
+        QQmlJSRegisterContent baseType)
 {
     if (!m_adjustedTypes.contains(baseType))
         return NotShadowable;

@@ -53,11 +53,11 @@ private:
 
     enum Shadowability { NotShadowable, Shadowable };
     Shadowability checkShadowing(
-            const QQmlJSRegisterContent &baseType, const QString &propertyName, int baseRegister);
+            QQmlJSRegisterContent baseType, const QString &propertyName, int baseRegister);
 
-    void checkResettable(const QQmlJSRegisterContent &accumulatorIn, int instructionOffset);
+    void checkResettable(QQmlJSRegisterContent accumulatorIn, int instructionOffset);
 
-    Shadowability checkBaseType(const QQmlJSRegisterContent &baseType);
+    Shadowability checkBaseType(QQmlJSRegisterContent baseType);
 
     QList<ResettableStore> m_resettableStores;
     QList<QQmlJSRegisterContent> m_baseTypes;
