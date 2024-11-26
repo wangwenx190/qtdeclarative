@@ -282,10 +282,10 @@ void QQmlTypeLoader::loadThread(const QQmlDataBlob::Ptr &blob)
         if (reply->isFinished()) {
             nrp->manualFinished(reply);
         } else {
-            QObject::connect(reply, SIGNAL(downloadProgress(qint64,qint64)),
-                             nrp, SLOT(downloadProgress(qint64,qint64)));
-            QObject::connect(reply, SIGNAL(finished()),
-                             nrp, SLOT(finished()));
+            QObject::connect(reply, &QNetworkReply::downloadProgress,
+                             nrp, &QQmlTypeLoaderNetworkReplyProxy::downloadProgress);
+            QObject::connect(reply, &QNetworkReply::finished,
+                             nrp, &QQmlTypeLoaderNetworkReplyProxy::finished);
         }
 
 #ifdef DATABLOB_DEBUG
