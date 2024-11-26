@@ -66,6 +66,16 @@ private:
     QMarginsF m_additionalMargins;
 };
 
+class Q_QUICK_EXPORT QQuickSafeAreaAttachable
+{
+public:
+    virtual QQuickItem *safeAreaAttachmentItem() = 0;
+    friend class QQuickSafeArea;
+};
+
+#define QQuickSafeAreaAttachable_iid "org.qt-project.Qt.QQuickSafeAreaAttachable"
+Q_DECLARE_INTERFACE(QQuickSafeAreaAttachable, QQuickSafeAreaAttachable_iid)
+
 QT_END_NAMESPACE
 
 #endif // QQUICKSAFEAREA_P_H

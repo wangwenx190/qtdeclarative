@@ -92,6 +92,10 @@ QQuickSafeArea *QQuickSafeArea::qmlAttachedProperties(QObject *attachee)
             item = window->contentItem();
     }
     if (!item) {
+        if (auto *safeAreaAttachable = qobject_cast<QQuickSafeAreaAttachable*>(attachee))
+            item = safeAreaAttachable->safeAreaAttachmentItem();
+    }
+    if (!item) {
         qmlWarning(attachee) << "SafeArea can not be attached to this type";
         return nullptr;
     }

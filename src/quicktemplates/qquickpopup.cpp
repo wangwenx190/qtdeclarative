@@ -3372,6 +3372,11 @@ bool QQuickPopup::setAccessibleProperty(const char *propertyName, const QVariant
     return d->popupItem->setAccessibleProperty(propertyName, value);
 }
 
+QQuickItem *QQuickPopup::safeAreaAttachmentItem()
+{
+    return popupItem();
+}
+
 QT_END_NAMESPACE
 
 #include "moc_qquickpopup_p.cpp"
