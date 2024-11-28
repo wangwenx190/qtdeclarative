@@ -36,11 +36,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-    packaging {
-        jniLibs {
-            useLegacyPackaging = true
-        }
-    }
     kotlinOptions {
         jvmTarget = "1.8"
     }
