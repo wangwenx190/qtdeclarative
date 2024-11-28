@@ -69,11 +69,22 @@ QQmlDataBlob::QQmlDataBlob(const QUrl &url, Type type, QQmlTypeLoader *manager)
 /*!  \internal */
 QQmlDataBlob::~QQmlDataBlob()
 {
-    // TODO: We would like to assert on this happening in the type loader thread.
-    //       Deleting a QQmlDataBlob in the engine thread is dangerous because it
-    //       manipulates other blobs' "waiting" lists.
-
     Q_ASSERT(m_waitingOnMe.isEmpty());
+
+    // Deleting a QQmlDataBlob in the engine thread is conceptually dangerous
+    // because it manipulates other blobs' m_waitingFor lists. We can guarantee
+    // that the list is empty if the blob isCompleteOrError. Therefore, in such
+    // a case, it's fine to delete it from the engine thread.
+    // Furthermore, if the type loader thread is (temporarily or permanently)
+    // shut down, we cannot run into concurrency here.
+    //
+    // Unfortunately, the typeLoader pointer itself may be dangling at this point
+    // if the QQmlDataBlob is destroyed after the engine. That can happen if you
+    // hold on to a QQmlComponent for longer than the engine it belongs to. You
+    // shouldn't do it, but the mistake is very common and harmless if you don't
+    // touch the component anymore after the engine is gone. In order to actually
+    // assert on the thread safety here, we'd have to touch the typeLoader pointer.
+    // Q_ASSERT(isCompleteOrError() || isTypeLoaderThread() || !isTypeLoaderThreadRunning());
 
     cancelAllWaitingFor();
 }
@@ -83,9 +94,10 @@ QQmlDataBlob::~QQmlDataBlob()
 */
 void QQmlDataBlob::startLoading()
 {
-    // TODO: This can be called on either thread.
+    // This can be called on either thread but since both status() and setStatus() are atomic
+    // this is fine.
     Q_ASSERT(status() == QQmlDataBlob::Null);
-    m_data.setStatus(QQmlDataBlob::Loading);
+    setStatus(QQmlDataBlob::Loading);
 }
 
 /*!
@@ -152,6 +164,11 @@ bool QQmlDataBlob::isCompleteOrError() const
 {
     Status s = status();
     return s == Error || s == Complete;
+}
+
+bool QQmlDataBlob::isAsync() const
+{
+    return m_data.isAsync();
 }
 
 /*!
@@ -232,6 +249,13 @@ bool QQmlDataBlob::isTypeLoaderThread() const
             && m_typeLoader->m_thread->isThisThread();
 }
 
+bool QQmlDataBlob::isTypeLoaderThreadRunning() const
+{
+    return m_typeLoader
+            && m_typeLoader->m_thread
+            && !m_typeLoader->m_thread->isShutdown();
+}
+
 bool QQmlDataBlob::isEngineThread() const
 {
     return m_typeLoader
@@ -278,14 +302,14 @@ void QQmlDataBlob::setError(const QList<QQmlError> &errors)
         }
     }
 
-    m_data.setStatus(Error);
+    cancelAllWaitingFor();
+    setStatus(Error);
 
     if (dumpErrors()) {
         qWarning().nospace() << "Errors for " << urlString();
         for (int ii = 0; ii < errors.size(); ++ii)
             qWarning().nospace() << "    " << qPrintable(errors.at(ii).toString());
     }
-    cancelAllWaitingFor();
 
     if (!m_inCallback)
         tryDone();
@@ -328,20 +352,22 @@ void QQmlDataBlob::addDependency(const QQmlDataBlob::Ptr &blob)
         status() == Error || status() == Complete || m_isDone)
         return;
 
-    for (const auto &existingDep: std::as_const(m_waitingFor))
+    for (const auto &existingDep: std::as_const(m_waitingFor)) {
         if (existingDep.data() == blob)
             return;
-
-    m_data.setStatus(WaitingForDependencies);
+    }
 
     m_waitingFor.append(blob);
     blob->m_waitingOnMe.append(this);
+
+    setStatus(WaitingForDependencies);
 
     // Check circular dependency
     if (m_waitingOnMe.indexOf(blob.data()) >= 0) {
         qCWarning(lcCycle) << "Cyclic dependency detected between" << this->url().toString()
                            << "and" << blob->url().toString();
-        m_data.setStatus(Error);
+        cancelAllWaitingFor();
+        setStatus(Error);
     }
 }
 
@@ -458,7 +484,7 @@ The default implementation does nothing.
 void QQmlDataBlob::allDependenciesDone()
 {
     Q_ASSERT(isTypeLoaderThread());
-    m_data.setStatus(QQmlDataBlob::ResolvingDependencies);
+    setStatus(QQmlDataBlob::ResolvingDependencies);
 }
 
 /*!
@@ -510,7 +536,7 @@ void QQmlDataBlob::tryDone()
         done();
 
         if (status() != Error)
-            m_data.setStatus(Complete);
+            setStatus(Complete);
 
         notifyAllWaitingOnMe();
 
@@ -527,9 +553,14 @@ void QQmlDataBlob::tryDone()
 
 void QQmlDataBlob::cancelAllWaitingFor()
 {
-    // Q_ASSERT(isTypeLoaderThread()); <-- TODO: We cannot guarantee this, due to the dtor
 
     while (m_waitingFor.size()) {
+
+        // We can assert here since we are sure that m_waitingFor is either empty whenever
+        // we delete a QQmlDataBlob from outside the type loader thread, or the type loader
+        // thread has been suspended before.
+        Q_ASSERT(isTypeLoaderThread() || !isTypeLoaderThreadRunning());
+
         QQmlRefPointer<QQmlDataBlob> blob = m_waitingFor.takeLast();
 
         Q_ASSERT(blob->m_waitingOnMe.contains(this));
@@ -632,6 +663,25 @@ bool QQmlDataBlob::SourceCodeData::isEmpty() const
     if (hasInlineSourceCode)
         return inlineSourceCode.isEmpty();
     return fileInfo.size() == 0;
+}
+
+bool QQmlDataBlob::setStatus(Status status)
+{
+    switch (status) {
+    case Loading:
+        break;
+    case WaitingForDependencies:
+        Q_ASSERT(!m_waitingFor.isEmpty());
+        break;
+    case Null:
+    case ResolvingDependencies:
+    case Complete:
+    case Error:
+        Q_ASSERT(m_waitingFor.isEmpty());
+        break;
+    }
+
+    return m_data.setStatus(status);
 }
 
 QT_END_NAMESPACE

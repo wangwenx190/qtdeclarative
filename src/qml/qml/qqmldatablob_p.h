@@ -71,6 +71,7 @@ public:
     bool isError() const;
     bool isCompleteOrError() const;
 
+    bool isAsync() const;
     qreal progress() const;
 
     QUrl url() const;
@@ -100,6 +101,7 @@ public:
     };
 
     bool isTypeLoaderThread() const;
+    bool isTypeLoaderThreadRunning() const;
     bool isEngineThread() const;
 
 protected:
@@ -138,7 +140,36 @@ private:
     void notifyAllWaitingOnMe();
     void notifyComplete(const QQmlDataBlob::Ptr &);
 
+    bool setStatus(Status status);
+    bool setIsAsync(bool async) { return m_data.setIsAsync(async); }
+    bool setProgress(qreal progress) { return m_data.setProgress(progress); }
+
     struct ThreadData {
+    public:
+        friend bool QQmlDataBlob::setStatus(Status);
+        friend bool QQmlDataBlob::setIsAsync(bool);
+        friend bool QQmlDataBlob::setProgress(qreal);
+
+        inline ThreadData()
+            : _p(0)
+        {
+        }
+
+        inline QQmlDataBlob::Status status() const
+        {
+            return QQmlDataBlob::Status((_p.loadAcquire() & StatusMask) >> StatusShift);
+        }
+
+        inline bool isAsync() const
+        {
+            return _p.loadAcquire() & AsyncMask;
+        }
+
+        inline qreal progress() const
+        {
+            return quint8((_p.loadAcquire() & ProgressMask) >> ProgressShift) / float(0xFF);
+        }
+
     private:
         enum {
             StatusMask = 0x0000FFFF,
@@ -149,64 +180,44 @@ private:
             NoMask = 0
         };
 
-    public:
-        inline ThreadData()
-            : _p(0)
-        {
-        }
-
-        inline QQmlDataBlob::Status status() const
-        {
-            return QQmlDataBlob::Status((_p.loadRelaxed() & StatusMask) >> StatusShift);
-        }
 
         inline bool setStatus(QQmlDataBlob::Status status)
         {
             while (true) {
-                int d = _p.loadRelaxed();
+                int d = _p.loadAcquire();
                 int nd = (d & ~StatusMask) | ((status << StatusShift) & StatusMask);
                 if (d == nd)
                     return false;
-                if (_p.testAndSetOrdered(d, nd))
+                if (_p.testAndSetRelease(d, nd))
                     return true;
             }
 
             Q_UNREACHABLE_RETURN(false);
-        }
-
-        inline bool isAsync() const
-        {
-            return _p.loadRelaxed() & AsyncMask;
         }
 
         inline bool setIsAsync(bool v)
         {
             while (true) {
-                int d = _p.loadRelaxed();
+                int d = _p.loadAcquire();
                 int nd = (d & ~AsyncMask) | (v ? AsyncMask : NoMask);
                 if (d == nd)
                     return false;
-                if (_p.testAndSetOrdered(d, nd))
+                if (_p.testAndSetRelease(d, nd))
                     return true;
             }
 
             Q_UNREACHABLE_RETURN(false);
-        }
-
-        inline qreal progress() const
-        {
-            return quint8((_p.loadRelaxed() & ProgressMask) >> ProgressShift) / float(0xFF);
         }
 
         inline bool setProgress(qreal progress)
         {
             quint8 v = 0xFF * progress;
             while (true) {
-                int d = _p.loadRelaxed();
+                int d = _p.loadAcquire();
                 int nd = (d & ~ProgressMask) | ((v << ProgressShift) & ProgressMask);
                 if (d == nd)
                     return false;
-                if (_p.testAndSetOrdered(d, nd))
+                if (_p.testAndSetRelease(d, nd))
                     return true;
             }
             Q_UNREACHABLE_RETURN(false);

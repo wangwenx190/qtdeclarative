@@ -172,7 +172,7 @@ void QQmlTypeLoader::doLoad(const Loader &loader, const QQmlDataBlob::Ptr &blob,
         loader.loadThread(this, blob);
         lock();
     } else if (mode == Asynchronous) {
-        blob->m_data.setIsAsync(true);
+        blob->setIsAsync(true);
         unlock();
         loader.loadAsync(this, blob);
         lock();
@@ -182,7 +182,7 @@ void QQmlTypeLoader::doLoad(const Loader &loader, const QQmlDataBlob::Ptr &blob,
         lock();
         if (mode == PreferSynchronous) {
             if (!blob->isCompleteOrError())
-                blob->m_data.setIsAsync(true);
+                blob->setIsAsync(true);
         } else {
             Q_ASSERT(mode == Synchronous);
             while (!blob->isCompleteOrError()) {
@@ -271,7 +271,7 @@ void QQmlTypeLoader::loadThread(const QQmlDataBlob::Ptr &blob)
             return;
         }
 
-        if (blob->m_data.setProgress(1.f) && blob->m_data.isAsync())
+        if (blob->setProgress(1.f) && blob->isAsync())
             m_thread->callDownloadProgressChanged(blob, 1.);
 
         setData(blob, fileName);
@@ -354,8 +354,8 @@ void QQmlTypeLoader::networkReplyProgress(QNetworkReply *reply,
 
     if (bytesTotal != 0) {
         const qreal progress = (qreal(bytesReceived) / qreal(bytesTotal));
-        if (blob->m_data.setProgress(progress) && blob->m_data.isAsync())
-            m_thread->callDownloadProgressChanged(blob, blob->m_data.progress());
+        if (blob->setProgress(progress) && blob->isAsync())
+            m_thread->callDownloadProgressChanged(blob, blob->progress());
     }
 }
 #endif // qml_network
@@ -432,9 +432,6 @@ void QQmlTypeLoader::setData(const QQmlDataBlob::Ptr &blob, const QQmlDataBlob::
     if (!blob->isError() && !blob->isWaiting())
         blob->allDependenciesDone();
 
-    if (blob->status() != QQmlDataBlob::Error)
-        blob->m_data.setStatus(QQmlDataBlob::WaitingForDependencies);
-
     blob->m_inCallback = false;
 
     blob->tryDone();
@@ -454,12 +451,17 @@ void QQmlTypeLoader::setCachedUnit(const QQmlDataBlob::Ptr &blob, const QQmlPriv
     if (!blob->isError() && !blob->isWaiting())
         blob->allDependenciesDone();
 
-    if (blob->status() != QQmlDataBlob::Error)
-        blob->m_data.setStatus(QQmlDataBlob::WaitingForDependencies);
-
     blob->m_inCallback = false;
 
     blob->tryDone();
+}
+
+void QQmlTypeLoader::startThread()
+{
+    ASSERT_ENGINETHREAD();
+
+    if (m_thread && m_thread->isShutdown())
+        m_thread->startup();
 }
 
 void QQmlTypeLoader::shutdownThread()
@@ -970,12 +972,12 @@ QQmlTypeLoader::~QQmlTypeLoader()
 {
     ASSERT_ENGINETHREAD();
 
-    // Stop the loader thread before releasing resources
     shutdownThread();
 
-    clearCache();
-
+    // Delete the thread before clearing the cache. Otherwise it will be started up again.
     invalidate();
+
+    clearCache();
 }
 
 QQmlImportDatabase *QQmlTypeLoader::importDatabase() const
@@ -1415,16 +1417,14 @@ and qmldir information.
 */
 void QQmlTypeLoader::clearCache()
 {
-    // TODO: This is extremely dangerous because we're dropping live blobs on the engine thread.
-    //       We expect either the thread to be terminated before this or the lock to be held by
-    //       the caller.
+    // This looks dangerous because we're dropping live blobs on the engine thread.
+    // However, it's safe because we shut down the type loader thread before we do so.
 
     ASSERT_ENGINETHREAD();
 
-    // Pending messages typically hold references to the blobs they want to be delivered to.
-    // We don't want them anymore.
-    if (m_thread)
-        m_thread->discardMessages();
+    // Temporarily shut the thread down and discard all messages, making it safe to
+    // hack into the various data structures below.
+    shutdownThread();
 
     qDeleteAll(m_importQmlDirCache);
 
@@ -1435,6 +1435,8 @@ void QQmlTypeLoader::clearCache()
     m_importDirCache.clear();
     m_importQmlDirCache.clear();
     m_checksumCache.clear();
+
+    startThread();
 }
 
 void QQmlTypeLoader::updateTypeCacheTrimThreshold()
@@ -1450,8 +1452,9 @@ void QQmlTypeLoader::updateTypeCacheTrimThreshold()
 
 void QQmlTypeLoader::trimCache()
 {
-    // TODO: This can be called from either thread and is extremely dangerous. It is called from a
-    //       method that locks, but it drops potentially live blobs.
+    // This can be called from either thread. It has to be called while the type loader mutex
+    // is locked. It drops potentially live blobs, but only ones which are isCompleteOrError and
+    // are not depended on by other blobs.
 
     while (true) {
         bool deletedOneType = false;
@@ -1461,10 +1464,14 @@ void QQmlTypeLoader::trimCache()
             // typeData->m_compiledData may be set early on in the proccess of loading a file, so
             // it's important to check the general loading status of the typeData before making any
             // other decisions.
-            if (typeData->count() != 1 || (!typeData->isError() && !typeData->isComplete())) {
+            if (typeData->count() != 1 || !typeData->isCompleteOrError()) {
                 ++iter;
                 continue;
             }
+
+            // isCompleteOrError means the waitingFor list of this typeData is empty.
+            // Therefore, it cannot interfere with other blobs on destruction anymore.
+            // Therefore, we can drop it on either the engine thread or the type loader thread.
 
             const QQmlRefPointer<QV4::CompiledData::CompilationUnit> &compilationUnit
                 = typeData->m_compiledData;
@@ -1489,11 +1496,11 @@ void QQmlTypeLoader::trimCache()
             break;
     }
 
+    // TODO: release any scripts which are no longer referenced by any types
+
     updateTypeCacheTrimThreshold();
 
     QQmlMetaType::freeUnusedTypesAndCaches();
-
-    // TODO: release any scripts which are no longer referenced by any types
 }
 
 bool QQmlTypeLoader::isTypeLoaded(const QUrl &url) const

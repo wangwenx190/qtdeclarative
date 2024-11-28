@@ -180,6 +180,7 @@ QQmlThread::~QQmlThread()
  */
 void QQmlThread::startup()
 {
+    d->m_shutdown = false;
     d->start();
     d->moveToThread(d);
 }

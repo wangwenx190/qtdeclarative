@@ -619,9 +619,7 @@ void QQmlEngine::clearComponentCache()
     mm->gcStateMachine->timeLimit = std::move(oldLimit);
 
     handle()->trimCompilationUnits();
-    d->typeLoader.lock();
     d->typeLoader.clearCache();
-    d->typeLoader.unlock();
     QQmlMetaType::freeUnusedTypesAndCaches();
 }
 
@@ -641,7 +639,9 @@ void QQmlEngine::trimComponentCache()
 {
     Q_D(QQmlEngine);
     handle()->trimCompilationUnits();
+    d->typeLoader.lock();
     d->typeLoader.trimCache();
+    d->typeLoader.unlock();
 }
 
 /*!

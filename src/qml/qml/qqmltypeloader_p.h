@@ -205,6 +205,7 @@ private:
     friend class QQmlTypeLoaderNetworkReplyProxy;
 #endif // qml_network
 
+    void startThread();
     void shutdownThread();
 
     void loadThread(const QQmlDataBlob::Ptr &);

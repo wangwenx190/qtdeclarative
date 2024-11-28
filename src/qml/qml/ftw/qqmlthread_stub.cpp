@@ -49,7 +49,11 @@ public:
 QQmlThread::QQmlThread() : d(new QQmlThreadPrivate(this)) {}
 QQmlThread::~QQmlThread() { delete d; }
 
-void QQmlThread::startup() {}
+void QQmlThread::startup()
+{
+    d->m_shutdown = false;
+}
+
 void QQmlThread::shutdown()
 {
     Q_ASSERT(!d->m_shutdown);

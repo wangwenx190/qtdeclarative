@@ -457,7 +457,9 @@ QQmlComponent::~QQmlComponent()
 
     if (d->m_typeData) {
         d->m_typeData->unregisterCallback(d);
-        if (d->m_engine) {
+        if (d->m_engine && !d->m_typeData->isCompleteOrError()) {
+            // In this case we have to send it to the type loader thread to be dropped. It will
+            // manipulate its "waiting" lists that other blobs may be using concurrently.
             QQmlEnginePrivate::get(d->m_engine)->typeLoader.drop(
                     QQmlDataBlob::Ptr(d->m_typeData.data()));
         }
