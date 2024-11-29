@@ -56,7 +56,7 @@ private:
     void windowChanged();
     void updateSafeArea();
 
-    void itemTransformChanged(QQuickItem *) override;
+    void itemTransformChanged(QQuickItem *, QQuickItem *) override;
 
 #ifndef QT_NO_DEBUG_STREAM
     friend Q_QUICK_EXPORT QDebug operator<<(QDebug debug, const QQuickSafeArea *safeArea);

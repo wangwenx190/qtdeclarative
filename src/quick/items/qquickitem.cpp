@@ -2135,7 +2135,8 @@ bool QQuickItemPrivate::setLastFocusChangeReason(Qt::FocusReason reason)
 
     \value ItemTransformHasChanged The item's transform has changed. This
     occurs when the item's position, size, rotation, scale, transformOrigin
-    or attached transforms change. (since Qt 6.9)
+    or attached transforms change. ItemChangeData::item contains the item
+    that caused the change. (since Qt 6.9)
 */
 
 /*!
@@ -5485,7 +5486,7 @@ bool QQuickItemPrivate::transformChanged(QQuickItem *transformedItem)
     if (thisWantsIt && q->clip() && !(dirtyAttributes & QQuickItemPrivate::Clip))
         dirty(QQuickItemPrivate::Clip);
 
-    itemChange(QQuickItem::ItemTransformHasChanged, true);
+    itemChange(QQuickItem::ItemTransformHasChanged, transformedItem);
     return ret;
 }
 
@@ -6929,7 +6930,7 @@ void QQuickItemPrivate::itemChange(QQuickItem::ItemChange change, const QQuickIt
     }
     case QQuickItem::ItemTransformHasChanged: {
         q->itemChange(change, data);
-        notifyChangeListeners(QQuickItemPrivate::Matrix, &QQuickItemChangeListener::itemTransformChanged, q);
+        notifyChangeListeners(QQuickItemPrivate::Matrix, &QQuickItemChangeListener::itemTransformChanged, q, data.item);
         break;
     }
     case QQuickItem::ItemAntialiasingHasChanged:

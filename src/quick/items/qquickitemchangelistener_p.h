@@ -102,7 +102,7 @@ public:
     virtual void itemImplicitHeightChanged(QQuickItem *) {}
     virtual void itemFocusChanged(QQuickItem *, Qt::FocusReason /* reason */) {}
     virtual void itemScaleChanged(QQuickItem *) {}
-    virtual void itemTransformChanged(QQuickItem *) {}
+    virtual void itemTransformChanged(QQuickItem *, QQuickItem * /* transformedItem */) {}
 
     virtual QQuickAnchorsPrivate *anchorPrivate() { return nullptr; }
     virtual bool baseDeleted(const QObject *caller) const

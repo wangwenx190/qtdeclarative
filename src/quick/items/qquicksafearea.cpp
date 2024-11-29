@@ -234,9 +234,10 @@ void QQuickSafeArea::windowChanged()
     updateSafeArea();
 }
 
-void QQuickSafeArea::itemTransformChanged(QQuickItem *item)
+void QQuickSafeArea::itemTransformChanged(QQuickItem *item, QQuickItem *transformedItem)
 {
     Q_UNUSED(item);
+    Q_UNUSED(transformedItem);
     updateSafeArea();
 }
 

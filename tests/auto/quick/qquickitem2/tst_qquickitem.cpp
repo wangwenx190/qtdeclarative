@@ -3313,9 +3313,9 @@ struct TestListener : public QQuickItemChangeListener
     {
         record(item, QQuickItemPrivate::Scale);
     }
-    void itemTransformChanged(QQuickItem *item) override
+    void itemTransformChanged(QQuickItem *item, QQuickItem *transformedItem) override
     {
-        record(item, QQuickItemPrivate::Matrix);
+        record(item, QQuickItemPrivate::Matrix, QVariant::fromValue(transformedItem));
     }
     void itemImplicitWidthChanged(QQuickItem *item) override
     {
@@ -3512,8 +3512,10 @@ void tst_QQuickItem::changeListener()
         QQuickItemPrivate::get(parent)->addItemChangeListener(listener, QQuickItemPrivate::Matrix);
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), listeners.size());
     parent->setX(parent->x() + 1);
-    for (TestListener *listener : std::as_const(listeners))
+    for (TestListener *listener : std::as_const(listeners)) {
         QCOMPARE(listener->count(QQuickItemPrivate::Matrix), 1);
+        QCOMPARE(listener->value(QQuickItemPrivate::Matrix), QVariant::fromValue(parent));
+    }
     QCOMPARE(QQuickItemPrivate::get(parent)->changeListeners.size(), 0);
 
     // itemOpacityChanged x 5
