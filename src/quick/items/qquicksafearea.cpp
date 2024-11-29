@@ -182,12 +182,15 @@ static QMarginsF mapFromItemToItem(QQuickItem *fromItem, const QMarginsF &margin
 
     const auto topLeft = toItem->mapFromItem(fromItem,
         QPointF(margins.left(), margins.top()));
+
     const auto bottomRight = toItem->mapFromItem(fromItem,
-        QPointF(margins.right(), margins.bottom()));
+        QPointF(fromItem->width() - margins.right(),
+                fromItem->height() - margins.bottom()));
 
     return QMarginsF(
         topLeft.x(), topLeft.y(),
-        bottomRight.x(), bottomRight.y()
+        toItem->width() - bottomRight.x(),
+        toItem->height() - bottomRight.y()
     );
 }
 
