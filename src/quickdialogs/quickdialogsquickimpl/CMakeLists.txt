@@ -21,6 +21,7 @@ set(qml_files
     "qml/MessageDialog.qml"
     "qml/PickerHandle.qml"
     "qml/SaturationLightnessPicker.qml"
+    "qml/SideBar.qml"
     "qml/+Fusion/ColorDialog.qml"
     "qml/+Fusion/FileDialog.qml"
     "qml/+Fusion/FileDialogDelegate.qml"
@@ -29,6 +30,7 @@ set(qml_files
     "qml/+Fusion/FolderDialogDelegate.qml"
     "qml/+Fusion/FontDialog.qml"
     "qml/+Fusion/MessageDialog.qml"
+    "qml/+Fusion/SideBar.qml"
     "qml/+Imagine/ColorDialog.qml"
     "qml/+Imagine/FileDialog.qml"
     "qml/+Imagine/FileDialogDelegate.qml"
@@ -37,6 +39,7 @@ set(qml_files
     "qml/+Imagine/FolderDialogDelegate.qml"
     "qml/+Imagine/FontDialog.qml"
     "qml/+Imagine/MessageDialog.qml"
+    "qml/+Imagine/SideBar.qml"
     "qml/+Material/ColorDialog.qml"
     "qml/+Material/FileDialog.qml"
     "qml/+Material/FileDialogDelegate.qml"
@@ -45,6 +48,7 @@ set(qml_files
     "qml/+Material/FolderDialogDelegate.qml"
     "qml/+Material/FontDialog.qml"
     "qml/+Material/MessageDialog.qml"
+    "qml/+Material/SideBar.qml"
     "qml/+Universal/ColorDialog.qml"
     "qml/+Universal/FileDialog.qml"
     "qml/+Universal/FileDialogDelegate.qml"
@@ -53,6 +57,7 @@ set(qml_files
     "qml/+Universal/FolderDialogDelegate.qml"
     "qml/+Universal/FontDialog.qml"
     "qml/+Universal/MessageDialog.qml"
+    "qml/+Universal/SideBar.qml"
 )
 
 qt_internal_add_qml_module(QuickDialogs2QuickImpl
@@ -154,6 +159,9 @@ qt_internal_extend_target(QuickDialogs2QuickImpl CONDITION QT_FEATURE_quick_list
         qquickplatformfolderdialog_p.h
         qquickplatformfontdialog.cpp
         qquickplatformfontdialog_p.h
+        qquicksidebar.cpp
+        qquicksidebar_p.h
+        qquicksidebar_p_p.h
 )
 
 # Resources:
@@ -219,6 +227,38 @@ set(qtquickdialogs2quickimpl_resource_files
     "images/up-icon-thick-square@2x.png"
     "images/up-icon-thick-square@3x.png"
     "images/up-icon-thick-square@4x.png"
+    "images/sidebar-photo.png"
+    "images/sidebar-photo@2x.png"
+    "images/sidebar-photo@3x.png"
+    "images/sidebar-photo@4x.png"
+    "images/sidebar-video.png"
+    "images/sidebar-video@2x.png"
+    "images/sidebar-video@3x.png"
+    "images/sidebar-video@4x.png"
+    "images/sidebar-documents.png"
+    "images/sidebar-documents@2x.png"
+    "images/sidebar-documents@3x.png"
+    "images/sidebar-documents@4x.png"
+    "images/sidebar-folder.png"
+    "images/sidebar-folder@2x.png"
+    "images/sidebar-folder@3x.png"
+    "images/sidebar-folder@4x.png"
+    "images/sidebar-home.png"
+    "images/sidebar-home@2x.png"
+    "images/sidebar-home@3x.png"
+    "images/sidebar-home@4x.png"
+    "images/sidebar-downloads.png"
+    "images/sidebar-downloads@2x.png"
+    "images/sidebar-downloads@3x.png"
+    "images/sidebar-downloads@4x.png"
+    "images/sidebar-desktop.png"
+    "images/sidebar-desktop@2x.png"
+    "images/sidebar-desktop@3x.png"
+    "images/sidebar-desktop@4x.png"
+    "images/sidebar-music.png"
+    "images/sidebar-music@2x.png"
+    "images/sidebar-music@3x.png"
+    "images/sidebar-music@4x.png"
 )
 
 qt_internal_add_resource(QuickDialogs2QuickImpl "QuickDialogs2QuickImpl"

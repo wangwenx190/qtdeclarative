@@ -17,6 +17,7 @@
 
 #include "qquickfiledialogdelegate_p.h"
 #include "qquickfolderbreadcrumbbar_p.h"
+#include "qquicksidebar_p.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -839,6 +840,23 @@ void QQuickFileDialogImplAttached::setOverwriteConfirmationDialog(QQuickDialog *
             QQuickFileDialogImplPrivate::get(fileDialogImpl), &QQuickFileDialogImplPrivate::selectFile, Qt::QueuedConnection);
 
     emit overwriteConfirmationDialogChanged();
+}
+
+QQuickSideBar *QQuickFileDialogImplAttached::sideBar() const
+{
+    Q_D(const QQuickFileDialogImplAttached);
+    return d->sideBar;
+}
+
+void QQuickFileDialogImplAttached::setSideBar(QQuickSideBar *sideBar)
+{
+    Q_D(QQuickFileDialogImplAttached);
+    if (sideBar == d->sideBar)
+        return;
+
+    d->sideBar = sideBar;
+
+    emit sideBarChanged();
 }
 
 QT_END_NAMESPACE
