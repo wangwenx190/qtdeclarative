@@ -231,7 +231,37 @@ void QQuickSafeArea::updateSafeArea()
             << "and additional margins" << additionalMargins;
 
         m_safeAreaMargins = newMargins;
+
+        if (emittingMarginsUpdate) {
+            // We are already in the process of emitting an update for this
+            // safe area, which resulted in the safe area margins changing.
+            // This can be a binding loop if the margins do not stabilize,
+            // which we'll detect when we return from the root emit below.
+            qCDebug(lcSafeArea) << "Already emitting update for" << this;
+            return;
+        }
+
+        QBoolBlocker blocker(emittingMarginsUpdate, true);
         emit marginsChanged();
+
+        if (m_safeAreaMargins != newMargins) {
+            qCDebug(lcSafeArea) << "⚠️ Possible binding loop for" << this
+                << newMargins << "changed to" << m_safeAreaMargins;
+
+            for (int i = 0; i < 5; ++i) {
+                auto marginsBeforeEmit = m_safeAreaMargins;
+                emit marginsChanged();
+                if (m_safeAreaMargins == marginsBeforeEmit) {
+                    qCDebug(lcSafeArea) << "✅ Margins stabilized for" << this;
+                    return;
+                }
+
+                qCDebug(lcSafeArea) << qPrintable(QStringLiteral("‼️").repeated(i + 1))
+                    << marginsBeforeEmit << "changed to" << m_safeAreaMargins;
+            }
+
+            qmlWarning(attachedItem) << "Safe area binding loop detected";
+        }
     }
 }
 

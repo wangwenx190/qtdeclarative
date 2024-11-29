@@ -15,6 +15,7 @@
 
 #include <QtQuick/qquickitem.h>
 #include <QtQuick/qquickwindow.h>
+#include <QtQuick/private/qquicksafearea_p.h>
 
 #if defined(Q_OS_MACOS)
 #include <AppKit/NSView.h>
@@ -45,6 +46,8 @@ private slots:
 
     void independentMargins_data();
     void independentMargins();
+
+    void bindingLoop();
 
 private:
     std::unique_ptr<QQmlApplicationEngine> m_engine;
@@ -217,6 +220,23 @@ void tst_QQuickSafeArea::updateFlipFlop()
     window->resize(window->width() - 1, window->height());
     QTRY_COMPARE(widthChangedSpy.count(), 1);
     QCOMPARE(marginChangeSpy.count(), 0);
+}
+
+void tst_QQuickSafeArea::bindingLoop()
+{
+    auto *window = qobject_cast<QQuickWindow*>(m_engine->rootObjects().first());
+    QVERIFY(window);
+    QVERIFY(QTest::qWaitForWindowExposed(window));
+
+    m_engine->setOutputWarningsToStandardError(false);
+
+    QList<QQmlError> warnings;
+    QObject::connect(m_engine.get(), &QQmlEngine::warnings, [&](auto w) { warnings = w; });
+    auto *windowSafeArea = qobject_cast<QQuickSafeArea*>(qmlAttachedPropertiesObject<QQuickSafeArea>(window));
+    QVERIFY(windowSafeArea);
+    windowSafeArea->setAdditionalMargins(QMarginsF(50, 0, 0, 0));
+    QCOMPARE(warnings.size(), 1);
+    QVERIFY(warnings.at(0).description().endsWith("Safe area binding loop detected"));
 }
 
 QTEST_MAIN(tst_QQuickSafeArea)
