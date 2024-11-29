@@ -259,6 +259,8 @@ QDebug operator<<(QDebug debug, const QQuickSafeArea *safeArea)
 }
 #endif // QT_NO_DEBUG_STREAM
 
+QQuickSafeAreaAttachable::~QQuickSafeAreaAttachable() = default;
+
 QT_END_NAMESPACE
 
 #include "moc_qquicksafearea_p.cpp"

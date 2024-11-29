@@ -69,7 +69,10 @@ private:
 class Q_QUICK_EXPORT QQuickSafeAreaAttachable
 {
 public:
+    virtual ~QQuickSafeAreaAttachable();
     virtual QQuickItem *safeAreaAttachmentItem() = 0;
+
+private:
     friend class QQuickSafeArea;
 };
 
