@@ -1917,6 +1917,9 @@ void tst_qquicktextinput::validators()
     // so you may need to run their tests first. All validators are checked
     // here to ensure that their exposure to QML is working.
 
+    auto restoreLocale = qScopeGuard([original = QLocale()] {
+        QLocale::setDefault(original);
+    });
     QLocale::setDefault(QLocale(QStringLiteral("C")));
 
     QQuickView window(testFileUrl("validators.qml"));
