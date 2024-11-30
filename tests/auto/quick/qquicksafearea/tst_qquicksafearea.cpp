@@ -160,19 +160,20 @@ void tst_QQuickSafeArea::additionalMargins()
     QVERIFY(window);
     QVERIFY(QTest::qWaitForWindowExposed(window));
 
-    QCOMPARE(window->property("margins").value<QMarginsF>(), QMarginsF());
+    QCOMPARE(window->property("margins").value<QMarginsF>(),
+        QMarginsF(20, 10, 40, 30));
 
     auto *additionalItem = window->findChild<QQuickItem*>("additionalItem");
     QCOMPARE(additionalItem->property("margins").value<QMarginsF>(),
-        QMarginsF(20, 10, 40, 30));
+        QMarginsF(120, 110, 140, 130));
 
     auto *additionalChild = additionalItem->findChild<QQuickItem*>("additionalChild");
     QCOMPARE(additionalChild->property("margins").value<QMarginsF>(),
-        QMarginsF(17, 7, 37, 27));
+        QMarginsF(117, 107, 137, 127));
 
     auto *additionalSibling = window->findChild<QQuickItem*>("additionalSibling");
     QCOMPARE(additionalSibling->property("margins").value<QMarginsF>(),
-        QMarginsF(0, 0, 0, 0));
+        QMarginsF(20, 10, 40, 30));
 }
 
 QTEST_MAIN(tst_QQuickSafeArea)

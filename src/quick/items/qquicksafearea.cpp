@@ -208,8 +208,12 @@ void QQuickSafeArea::updateSafeArea()
 
     QMarginsF additionalMargins;
     for (auto *item = attachedItem; item; item = item->parentItem()) {
-        if (auto *safeArea = static_cast<QQuickSafeArea*>(
-            qmlAttachedPropertiesObject<QQuickSafeArea>(item, false))) {
+        // We attach the safe area to the relevant item for an attachee
+        // such as QQuickWindow or QQuickPopup, so we can't go via
+        // qmlAttachedPropertiesObject to find the safe area for an
+        // item, as the attached object cache is based on the original
+        // attachee.
+        if (auto *safeArea = item->findChild<QQuickSafeArea*>(Qt::FindDirectChildrenOnly)) {
             additionalMargins = additionalMargins | mapFromItemToItem(item,
                 safeArea->additionalMargins(), attachedItem);
         }
