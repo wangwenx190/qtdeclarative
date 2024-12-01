@@ -41,6 +41,7 @@ private slots:
 #endif
 
     void additionalMargins();
+    void updateFlipFlop();
 
     void independentMargins_data();
     void independentMargins();
@@ -203,6 +204,19 @@ void tst_QQuickSafeArea::independentMargins()
 
     QFETCH(QMarginsF, expectedMargins);
     QCOMPARE(item->property("margins").value<QMarginsF>(), expectedMargins);
+}
+
+void tst_QQuickSafeArea::updateFlipFlop()
+{
+    auto *window = qobject_cast<QQuickWindow*>(m_engine->rootObjects().first());
+    QVERIFY(window);
+    QVERIFY(QTest::qWaitForWindowExposed(window));
+
+    QSignalSpy widthChangedSpy(window, SIGNAL(itemWidthChanged()));
+    QSignalSpy marginChangeSpy(window, SIGNAL(safeAreaRightMarginChanged()));
+    window->resize(window->width() - 1, window->height());
+    QTRY_COMPARE(widthChangedSpy.count(), 1);
+    QCOMPARE(marginChangeSpy.count(), 0);
 }
 
 QTEST_MAIN(tst_QQuickSafeArea)

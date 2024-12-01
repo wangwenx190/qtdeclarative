@@ -57,6 +57,7 @@ private:
     void updateSafeArea();
 
     void itemTransformChanged(QQuickItem *, QQuickItem *) override;
+    void itemGeometryChanged(QQuickItem *, QQuickGeometryChange, const QRectF &) override;
 
 #ifndef QT_NO_DEBUG_STREAM
     friend Q_QUICK_EXPORT QDebug operator<<(QDebug debug, const QQuickSafeArea *safeArea);

@@ -242,8 +242,47 @@ void QQuickSafeArea::windowChanged()
 
 void QQuickSafeArea::itemTransformChanged(QQuickItem *item, QQuickItem *transformedItem)
 {
-    Q_UNUSED(item);
-    Q_UNUSED(transformedItem);
+    Q_ASSERT(item == parent());
+
+    auto *transformedItemPrivate = QQuickItemPrivate::get(transformedItem);
+    qCDebug(lcSafeArea) << "Transform changed for" << transformedItem
+                        << "with dirty state" << transformedItemPrivate->dirtyToString();
+
+    // The dirtying of position and size will be followed by a geometry change,
+    // which via anchors or event listeners may result in an ancestor invalidating
+    // its transform, which might invalidate the margins we're about to compute.
+    // Instead of processing the margin change now, possibly resulting in a flip-
+    // flop of the margins, we wait for the geometry notification, where the item
+    // hierarchy has already reacted to the geometry change of the transformed item.
+    // This accounts for anchors, and items that listen to geometry changes, but not
+    // property bindings, as those are emitted after notifying listeners (us) about
+    // the geometry change. We intentionally limit this optimization to pure size
+    // and/or position changes, and only if the transformed item is an ancestor
+    // to the one the safe area is attached to.
+    if (transformedItem != item) {
+        auto dirtyAttributes = transformedItemPrivate->dirtyAttributes;
+        if (dirtyAttributes == (QQuickItemPrivate::Position | QQuickItemPrivate::Size)
+            || dirtyAttributes == QQuickItemPrivate::Position
+            || dirtyAttributes == QQuickItemPrivate::Size) {
+            qCDebug(lcSafeArea) << "Deferring update of" << this << "until geometry change";
+            transformedItemPrivate->addItemChangeListener(
+                this, QQuickItemPrivate::Geometry);
+            return;
+        }
+    }
+    updateSafeArea();
+}
+
+void QQuickSafeArea::itemGeometryChanged(QQuickItem *item, QQuickGeometryChange change, const QRectF &oldGeometry)
+{
+    Q_UNUSED(change);
+    Q_UNUSED(oldGeometry);
+
+    auto *itemPrivate = QQuickItemPrivate::get(item);
+    itemPrivate->removeItemChangeListener(this, QQuickItemPrivate::Geometry);
+
+    qCDebug(lcSafeArea) << "Geometry changed for" << item << "from" << oldGeometry
+                        << "to" << QRectF(item->position(), item->size());
     updateSafeArea();
 }
 
