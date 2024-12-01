@@ -42,6 +42,9 @@ private slots:
 
     void additionalMargins();
 
+    void independentMargins_data();
+    void independentMargins();
+
 private:
     std::unique_ptr<QQmlApplicationEngine> m_engine;
 };
@@ -174,6 +177,32 @@ void tst_QQuickSafeArea::additionalMargins()
     auto *additionalSibling = window->findChild<QQuickItem*>("additionalSibling");
     QCOMPARE(additionalSibling->property("margins").value<QMarginsF>(),
         QMarginsF(20, 10, 40, 30));
+}
+
+void tst_QQuickSafeArea::independentMargins_data()
+{
+    QTest::addColumn<QString>("itemName");
+    QTest::addColumn<QMarginsF>("expectedMargins");
+
+    QTest::newRow("top") << "topMarginItem" << QMarginsF(0, 50, 0, 0);
+    QTest::newRow("left") << "leftMarginItem" << QMarginsF(50, 0, 0, 0);
+    QTest::newRow("right") << "rightMarginItem" << QMarginsF(0, 0, 50, 0);
+    QTest::newRow("bottom") << "bottomMarginItem" << QMarginsF(0, 0, 0, 50);
+}
+
+void tst_QQuickSafeArea::independentMargins()
+{
+    auto *window = qobject_cast<QQuickWindow*>(m_engine->rootObjects().first());
+    QVERIFY(window);
+    QVERIFY(QTest::qWaitForWindowExposed(window));
+
+    QFETCH(QString, itemName);
+
+    auto *item = window->findChild<QQuickItem*>(itemName);
+    QVERIFY(item);
+
+    QFETCH(QMarginsF, expectedMargins);
+    QCOMPARE(item->property("margins").value<QMarginsF>(), expectedMargins);
 }
 
 QTEST_MAIN(tst_QQuickSafeArea)

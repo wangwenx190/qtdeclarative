@@ -187,10 +187,12 @@ static QMarginsF mapFromItemToItem(QQuickItem *fromItem, const QMarginsF &margin
         QPointF(fromItem->width() - margins.right(),
                 fromItem->height() - margins.bottom()));
 
+    // Only return a mapped margin if there was an original margin
     return QMarginsF(
-        topLeft.x(), topLeft.y(),
-        toItem->width() - bottomRight.x(),
-        toItem->height() - bottomRight.y()
+        margins.left() > 0 ? topLeft.x() : 0,
+        margins.top() > 0 ? topLeft.y() : 0,
+        margins.right() > 0 ? toItem->width() - bottomRight.x() : 0,
+        margins.bottom() > 0 ? toItem->height() - bottomRight.y() : 0
     );
 }
 
