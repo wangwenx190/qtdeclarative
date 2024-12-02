@@ -1005,47 +1005,52 @@ QQmlRefPointer<QQmlTypeData> QQmlTypeLoader::getType(const QUrl &unNormalizedUrl
 
     const QUrl url = normalize(unNormalizedUrl);
 
+    const auto handleExisting = [&](const QQmlRefPointer<QQmlTypeData> &typeData) {
+        if ((mode == PreferSynchronous || mode == Synchronous) && QQmlFile::isSynchronous(url)) {
+            // this was started Asynchronous, but we need to force Synchronous
+            // completion now (if at all possible with this type of URL).
+
+            // This only works when called directly from e.g. the UI thread, but not
+            // when recursively called on the QML thread via resolveTypes()
+
+            // NB: We do not want to know whether the thread is the main thread, but specifically
+            //     that the thread is _not_ the thread we're waiting for.
+            //     If !QT_CONFIG(qml_type_loader_thread) the QML thread is the main thread.
+            if (!m_thread->isThisThread()) {
+                while (!typeData->isCompleteOrError())
+                    m_thread->waitForNextMessage();
+            }
+        }
+        return typeData;
+    };
+
     // TODO: How long should we actually hold on to the lock?
     //       Currently, if we are in the type loader thread. The lock is held through the whole
     //       load() below. That's quite excessive.
     LockHolder<QQmlTypeLoader> holder(this);
 
     QQmlRefPointer<QQmlTypeData> typeData = m_typeCache.value(url);
+    if (typeData)
+        return handleExisting(typeData);
 
-    if (!typeData) {
-        // Trim before adding the new type, so that we don't immediately trim it away
-        if (m_typeCache.size() >= m_typeCacheTrimThreshold)
-            trimCache();
+    // Trim before adding the new type, so that we don't immediately trim it away
+    if (m_typeCache.size() >= m_typeCacheTrimThreshold)
+        trimCache();
 
-        typeData = QQml::makeRefPointer<QQmlTypeData>(url, this);
-        // TODO: if (compiledData == 0), is it safe to omit this insertion?
-        m_typeCache.insert(url, typeData);
-        QQmlMetaType::CachedUnitLookupError error = QQmlMetaType::CachedUnitLookupError::NoError;
+    typeData = QQml::makeRefPointer<QQmlTypeData>(url, this);
 
-        const QQmlMetaType::CacheMode cacheMode = typeData->aotCacheMode();
-        if (const QQmlPrivate::CachedQmlUnit *cachedUnit = (cacheMode != QQmlMetaType::RejectAll)
-                ? QQmlMetaType::findCachedCompilationUnit(typeData->url(), cacheMode, &error)
-                : nullptr) {
-            QQmlTypeLoader::loadWithCachedUnit(
-                    QQmlDataBlob::Ptr(typeData.data()), cachedUnit, mode);
-        } else {
-            typeData->setCachedUnitStatus(error);
-            QQmlTypeLoader::load(QQmlDataBlob::Ptr(typeData.data()), mode);
-        }
-    } else if ((mode == PreferSynchronous || mode == Synchronous) && QQmlFile::isSynchronous(url)) {
-        // this was started Asynchronous, but we need to force Synchronous
-        // completion now (if at all possible with this type of URL).
+    // TODO: if (compiledData == 0), is it safe to omit this insertion?
+    m_typeCache.insert(url, typeData);
 
-        // This only works when called directly from e.g. the UI thread, but not
-        // when recursively called on the QML thread via resolveTypes()
-
-        // NB: We do not want to know whether the thread is the main thread, but specifically that
-        //     the thread is _not_ the thread we're waiting for.
-        //     If !QT_CONFIG(qml_type_loader_thread) the QML thread is the main thread.
-        if (!m_thread->isThisThread()) {
-            while (!typeData->isCompleteOrError())
-                m_thread->waitForNextMessage();
-        }
+    QQmlMetaType::CachedUnitLookupError error = QQmlMetaType::CachedUnitLookupError::NoError;
+    const QQmlMetaType::CacheMode cacheMode = typeData->aotCacheMode();
+    if (const QQmlPrivate::CachedQmlUnit *cachedUnit = (cacheMode != QQmlMetaType::RejectAll)
+            ? QQmlMetaType::findCachedCompilationUnit(typeData->url(), cacheMode, &error)
+            : nullptr) {
+        QQmlTypeLoader::loadWithCachedUnit(QQmlDataBlob::Ptr(typeData.data()), cachedUnit, mode);
+    } else {
+        typeData->setCachedUnitStatus(error);
+        QQmlTypeLoader::load(QQmlDataBlob::Ptr(typeData.data()), mode);
     }
 
     return typeData;
