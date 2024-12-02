@@ -460,7 +460,7 @@ QImage QQuickWidgetPrivate::grabFramebuffer()
                                 readResult.pixelSize.width(), readResult.pixelSize.height(),
                                 QImage::Format_RGBA8888_Premultiplied);
             if (rhi->isYUpInFramebuffer())
-                return wrapperImage.mirrored();
+                return wrapperImage.flipped();
             else
                 return wrapperImage.copy();
         }

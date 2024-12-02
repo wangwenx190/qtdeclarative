@@ -707,7 +707,7 @@ void tst_SceneGraph::withAdoptedRhi()
                                     readResult.pixelSize.width(), readResult.pixelSize.height(),
                                     QImage::Format_RGBA8888_Premultiplied);
                 if (rhi->isYUpInFramebuffer())
-                    result = wrapperImage.mirrored();
+                    result = wrapperImage.flipped();
                 else
                     result = wrapperImage.copy();
             };

@@ -1332,7 +1332,7 @@ QImage QSGRhiSupport::grabAndBlockInCurrentFrame(QRhi *rhi, QRhiCommandBuffer *c
     const QImage img(p, result.pixelSize.width(), result.pixelSize.height(), imageFormat);
 
     if (rhi->isYUpInFramebuffer())
-        return img.mirrored();
+        return img.flipped();
 
     return img.copy();
 }

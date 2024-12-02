@@ -452,7 +452,7 @@ QImage QSGRhiLayer::toImage() const
         imageFormat = QImage::Format_RGBA32FPx4_Premultiplied;
 
     const uchar *p = reinterpret_cast<const uchar *>(result.data.constData());
-    return QImage(p, result.pixelSize.width(), result.pixelSize.height(), imageFormat).mirrored();
+    return QImage(p, result.pixelSize.width(), result.pixelSize.height(), imageFormat).flipped();
 }
 
 QRectF QSGRhiLayer::normalizedTextureSubRect() const
