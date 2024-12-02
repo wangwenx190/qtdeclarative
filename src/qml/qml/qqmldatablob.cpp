@@ -159,9 +159,7 @@ Returns the data download progress from 0 to 1.
 */
 qreal QQmlDataBlob::progress() const
 {
-    quint8 p = m_data.progress();
-    if (p == 0xFF) return 1.;
-    else return qreal(p) / qreal(0xFF);
+    return m_data.progress();
 }
 
 /*!

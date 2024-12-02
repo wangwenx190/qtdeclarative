@@ -181,7 +181,13 @@ public:
     void completeLoadFromModule(
             QAnyStringView uri, QAnyStringView typeName);
 
-    void setProgress(qreal progress) { m_progress = progress; }
+    void setProgress(qreal progress)
+    {
+        if (progress != m_progress) {
+            m_progress = progress;
+            emit q_func()->progressChanged(progress);
+        }
+    }
     void setCreationContext(QQmlRefPointer<QQmlContextData> creationContext)
     {
         m_creationContext = std::move(creationContext);

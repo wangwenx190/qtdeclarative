@@ -271,8 +271,7 @@ void QQmlTypeLoader::loadThread(const QQmlDataBlob::Ptr &blob)
             return;
         }
 
-        blob->m_data.setProgress(1.f);
-        if (blob->m_data.isAsync())
+        if (blob->m_data.setProgress(1.f) && blob->m_data.isAsync())
             m_thread->callDownloadProgressChanged(blob, 1.);
 
         setData(blob, fileName);
@@ -354,9 +353,8 @@ void QQmlTypeLoader::networkReplyProgress(QNetworkReply *reply,
     Q_ASSERT(blob);
 
     if (bytesTotal != 0) {
-        qreal progress = (qreal(bytesReceived) / qreal(bytesTotal));
-        blob->m_data.setProgress(progress);
-        if (blob->m_data.isAsync())
+        const qreal progress = (qreal(bytesReceived) / qreal(bytesTotal));
+        if (blob->m_data.setProgress(progress) && blob->m_data.isAsync())
             m_thread->callDownloadProgressChanged(blob, blob->m_data.progress());
     }
 }

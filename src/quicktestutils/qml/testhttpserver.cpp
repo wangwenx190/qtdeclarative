@@ -331,10 +331,21 @@ bool TestHTTPServer::reply(QTcpSocket *socket, const QByteArray &fileNameIn)
                 m_toSend.append(qMakePair(socket, response));
                 QTimer::singleShot(500, this, &TestHTTPServer::sendOne);
                 return false;
-            } else {
+            }
+
+            if (response.length() <= m_chunkSize) {
                 socket->write(response);
                 return true;
             }
+
+            socket->write(response.left(m_chunkSize));
+            for (qsizetype offset = m_chunkSize, end = response.length(); offset < end;
+                 offset += m_chunkSize) {
+                m_toSend.append(qMakePair(socket, response.mid(offset, m_chunkSize)));
+            }
+
+            QTimer::singleShot(1, this, &TestHTTPServer::sendChunk);
+            return false;
         }
     }
 
@@ -355,6 +366,16 @@ void TestHTTPServer::sendOne()
         m_toSend.first().first->close();
         m_toSend.removeFirst();
     }
+}
+
+void TestHTTPServer::sendChunk()
+{
+    const auto chunk = m_toSend.takeFirst();
+    chunk.first->write(chunk.second);
+    if (m_toSend.isEmpty())
+        chunk.first->close();
+    else
+        QTimer::singleShot(1, this, &TestHTTPServer::sendChunk);
 }
 
 void TestHTTPServer::serveGET(QTcpSocket *socket, const QByteArray &data)

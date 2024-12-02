@@ -282,19 +282,13 @@ void QQmlComponentPrivate::typeDataReady(QQmlTypeData *)
 
     fromTypeData(m_typeData);
     m_typeData.reset();
-    m_progress = 1.0;
-
+    setProgress(1.0);
     emit q->statusChanged(q->status());
-    emit q->progressChanged(m_progress);
 }
 
 void QQmlComponentPrivate::typeDataProgress(QQmlTypeData *, qreal p)
 {
-    Q_Q(QQmlComponent);
-
-    m_progress = p;
-
-    emit q->progressChanged(p);
+    setProgress(p);
 }
 
 void QQmlComponentPrivate::fromTypeData(const QQmlRefPointer<QQmlTypeData> &data)
@@ -728,9 +722,8 @@ void QQmlComponent::setData(const QByteArray &data, const QUrl &url)
         d->m_typeData->registerCallback(d);
     }
 
-    d->m_progress = 1.0;
+    d->setProgress(1.0);
     emit statusChanged(status());
-    emit progressChanged(d->m_progress);
 }
 
 /*!
@@ -808,10 +801,7 @@ void QQmlComponentPrivate::loadUrl(const QUrl &newUrl, QQmlComponent::Compilatio
         return;
     }
 
-    if (m_progress != 0.0) {
-        m_progress = 0.0;
-        emit q->progressChanged(m_progress);
-    }
+    setProgress(0.0);
 
     QQmlTypeLoader::Mode loaderMode = (mode == QQmlComponent::Asynchronous)
             ? QQmlTypeLoader::Asynchronous
@@ -821,16 +811,14 @@ void QQmlComponentPrivate::loadUrl(const QUrl &newUrl, QQmlComponent::Compilatio
 
     if (data->isCompleteOrError()) {
         fromTypeData(data);
-        m_progress = 1.0;
+        setProgress(1.0);
     } else {
         m_typeData = data;
         m_typeData->registerCallback(this);
-        m_progress = data->progress();
+        setProgress(data->progress());
     }
 
     emit q->statusChanged(q->status());
-    if (m_progress != 0.0)
-        emit q->progressChanged(m_progress);
 }
 
 /*!
@@ -1417,22 +1405,15 @@ void QQmlComponentPrivate::completeLoadFromModule(QAnyStringView uri, QAnyString
         QQmlError error;
         error.setDescription(msg);
         m_state.errors.push_back(std::move(error));
-        m_progress = 1;
-        emit q->progressChanged(1);
+        setProgress(1);
         emit q->statusChanged(q->Error);
     };
-    auto emitProgressReset = [&](){
-        if (m_progress != 0) {
-            m_progress = 0;
-            emit q->progressChanged(0);
-        }
-    };
     auto emitComplete = [&]() {
-        m_progress = 1;
-        emit q->progressChanged(1);
+        setProgress(1);
         emit q->statusChanged(q->status());
     };
-    emitProgressReset();
+
+    setProgress(0);
 
     const QQmlType type = m_loadHelper->type();
 
@@ -1460,6 +1441,8 @@ void QQmlComponentPrivate::completeLoadFromModule(QAnyStringView uri, QAnyString
     } else if (type.isInlineComponentType()) {
         auto baseUrl = type.sourceUrl();
         baseUrl.setFragment(QString());
+
+        Q_ASSERT(m_progress == 0.0);
         {
             // we don't want to emit status changes from the "helper" loadUrl below
             // because it would signal success to early
@@ -1467,6 +1450,10 @@ void QQmlComponentPrivate::completeLoadFromModule(QAnyStringView uri, QAnyString
             // we really need to continue in a synchronous way, otherwise we can't check the CU
             loadUrl(baseUrl, QQmlComponent::PreferSynchronous);
         }
+        // We do want to emit any progress change that happened in the "helper" loadUrl.
+        if (m_progress != 0.0)
+            emit q->progressChanged(m_progress);
+
         if (q->isError()) {
             emitComplete();
             return;

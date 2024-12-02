@@ -56,11 +56,15 @@ public:
     // In Delay mode, each item needs one call to this function to be sent
     void sendDelayedItem();
 
+    qsizetype chunkSize() const { return m_chunkSize; }
+    void setChunkSize(qsizetype chunkSize) { m_chunkSize = chunkSize; }
+
 private Q_SLOTS:
     void newConnection();
     void disconnected();
     void readyRead();
     void sendOne();
+    void sendChunk();
 
 private:
     enum State {
@@ -91,6 +95,8 @@ private:
     QHash<QString, QString> m_redirects;
 
     QTcpServer m_server;
+
+    qsizetype m_chunkSize = std::numeric_limits<qsizetype>::max();
 };
 
 class ThreadedTestHTTPServer : public QThread

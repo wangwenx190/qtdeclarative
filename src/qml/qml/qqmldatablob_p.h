@@ -160,13 +160,18 @@ private:
             return QQmlDataBlob::Status((_p.loadRelaxed() & StatusMask) >> StatusShift);
         }
 
-        inline void setStatus(QQmlDataBlob::Status status)
+        inline bool setStatus(QQmlDataBlob::Status status)
         {
             while (true) {
                 int d = _p.loadRelaxed();
                 int nd = (d & ~StatusMask) | ((status << StatusShift) & StatusMask);
-                if (d == nd || _p.testAndSetOrdered(d, nd)) return;
+                if (d == nd)
+                    return false;
+                if (_p.testAndSetOrdered(d, nd))
+                    return true;
             }
+
+            Q_UNREACHABLE_RETURN(false);
         }
 
         inline bool isAsync() const
@@ -174,13 +179,18 @@ private:
             return _p.loadRelaxed() & AsyncMask;
         }
 
-        inline void setIsAsync(bool v)
+        inline bool setIsAsync(bool v)
         {
             while (true) {
                 int d = _p.loadRelaxed();
                 int nd = (d & ~AsyncMask) | (v ? AsyncMask : NoMask);
-                if (d == nd || _p.testAndSetOrdered(d, nd)) return;
+                if (d == nd)
+                    return false;
+                if (_p.testAndSetOrdered(d, nd))
+                    return true;
             }
+
+            Q_UNREACHABLE_RETURN(false);
         }
 
         inline qreal progress() const
@@ -188,14 +198,18 @@ private:
             return quint8((_p.loadRelaxed() & ProgressMask) >> ProgressShift) / float(0xFF);
         }
 
-        inline void setProgress(qreal progress)
+        inline bool setProgress(qreal progress)
         {
             quint8 v = 0xFF * progress;
             while (true) {
                 int d = _p.loadRelaxed();
                 int nd = (d & ~ProgressMask) | ((v << ProgressShift) & ProgressMask);
-                if (d == nd || _p.testAndSetOrdered(d, nd)) return;
+                if (d == nd)
+                    return false;
+                if (_p.testAndSetOrdered(d, nd))
+                    return true;
             }
+            Q_UNREACHABLE_RETURN(false);
         }
 
     private:
