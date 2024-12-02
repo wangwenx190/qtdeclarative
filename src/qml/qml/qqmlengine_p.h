@@ -101,7 +101,7 @@ class Q_QML_EXPORT QQmlEnginePrivate : public QJSEnginePrivate
 {
     Q_DECLARE_PUBLIC(QQmlEngine)
 public:
-    explicit QQmlEnginePrivate(QQmlEngine *q) : importDatabase(q), typeLoader(q) {}
+    explicit QQmlEnginePrivate(QQmlEngine *q) : importDatabase(&typeLoader), typeLoader(q) {}
     ~QQmlEnginePrivate() override;
 
     void init();
@@ -147,8 +147,6 @@ public:
     mutable QRecursiveMutex imageProviderMutex;
     QHash<QString,QSharedPointer<QQmlImageProviderBase> > imageProviders;
     QSharedPointer<QQmlImageProviderBase> imageProvider(const QString &providerId) const;
-
-    QList<QQmlAbstractUrlInterceptor *> urlInterceptors;
 
     int scarceResourcesRefCount = 0;
     void referenceScarceResources();

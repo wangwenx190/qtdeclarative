@@ -190,6 +190,12 @@ public:
     void initializeEngine(QQmlExtensionInterface *, const char *);
     void invalidate();
 
+    void addUrlInterceptor(QQmlAbstractUrlInterceptor *urlInterceptor);
+    void removeUrlInterceptor(QQmlAbstractUrlInterceptor *urlInterceptor);
+    QList<QQmlAbstractUrlInterceptor *> urlInterceptors() const;
+    QUrl interceptUrl(const QUrl &url, QQmlAbstractUrlInterceptor::DataType type) const;
+    bool hasUrlInterceptors() const;
+
 #if !QT_CONFIG(qml_debug)
     quintptr profiler() const { return 0; }
     void setProfiler(quintptr) {}
@@ -236,6 +242,8 @@ private:
     typedef QCache<QString, QCache<QString, bool> > ImportDirCache;
     typedef QStringHash<QQmlTypeLoaderQmldirContent *> ImportQmlDirCache;
 
+    // URL interceptors must be set before loading any types. Otherwise we get data races.
+    QList<QQmlAbstractUrlInterceptor *> m_urlInterceptors;
     QQmlEngine *m_engine;
     QQmlTypeLoaderThread *m_thread = nullptr;
 

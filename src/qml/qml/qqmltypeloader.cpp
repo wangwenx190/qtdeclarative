@@ -92,6 +92,41 @@ void QQmlTypeLoader::invalidate()
 #endif // qml_network
 }
 
+void QQmlTypeLoader::addUrlInterceptor(QQmlAbstractUrlInterceptor *urlInterceptor)
+{
+    ASSERT_ENGINETHREAD();
+    m_urlInterceptors.append(urlInterceptor);
+}
+
+void QQmlTypeLoader::removeUrlInterceptor(QQmlAbstractUrlInterceptor *urlInterceptor)
+{
+    ASSERT_ENGINETHREAD();
+    m_urlInterceptors.removeOne(urlInterceptor);
+}
+
+QList<QQmlAbstractUrlInterceptor *> QQmlTypeLoader::urlInterceptors() const
+{
+    ASSERT_ENGINETHREAD();
+    return m_urlInterceptors;
+}
+
+QUrl QQmlTypeLoader::interceptUrl(const QUrl &url, QQmlAbstractUrlInterceptor::DataType type) const
+{
+    // Can be called from either thread, but only after interceptor setup is done.
+
+    QUrl result = url;
+    for (QQmlAbstractUrlInterceptor *interceptor : m_urlInterceptors)
+        result = interceptor->intercept(result, type);
+    return result;
+}
+
+bool QQmlTypeLoader::hasUrlInterceptors() const
+{
+    // Can be called from either thread, but only after interceptor setup is done.
+
+    return !m_urlInterceptors.isEmpty();
+}
+
 #if QT_CONFIG(qml_debug)
 void QQmlTypeLoader::setProfiler(QQmlProfiler *profiler)
 {
@@ -736,9 +771,7 @@ bool QQmlTypeLoader::Blob::addLibraryImport(const QQmlTypeLoader::Blob::PendingI
         // We haven't yet resolved this import
         m_unresolvedImports << import;
 
-        const QQmlEngine *engine = typeLoader()->engine();
-        const bool hasInterceptors
-                = !(QQmlEnginePrivate::get(engine)->urlInterceptors.isEmpty());
+        const bool hasInterceptors = m_typeLoader->hasUrlInterceptors();
 
         // Query any network import paths for this library.
         // Interceptor might redirect local paths.
@@ -765,7 +798,7 @@ bool QQmlTypeLoader::Blob::addLibraryImport(const QQmlTypeLoader::Blob::PendingI
                         import->uri, remotePathList, import->version);
             for (const QString &qmldirPath : qmlDirPaths) {
                 if (hasInterceptors) {
-                    QUrl url = engine->interceptUrl(
+                    QUrl url = m_typeLoader->interceptUrl(
                                 QQmlImports::urlFromLocalFileOrQrcOrUrl(qmldirPath),
                                 QQmlAbstractUrlInterceptor::QmldirFile);
                     if (!QQmlFile::isLocalFile(url)

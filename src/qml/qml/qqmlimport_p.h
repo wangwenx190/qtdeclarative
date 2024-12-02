@@ -9,13 +9,15 @@
 #include <QtCore/qloggingcategory.h>
 #include <QtCore/qset.h>
 #include <QtCore/qstringlist.h>
-#include <QtQml/qqmlengine.h>
+
+#include <QtQml/qqmlabstracturlinterceptor.h>
 #include <QtQml/qqmlerror.h>
 #include <QtQml/qqmlfile.h>
+
+#include <private/qfieldlist_p.h>
 #include <private/qqmldirparser_p.h>
 #include <private/qqmltype_p.h>
 #include <private/qstringhash_p.h>
-#include <private/qfieldlist_p.h>
 
 //
 //  W A R N I N G
@@ -31,13 +33,13 @@
 QT_BEGIN_NAMESPACE
 
 class QQmlTypeNameCache;
-class QQmlEngine;
 class QDir;
 class QQmlImportNamespace;
 class QQmlImportDatabase;
 class QQmlTypeLoader;
 class QQmlTypeLoaderQmldirContent;
 class QTypeRevision;
+class QQmlTypeLoader;
 
 const QLoggingCategory &lcQmlImport();
 
@@ -282,7 +284,7 @@ public:
         QmldirRejected
     };
 
-    QQmlImportDatabase(QQmlEngine *);
+    QQmlImportDatabase(QQmlTypeLoader *typeLoader);
     ~QQmlImportDatabase() { clearDirCache(); }
 
     bool removeDynamicPlugin(const QString &pluginId);
@@ -324,6 +326,9 @@ private:
     QString absoluteFilePath(const QString &path) const;
     void clearDirCache();
 
+    bool hasUrlInterceptors() const;
+    QUrl interceptUrl(const QUrl &url, QQmlAbstractUrlInterceptor::DataType type) const;
+
     struct QmldirCache {
         QTypeRevision version;
         QString qmldirFilePath;
@@ -340,7 +345,7 @@ private:
 
     QSet<QString> modulesForWhichPluginsHaveBeenLoaded;
     QSet<QString> initializedPlugins;
-    QQmlEngine *engine;
+    QQmlTypeLoader *typeLoader;
 };
 
 template<typename Callback>
@@ -377,7 +382,7 @@ QQmlImportDatabase::LocalQmldirResult QQmlImportDatabase::locateLocalQmldir(
     if (location == QmldirCacheOnly || result != QmldirNotFound)
         return result;
 
-    const bool hasInterceptors = !engine->urlInterceptors().isEmpty();
+    const bool hasInterceptors = hasUrlInterceptors();
 
     // Interceptor might redirect remote files to local ones.
     QStringList localImportPaths = importPathList(hasInterceptors ? LocalOrRemote : Local);
@@ -389,7 +394,7 @@ QQmlImportDatabase::LocalQmldirResult QQmlImportDatabase::locateLocalQmldir(
     QString qmldirAbsoluteFilePath;
     for (QString qmldirPath : qmlDirPaths) {
         if (hasInterceptors) {
-            const QUrl intercepted = engine->interceptUrl(
+            const QUrl intercepted = interceptUrl(
                         QQmlImports::urlFromLocalFileOrQrcOrUrl(qmldirPath),
                         QQmlAbstractUrlInterceptor::QmldirFile);
             qmldirPath = QQmlFile::urlToLocalFileOrQrc(intercepted);

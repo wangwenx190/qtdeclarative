@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only
 
 #include <QtTest>
+
 #include <QtQml/qqmlcomponent.h>
+#include <QtQml/qqmlengine.h>
 
 #include <private/qobject_p.h>
 #include <private/qv4compileddata_p.h>

@@ -1294,7 +1294,7 @@ QTypeRevision QQmlImports::addFileImport(
     QString qmldirUrl = resolveLocalUrl(m_base, importUri + (importUri.endsWith(Slash)
                                                            ? String_qmldir
                                                            : Slash_qmldir));
-    qmldirUrl = typeLoader->engine()->interceptUrl(
+    qmldirUrl = typeLoader->interceptUrl(
                 QUrl(qmldirUrl), QQmlAbstractUrlInterceptor::QmldirFile).toString();
     QString qmldirIdentifier;
 
@@ -1534,8 +1534,8 @@ static QStringList parseEnvPath(const QString &envImportPath)
 \brief The QQmlImportDatabase class manages the QML imports for a QQmlEngine.
 \internal
 */
-QQmlImportDatabase::QQmlImportDatabase(QQmlEngine *e)
-: engine(e)
+QQmlImportDatabase::QQmlImportDatabase(QQmlTypeLoader *typeLoader)
+    : typeLoader(typeLoader)
 {
     filePluginPath << QLatin1String(".");
     // Search order is:
@@ -1627,7 +1627,7 @@ void QQmlImportDatabase::addPluginPath(const QString& path)
 
 QString QQmlImportDatabase::absoluteFilePath(const QString &path) const
 {
-    return QQmlEnginePrivate::get(engine)->typeLoader.absoluteFilePath(path);
+    return typeLoader->absoluteFilePath(path);
 }
 
 /*!
@@ -1749,6 +1749,17 @@ void QQmlImportDatabase::clearDirCache()
         ++itr;
     }
     qmldirCache.clear();
+}
+
+bool QQmlImportDatabase::hasUrlInterceptors() const
+{
+    return typeLoader->hasUrlInterceptors();
+}
+
+QUrl QQmlImportDatabase::interceptUrl(
+        const QUrl &url, QQmlAbstractUrlInterceptor::DataType type) const
+{
+    return typeLoader->interceptUrl(url, type);
 }
 
 QT_END_NAMESPACE

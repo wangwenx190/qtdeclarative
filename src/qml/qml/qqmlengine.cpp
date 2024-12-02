@@ -694,7 +694,7 @@ QQmlContext *QQmlEngine::rootContext() const
 QQmlAbstractUrlInterceptor *QQmlEngine::urlInterceptor() const
 {
     Q_D(const QQmlEngine);
-    return d->urlInterceptors.last();
+    return d->typeLoader.urlInterceptors().last();
 }
 #endif
 
@@ -710,7 +710,7 @@ QQmlAbstractUrlInterceptor *QQmlEngine::urlInterceptor() const
 void QQmlEngine::addUrlInterceptor(QQmlAbstractUrlInterceptor *urlInterceptor)
 {
     Q_D(QQmlEngine);
-    d->urlInterceptors.append(urlInterceptor);
+    d->typeLoader.addUrlInterceptor(urlInterceptor);
 }
 
 /*!
@@ -724,7 +724,7 @@ void QQmlEngine::addUrlInterceptor(QQmlAbstractUrlInterceptor *urlInterceptor)
 void QQmlEngine::removeUrlInterceptor(QQmlAbstractUrlInterceptor *urlInterceptor)
 {
     Q_D(QQmlEngine);
-    d->urlInterceptors.removeOne(urlInterceptor);
+    d->typeLoader.removeUrlInterceptor(urlInterceptor);
 }
 
 /*!
@@ -734,10 +734,7 @@ void QQmlEngine::removeUrlInterceptor(QQmlAbstractUrlInterceptor *urlInterceptor
 QUrl QQmlEngine::interceptUrl(const QUrl &url, QQmlAbstractUrlInterceptor::DataType type) const
 {
     Q_D(const QQmlEngine);
-    QUrl result = url;
-    for (QQmlAbstractUrlInterceptor *interceptor : d->urlInterceptors)
-        result = interceptor->intercept(result, type);
-    return result;
+    return d->typeLoader.interceptUrl(url, type);
 }
 
 /*!
@@ -746,7 +743,7 @@ QUrl QQmlEngine::interceptUrl(const QUrl &url, QQmlAbstractUrlInterceptor::DataT
 QList<QQmlAbstractUrlInterceptor *> QQmlEngine::urlInterceptors() const
 {
     Q_D(const QQmlEngine);
-    return d->urlInterceptors;
+    return d->typeLoader.urlInterceptors();
 }
 
 QSharedPointer<QQmlImageProviderBase> QQmlEnginePrivate::imageProvider(const QString &providerId) const
