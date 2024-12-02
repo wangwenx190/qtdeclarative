@@ -45,7 +45,10 @@ namespace QV4 {
 
     namespace Heap {
 
-        struct VariantAssociationObject : ReferenceObject
+        #define VariantAssociationObjectMembers(class, Member) \
+            Member(class, Pointer, ArrayObject *, propertyIndexMapping);
+
+        DECLARE_HEAP_OBJECT(VariantAssociationObject, ReferenceObject)
         {
             enum class AssociationType: quint8 {
                 VariantMap,
@@ -80,7 +83,6 @@ namespace QV4 {
             alignas(alignment)
             std::byte m_variantAssociation[std::max(sizeof(QVariantMap), sizeof(QVariantHash))];
 
-            std::vector<QString>* propertyIndexMapping;
             AssociationType m_type;
         };
 

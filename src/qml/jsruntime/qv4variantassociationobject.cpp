@@ -61,21 +61,36 @@ Return visitVariantAssociation(
     return visitVariantAssociation<Return>(association, callable, callable);
 }
 
-static void mapPropertyKey(std::vector<QString>& mapping, const QString& key) {
-    auto it = std::find(mapping.cbegin(), mapping.cend(), key);
-    if (it == mapping.cend())
-        mapping.emplace_back(key);
+static void mapPropertyKey(QV4::ArrayObject* mapping, QV4::Value* key) {
+    QString qKey = key->toQString();
+
+    QV4::Scope scope(mapping->engine());
+    for (uint i = 0; i < mapping->arrayData()->length(); ++i) {
+        QV4::ScopedValue value(scope, mapping->arrayData()->get(i));
+        if (value->toQString() == qKey)
+            return;
+    }
+
+    mapping->push_back(*key);
 }
 
-static int keyToIndex(const std::vector<QString>& mapping, const QString& key) {
-    auto it = std::find(mapping.cbegin(), mapping.cend(), key);
-    return (it == mapping.cend()) ? -1 : std::distance(mapping.cbegin(), it);
+static int keyToIndex(const QV4::ArrayObject* mapping, const QV4::Value* key) {
+    QString qKey = key->toQString();
+
+    QV4::Scope scope(mapping->engine());
+    for (uint i = 0; i < mapping->arrayData()->length(); ++i) {
+        QV4::ScopedValue value(scope, mapping->get(i));
+        if (value->toQString() == qKey)
+            return i;
+    }
+
+    return -1;
 }
 
-static const QString& indexToKey(const std::vector<QString>& mapping, int index) {
-    Q_ASSERT(index >= 0);
-    Q_ASSERT(index < static_cast<int>(mapping.size()));
-    return mapping[index];
+static QV4::ReturnedValue indexToKey(QV4::ArrayObject* mapping, uint index) {
+    Q_ASSERT(index < mapping->arrayData()->length());
+
+    return mapping->arrayData()->get(index);
 }
 
 namespace QV4 {
@@ -112,8 +127,6 @@ namespace QV4 {
 
             new(m_variantAssociation) QVariantMap(variantMap);
             m_type = AssociationType::VariantMap;
-
-            propertyIndexMapping = new std::vector<QString>(variantMap.keyBegin(), variantMap.keyEnd());
         }
 
         void VariantAssociationObject::init(
@@ -125,8 +138,6 @@ namespace QV4 {
 
             new(m_variantAssociation) QVariantHash(variantHash);
             m_type = AssociationType::VariantHash;
-
-            propertyIndexMapping = new std::vector<QString>(variantHash.keyBegin(), variantHash.keyEnd());
         }
 
         void VariantAssociationObject::destroy() {
@@ -134,7 +145,6 @@ namespace QV4 {
                 this,
                 std::destroy_at<QVariantMap>,
                 std::destroy_at<QVariantHash>);
-            delete propertyIndexMapping;
             ReferenceObject::destroy();
         }
 
@@ -164,11 +174,6 @@ namespace QV4 {
                 new(m_variantAssociation) QVariantHash(variant.toHash());
                 m_type = AssociationType::VariantHash;
             }
-
-            auto keys = visitVariantAssociation<QStringList>(
-                this, [](auto* association){ return association->keys(); });
-            for (const QString& key : keys)
-                mapPropertyKey(*propertyIndexMapping, key);
 
             return true;
         }
@@ -274,14 +279,19 @@ namespace QV4 {
 
         Heap::VariantAssociationObject *heapAssociation = variantAssociation->d();
 
+        Q_ASSERT(heapAssociation->propertyIndexMapping);
+
         switch (call) {
         case QMetaObject::ReadProperty: {
             QV4::ReferenceObject::readReference(heapAssociation);
 
-            if (index < 0 || index >= static_cast<int>(heapAssociation->propertyIndexMapping->size()))
+            if (index < 0 || index >= static_cast<int>(heapAssociation->propertyIndexMapping->arrayData->length()))
                 return 0;
 
-            const QString& key = indexToKey(*heapAssociation->propertyIndexMapping, index);
+            Scope scope(variantAssociation->engine());
+            ScopedArrayObject mapping(scope, heapAssociation->propertyIndexMapping);
+            ScopedString scopedKey(scope, indexToKey(mapping, index));
+            QString key = scopedKey->toQString();
 
             if (!visitVariantAssociation<bool>(heapAssociation, [key](auto association) {
                 return association->contains(key);
@@ -296,10 +306,13 @@ namespace QV4 {
             break;
         }
         case QMetaObject::WriteProperty: {
-            if (index < 0 || index >= static_cast<int>(heapAssociation->propertyIndexMapping->size()))
+            if (index < 0 || index >= static_cast<int>(heapAssociation->propertyIndexMapping->arrayData->length()))
                 return 0;
 
-            const QString& key = indexToKey(*heapAssociation->propertyIndexMapping, index);
+            Scope scope(variantAssociation->engine());
+            ScopedArrayObject mapping(scope, heapAssociation->propertyIndexMapping);
+            ScopedString scopedKey(scope, indexToKey(mapping, index));
+            QString key = scopedKey->toQString();
 
             visitVariantAssociation<void>(heapAssociation, [a, key](auto association){
                 if (association->contains(key))
@@ -326,11 +339,25 @@ namespace QV4 {
                 bool hasElement = association->contains(key);
                 if (hasProperty)
                     *hasProperty = hasElement;
-                return engine->fromVariant(
-                    association->value(key),
-                    d(), hasElement ? keyToIndex(*d()->propertyIndexMapping, key) : -1,
-                    Heap::ReferenceObject::Flag::CanWriteBack |
-                    Heap::ReferenceObject::Flag::IsVariant);
+
+                if (hasElement) {
+                    if (!d()->propertyIndexMapping.heapObject())
+                        d()->propertyIndexMapping.set(engine, engine->newArrayObject(1));
+
+                    Scope scope(engine);
+                    ScopedString scopedKey(scope, scope.engine->newString(key));
+                    ScopedArrayObject mapping(scope, d()->propertyIndexMapping);
+
+                    mapPropertyKey(mapping, scopedKey);
+
+                    return engine->fromVariant(
+                        association->value(key),
+                        d(), hasElement ? keyToIndex(mapping.getPointer(), scopedKey.getPointer()) : -1,
+                        Heap::ReferenceObject::Flag::CanWriteBack |
+                        Heap::ReferenceObject::Flag::IsVariant);
+                }
+
+                return Encode::undefined();
             }
         );
     }
@@ -341,8 +368,6 @@ namespace QV4 {
         visitVariantAssociation<void>(heapAssociation, [engine = engine(), value, key](auto association){
             association->insert(key, engine->toVariant(value, QMetaType{}, false));
         });
-
-        mapPropertyKey(*heapAssociation->propertyIndexMapping, key);
 
         QV4::ReferenceObject::writeBack(heapAssociation);
         return true;
