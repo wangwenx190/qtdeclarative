@@ -1247,7 +1247,8 @@ bool QQmlTypeLoader::fileExists(const QString &path, const QString &file)
     auto addToCache = [&](const QFileInfo &fileInfo) {
         if (!fileSet) {
             fileSet = fileInfo.dir().exists() ? new QCache<QString, bool> : nullptr;
-            m_importDirCache.insert(path, fileSet);
+            bool inserted = m_importDirCache.insert(path, fileSet);
+            Q_ASSERT(inserted);
             if (!fileSet)
                 return false;
         }
