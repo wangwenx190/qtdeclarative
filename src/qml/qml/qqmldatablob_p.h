@@ -104,21 +104,21 @@ public:
     void assertTypeLoaderThreadIfRunning() const
     {
         const Loader *loader = m_typeLoader;
-        Q_ASSERT(!loader || !loader->m_thread || loader->m_thread->isThisThread());
+        Q_ASSERT(!loader || !loader->thread() || loader->thread()->isThisThread());
     }
 
     template<typename Loader = QQmlTypeLoader>
     void assertTypeLoaderThread() const
     {
         const Loader *loader = m_typeLoader;
-        Q_ASSERT(loader && loader->m_thread && loader->m_thread->isThisThread());
+        Q_ASSERT(loader && loader->thread() && loader->thread()->isThisThread());
     }
 
     template<typename Loader = QQmlTypeLoader>
     void assertEngineThread() const
     {
         const Loader *loader = m_typeLoader;
-        Q_ASSERT(loader && loader->m_engine && loader->m_engine->thread()->isCurrentThread());
+        Q_ASSERT(loader && loader->engine() && loader->engine()->thread()->isCurrentThread());
     }
 
 protected:

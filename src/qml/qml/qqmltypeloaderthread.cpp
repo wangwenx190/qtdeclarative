@@ -138,7 +138,7 @@ void QQmlTypeLoaderThread::initializeExtensionMain(QQmlExtensionInterface *iface
                                                 const char *uri)
 {
     // We can use m_engine because we're on the engine thread.
-    QQmlEngine *engine = m_loader->m_engine;
+    QQmlEngine *engine = m_loader->engine();
     Q_ASSERT(engine->thread() == QThread::currentThread());
     iface->initializeEngine(engine, uri);
 }
@@ -147,7 +147,7 @@ void QQmlTypeLoaderThread::initializeEngineExtensionMain(QQmlEngineExtensionInte
                                                 const char *uri)
 {
     // We can use m_engine because we're on the engine thread.
-    QQmlEngine *engine = m_loader->m_engine;
+    QQmlEngine *engine = m_loader->engine();
     Q_ASSERT(engine->thread() == QThread::currentThread());
     iface->initializeEngine(engine, uri);
 }

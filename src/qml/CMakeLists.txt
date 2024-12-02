@@ -328,6 +328,7 @@ qt_internal_add_qml_module(Qml
         qml/qqmltypecompiler.cpp qml/qqmltypecompiler_p.h
         qml/qqmltypedata.cpp qml/qqmltypedata_p.h
         qml/qqmltypeloader.cpp qml/qqmltypeloader_p.h
+        qml/qqmltypeloaderdata.cpp qml/qqmltypeloaderdata_p.h
         qml/qqmltypeloaderqmldircontent.cpp qml/qqmltypeloaderqmldircontent_p.h
         qml/qqmltypeloaderthread.cpp qml/qqmltypeloaderthread_p.h
         qml/qqmltypemodule.cpp qml/qqmltypemodule_p.h

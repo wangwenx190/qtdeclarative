@@ -639,9 +639,7 @@ void QQmlEngine::trimComponentCache()
 {
     Q_D(QQmlEngine);
     handle()->trimCompilationUnits();
-    d->typeLoader.lock();
     d->typeLoader.trimCache();
-    d->typeLoader.unlock();
 }
 
 /*!
@@ -772,6 +770,8 @@ void QQmlEngine::setNetworkAccessManagerFactory(QQmlNetworkAccessManagerFactory 
     d->typeLoader.setNetworkAccessManagerFactory(factory);
 }
 
+class QQmlEnginePublicAPIToken {};
+
 /*!
   Returns the current QQmlNetworkAccessManagerFactory.
 
@@ -780,7 +780,7 @@ void QQmlEngine::setNetworkAccessManagerFactory(QQmlNetworkAccessManagerFactory 
 QQmlNetworkAccessManagerFactory *QQmlEngine::networkAccessManagerFactory() const
 {
     Q_D(const QQmlEngine);
-    return d->typeLoader.networkAccessManagerFactory();
+    return d->typeLoader.networkAccessManagerFactory().get(QQmlEnginePublicAPIToken());
 }
 
 QNetworkAccessManager *QQmlEnginePrivate::getNetworkAccessManager()

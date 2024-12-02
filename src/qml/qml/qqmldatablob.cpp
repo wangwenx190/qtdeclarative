@@ -240,8 +240,8 @@ QList<QQmlError> QQmlDataBlob::errors() const
 {
     Q_ASSERT(isCompleteOrError()
              || !m_typeLoader
-             || !m_typeLoader->m_thread
-             || m_typeLoader->m_thread->isThisThread());
+             || !m_typeLoader->thread()
+             || m_typeLoader->thread()->isThisThread());
     return m_errors;
 }
 
@@ -528,7 +528,7 @@ void QQmlDataBlob::tryDone()
 #ifdef DATABLOB_DEBUG
         qWarning("QQmlDataBlob: Dispatching completed");
 #endif
-        m_typeLoader->m_thread->callCompleted(this);
+        m_typeLoader->thread()->callCompleted(this);
 
         release();
     }

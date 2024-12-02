@@ -35,7 +35,7 @@ void QQmlScriptBlob::dataReceived(const SourceCodeData &data)
 {
     assertTypeLoaderThread();
 
-    if (readCacheFile()) {
+    if (m_typeLoader->readCacheFile()) {
         auto unit = QQml::makeRefPointer<QV4::CompiledData::CompilationUnit>();
         QString error;
         if (unit->loadFromDisk(url(), data.sourceTimeStamp(), &error)) {
@@ -65,15 +65,16 @@ void QQmlScriptBlob::dataReceived(const SourceCodeData &data)
 
     if (m_isModule) {
         QList<QQmlJS::DiagnosticMessage> diagnostics;
-        unit = QV4::Compiler::Codegen::compileModule(isDebugging(), urlString(), source,
-                                                     data.sourceTimeStamp(), &diagnostics);
+        unit = QV4::Compiler::Codegen::compileModule(
+                m_typeLoader->isDebugging(), urlString(), source, data.sourceTimeStamp(),
+                &diagnostics);
         QList<QQmlError> errors = QQmlEnginePrivate::qmlErrorFromDiagnostics(urlString(), diagnostics);
         if (!errors.isEmpty()) {
             setError(errors);
             return;
         }
     } else {
-        QmlIR::Document irUnit(isDebugging());
+        QmlIR::Document irUnit(m_typeLoader->isDebugging());
 
         irUnit.jsModule.sourceTimeStamp = data.sourceTimeStamp();
 
@@ -96,7 +97,7 @@ void QQmlScriptBlob::dataReceived(const SourceCodeData &data)
         unit = std::move(irUnit.javaScriptCompilationUnit);
     }
 
-    if (writeCacheFile()) {
+    if (m_typeLoader->writeCacheFile()) {
         QString errorString;
         if (unit->saveToDisk(url(), &errorString)) {
             QString error;

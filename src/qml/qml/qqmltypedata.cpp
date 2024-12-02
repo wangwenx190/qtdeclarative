@@ -81,7 +81,7 @@ bool QQmlTypeData::tryLoadFromDiskCache()
 {
     assertTypeLoaderThread();
 
-    if (!readCacheFile())
+    if (!m_typeLoader->readCacheFile())
         return false;
 
     auto unit = QQml::makeRefPointer<QV4::CompiledData::CompilationUnit>();
@@ -692,7 +692,7 @@ void QQmlTypeData::initializeFromCachedUnit(const QQmlPrivate::CachedQmlUnit *un
         return;
     }
 
-    m_document.reset(new QmlIR::Document(isDebugging()));
+    m_document.reset(new QmlIR::Document(m_typeLoader->isDebugging()));
     QQmlIRLoader loader(unit->qmlData, m_document.data());
     loader.load();
     m_document->jsModule.fileName = urlString();
@@ -708,7 +708,7 @@ bool QQmlTypeData::loadFromSource()
 {
     assertTypeLoaderThread();
 
-    m_document.reset(new QmlIR::Document(isDebugging()));
+    m_document.reset(new QmlIR::Document(m_typeLoader->isDebugging()));
     m_document->jsModule.sourceTimeStamp = m_backupSourceCode.sourceTimeStamp();
     QmlIR::IRBuilder compiler;
 
@@ -740,7 +740,7 @@ void QQmlTypeData::restoreIR(const QQmlRefPointer<QV4::CompiledData::Compilation
 {
     assertTypeLoaderThread();
 
-    m_document.reset(new QmlIR::Document(isDebugging()));
+    m_document.reset(new QmlIR::Document(m_typeLoader->isDebugging()));
     QQmlIRLoader loader(unit->unitData(), m_document.data());
     loader.load();
     m_document->jsModule.fileName = urlString();
@@ -885,7 +885,7 @@ void QQmlTypeData::compile(const QQmlRefPointer<QQmlTypeNameCache> &typeNameCach
         return;
     }
 
-    const bool trySaveToDisk = writeCacheFile() && !typeRecompilation;
+    const bool trySaveToDisk = m_typeLoader->writeCacheFile() && !typeRecompilation;
     if (trySaveToDisk) {
         QString errorString;
         if (compilationUnit->saveToDisk(url(), &errorString)) {
