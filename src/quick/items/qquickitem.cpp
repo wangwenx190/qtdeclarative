@@ -106,6 +106,7 @@ static void setActiveFocus(QQuickItem *item, Qt::FocusReason reason)
     \li \l Rotation
     \li \l Scale
     \li \l Translate
+    \li \l Shear
     \li \l Matrix4x4
     \endlist
 
