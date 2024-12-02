@@ -2816,7 +2816,9 @@ void QQmlListModel::sync()
     qmlWarning(this) << "List sync() can only be called from a WorkerScript";
 }
 
-bool QQmlListModelParser::verifyProperty(const QQmlRefPointer<QV4::ExecutableCompilationUnit> &compilationUnit, const QV4::CompiledData::Binding *binding)
+bool QQmlListModelParser::verifyProperty(
+        const QQmlRefPointer<QV4::CompiledData::CompilationUnit> &compilationUnit,
+        const QV4::CompiledData::Binding *binding)
 {
     if (binding->type() >= QV4::CompiledData::Binding::Type_Object) {
         const quint32 targetObjectIndex = binding->value.objectIndex;
@@ -2956,7 +2958,9 @@ bool QQmlListModelParser::applyProperty(
     return roleSet;
 }
 
-void QQmlListModelParser::verifyBindings(const QQmlRefPointer<QV4::ExecutableCompilationUnit> &compilationUnit, const QList<const QV4::CompiledData::Binding *> &bindings)
+void QQmlListModelParser::verifyBindings(
+        const QQmlRefPointer<QV4::CompiledData::CompilationUnit> &compilationUnit,
+        const QList<const QV4::CompiledData::Binding *> &bindings)
 {
     listElementTypeName = QString(); // unknown
 
@@ -2971,7 +2975,9 @@ void QQmlListModelParser::verifyBindings(const QQmlRefPointer<QV4::ExecutableCom
     }
 }
 
-void QQmlListModelParser::applyBindings(QObject *obj, const QQmlRefPointer<QV4::ExecutableCompilationUnit> &compilationUnit, const QList<const QV4::CompiledData::Binding *> &bindings)
+void QQmlListModelParser::applyBindings(
+        QObject *obj, const QQmlRefPointer<QV4::ExecutableCompilationUnit> &compilationUnit,
+        const QList<const QV4::CompiledData::Binding *> &bindings)
 {
     QQmlListModel *rv = static_cast<QQmlListModel *>(obj);
 
