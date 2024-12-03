@@ -1,81 +1,87 @@
 // Copyright (C) 2021 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
-#include <qv4engine_p.h>
 
-#include <private/qv4compileddata_p.h>
-#include <private/qv4codegen_p.h>
-#include <private/qqmljsdiagnosticmessage_p.h>
+#include "qv4engine_p.h"
 
-#include <QtCore/QTextStream>
-#include <QDateTime>
-#include <QDir>
-#include <QFileInfo>
-#include <QLoggingCategory>
-#if QT_CONFIG(regularexpression)
-#include <QRegularExpression>
-#endif
-#include <QtCore/QTimeZone>
-#include <QtCore/qiterable.h>
-
-#include <qv4qmlcontext_p.h>
-#include <qv4value_p.h>
-#include <qv4object_p.h>
-#include <qv4objectproto_p.h>
-#include <qv4objectiterator_p.h>
-#include <qv4setiterator_p.h>
-#include <qv4mapiterator_p.h>
-#include <qv4arrayiterator_p.h>
-#include <qv4arrayobject_p.h>
-#include <qv4booleanobject_p.h>
-#include <qv4globalobject_p.h>
-#include <qv4errorobject_p.h>
-#include <qv4functionobject_p.h>
-#include "qv4function_p.h"
-#include <qv4mathobject_p.h>
-#include <qv4numberobject_p.h>
-#include <qv4regexpobject_p.h>
-#include <qv4regexp_p.h>
-#include "qv4symbol_p.h"
-#include "qv4setobject_p.h"
-#include "qv4mapobject_p.h"
-#include <qv4variantobject_p.h>
-#include <qv4runtime_p.h>
-#include <private/qv4mm_p.h>
-#include <qv4argumentsobject_p.h>
-#include <qv4dateobject_p.h>
-#include <qv4jsonobject_p.h>
-#include <qv4stringobject_p.h>
-#include <qv4identifiertable_p.h>
-#include "qv4debugging_p.h"
-#include "qv4profiling_p.h"
-#include "qv4executableallocator_p.h"
-#include "qv4iterator_p.h"
-#include "qv4stringiterator_p.h"
-#include "qv4generatorobject_p.h"
-#include "qv4reflect_p.h"
-#include "qv4proxy_p.h"
-#include "qv4stackframe_p.h"
-#include "qv4stacklimits_p.h"
-#include "qv4atomics_p.h"
-#include "qv4urlobject_p.h"
-#include "qv4variantobject_p.h"
-#include "qv4variantassociationobject_p.h"
-#include "qv4sequenceobject_p.h"
-#include "qv4qobjectwrapper_p.h"
-#include "qv4qmetaobjectwrapper_p.h"
-#include "qv4memberdata_p.h"
-#include "qv4arraybuffer_p.h"
-#include "qv4dataview_p.h"
-#include "qv4promiseobject_p.h"
-#include "qv4typedarray_p.h"
 #include <private/qjsvalue_p.h>
-#include <private/qqmltypewrapper_p.h>
-#include <private/qqmlvaluetypewrapper_p.h>
-#include <private/qqmlvaluetype_p.h>
-#include <private/qqmllistwrapper_p.h>
-#include <private/qqmllist_p.h>
-#include <private/qqmltypeloader_p.h>
 #include <private/qqmlbuiltinfunctions_p.h>
+#include <private/qqmlengine_p.h>
+#include <private/qqmljsdiagnosticmessage_p.h>
+#include <private/qqmllist_p.h>
+#include <private/qqmllistwrapper_p.h>
+#include <private/qqmltypeloader_p.h>
+#include <private/qqmltypewrapper_p.h>
+#include <private/qqmlvaluetype_p.h>
+#include <private/qqmlvaluetypewrapper_p.h>
+#include <private/qv4argumentsobject_p.h>
+#include <private/qv4arraybuffer_p.h>
+#include <private/qv4arrayiterator_p.h>
+#include <private/qv4arrayobject_p.h>
+#include <private/qv4atomics_p.h>
+#include <private/qv4booleanobject_p.h>
+#include <private/qv4codegen_p.h>
+#include <private/qv4compileddata_p.h>
+#include <private/qv4dataview_p.h>
+#include <private/qv4dateobject_p.h>
+#include <private/qv4debugging_p.h>
+#include <private/qv4errorobject_p.h>
+#include <private/qv4executableallocator_p.h>
+#include <private/qv4function_p.h>
+#include <private/qv4functionobject_p.h>
+#include <private/qv4generatorobject_p.h>
+#include <private/qv4globalobject_p.h>
+#include <private/qv4identifiertable_p.h>
+#include <private/qv4iterator_p.h>
+#include <private/qv4jsonobject_p.h>
+#include <private/qv4mapiterator_p.h>
+#include <private/qv4mapobject_p.h>
+#include <private/qv4mathobject_p.h>
+#include <private/qv4memberdata_p.h>
+#include <private/qv4mm_p.h>
+#include <private/qv4numberobject_p.h>
+#include <private/qv4object_p.h>
+#include <private/qv4objectiterator_p.h>
+#include <private/qv4objectproto_p.h>
+#include <private/qv4profiling_p.h>
+#include <private/qv4promiseobject_p.h>
+#include <private/qv4proxy_p.h>
+#include <private/qv4qmetaobjectwrapper_p.h>
+#include <private/qv4qmlcontext_p.h>
+#include <private/qv4qobjectwrapper_p.h>
+#include <private/qv4reflect_p.h>
+#include <private/qv4regexp_p.h>
+#include <private/qv4regexpobject_p.h>
+#include <private/qv4runtime_p.h>
+#include <private/qv4sequenceobject_p.h>
+#include <private/qv4setiterator_p.h>
+#include <private/qv4setobject_p.h>
+#include <private/qv4sqlerrors_p.h>
+#include <private/qv4stackframe_p.h>
+#include <private/qv4stacklimits_p.h>
+#include <private/qv4stringiterator_p.h>
+#include <private/qv4stringobject_p.h>
+#include <private/qv4symbol_p.h>
+#include <private/qv4typedarray_p.h>
+#include <private/qv4urlobject_p.h>
+#include <private/qv4value_p.h>
+#include <private/qv4variantassociationobject_p.h>
+#include <private/qv4variantobject_p.h>
+
+#include <QtQml/qqmlfile.h>
+
+#include <QtCore/qdatetime.h>
+#include <QtCore/qdir.h>
+#include <QtCore/qfileinfo.h>
+#include <QtCore/qiterable.h>
+#include <QtCore/qloggingcategory.h>
+#include <QtCore/qmetatype.h>
+#include <QtCore/qsequentialiterable.h>
+#include <QtCore/qtextstream.h>
+#include <QtCore/qtimezone.h>
+
+#if QT_CONFIG(regularexpression)
+#include <QtCore/qregularexpression.h>
+#endif
 #if QT_CONFIG(qml_locale)
 #include <private/qqmllocale_p.h>
 #endif
@@ -83,13 +89,6 @@
 #include <private/qv4domerrors_p.h>
 #include <private/qqmlxmlhttprequest_p.h>
 #endif
-#include <private/qv4sqlerrors_p.h>
-#include <qqmlfile.h>
-#include <qmetatype.h>
-#include <qsequentialiterable.h>
-
-#include <private/qqmlengine_p.h>
-
 #ifdef V4_USE_VALGRIND
 #include <valgrind/memcheck.h>
 #endif
