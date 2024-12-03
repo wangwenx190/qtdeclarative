@@ -175,24 +175,25 @@ QMarginsF QQuickSafeArea::additionalMargins() const
     return m_additionalMargins;
 }
 
-static QMarginsF mapFromItemToItem(QQuickItem *fromItem, const QMarginsF &margins, QQuickItem *toItem)
+/*
+    Maps the safe area \a margins from \a fromItem to \a toItem
+*/
+static QMarginsF toLocalMargins(const QMarginsF &margins, QQuickItem *fromItem, QQuickItem *toItem)
 {
     if (margins.isNull())
         return margins;
 
-    const auto topLeft = toItem->mapFromItem(fromItem,
-        QPointF(margins.left(), margins.top()));
-
-    const auto bottomRight = toItem->mapFromItem(fromItem,
-        QPointF(fromItem->width() - margins.right(),
-                fromItem->height() - margins.bottom()));
+    const auto localMarginRect = fromItem->mapRectToItem(toItem,
+        QRectF(margins.left(), margins.top(),
+               fromItem->width() - margins.left() - margins.right(),
+               fromItem->height() - margins.top() - margins.bottom()));
 
     // Only return a mapped margin if there was an original margin
     return QMarginsF(
-        margins.left() > 0 ? topLeft.x() : 0,
-        margins.top() > 0 ? topLeft.y() : 0,
-        margins.right() > 0 ? toItem->width() - bottomRight.x() : 0,
-        margins.bottom() > 0 ? toItem->height() - bottomRight.y() : 0
+        margins.left() > 0 ? localMarginRect.left() : 0,
+        margins.top() > 0 ? localMarginRect.top() : 0,
+        margins.right() > 0 ? toItem->width() - localMarginRect.right() : 0,
+        margins.bottom() > 0 ? toItem->height() - localMarginRect.bottom() : 0
     );
 }
 
@@ -204,8 +205,8 @@ void QQuickSafeArea::updateSafeArea()
 
     QMarginsF windowMargins;
     if (auto *window = attachedItem->window()) {
-        windowMargins = mapFromItemToItem(window->contentItem(),
-            window->safeAreaMargins(), attachedItem);
+        windowMargins = toLocalMargins(window->safeAreaMargins(),
+            window->contentItem(), attachedItem);
     }
 
     QMarginsF additionalMargins;
@@ -216,8 +217,8 @@ void QQuickSafeArea::updateSafeArea()
         // item, as the attached object cache is based on the original
         // attachee.
         if (auto *safeArea = item->findChild<QQuickSafeArea*>(Qt::FindDirectChildrenOnly)) {
-            additionalMargins = additionalMargins | mapFromItemToItem(item,
-                safeArea->additionalMargins(), attachedItem);
+            additionalMargins = additionalMargins | toLocalMargins(
+                safeArea->additionalMargins(), item, attachedItem);
         }
     }
 
