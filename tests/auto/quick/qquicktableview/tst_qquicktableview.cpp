@@ -128,6 +128,7 @@ private slots:
     void fillTableViewButNothingMore();
     void checkInitialAttachedProperties_data();
     void checkInitialAttachedProperties();
+    void checkNoAttachedObjectByDefault();
     void checkSpacingValues();
     void checkDelegateParent();
     void flick_data();
@@ -316,7 +317,7 @@ void tst_QQuickTableView::cleanupTestCase()
 
 QQuickTableViewAttached *tst_QQuickTableView::getAttachedObject(const QObject *object) const
 {
-    QObject *attachedObject = qmlAttachedPropertiesObject<QQuickTableView>(object);
+    QObject *attachedObject = qmlAttachedPropertiesObject<QQuickTableView>(object, false);
     return static_cast<QQuickTableViewAttached *>(attachedObject);
 }
 
@@ -1633,6 +1634,19 @@ void tst_QQuickTableView::checkInitialAttachedProperties()
         QCOMPARE(contextModelData, QStringLiteral("%1").arg(cell.y()));
         QCOMPARE(getAttachedObject(item)->view(), tableView);
     }
+}
+
+void tst_QQuickTableView::checkNoAttachedObjectByDefault()
+{
+    // Check that we don't create an attached object for every
+    // delegate, if the application is not using them.
+    LOAD_TABLEVIEW("tableviewimplicitsize.qml");
+    auto model = TestModelAsVariant(2, 2);
+    tableView->setModel(model);
+    WAIT_UNTIL_POLISHED;
+
+    for (auto fxItem : tableViewPrivate->loadedItems)
+        QVERIFY(!getAttachedObject(fxItem->item));
 }
 
 void tst_QQuickTableView::checkSpacingValues()

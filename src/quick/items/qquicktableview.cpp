@@ -2190,8 +2190,29 @@ void QQuickTableViewPrivate::setCallback(std::function<void (CallBackFlag)> func
 
 QQuickTableViewAttached *QQuickTableViewPrivate::getAttachedObject(const QObject *object) const
 {
-    QObject *attachedObject = qmlAttachedPropertiesObject<QQuickTableView>(object);
+    QObject *attachedObject = qmlAttachedPropertiesObject<QQuickTableView>(object, false);
     return static_cast<QQuickTableViewAttached *>(attachedObject);
+}
+
+QQuickTableViewAttached::QQuickTableViewAttached(QObject *parent)
+    : QObject(parent)
+{
+    QQuickItem *parentItem = qobject_cast<QQuickItem *>(parent);
+    if (!parentItem)
+        return;
+
+    // For a normal delegate, the 3rd parent should be the view (1:delegate, 2:contentItem,
+    // 3:TableView). For an edit delegate, the 4th. We don't search further than that, as
+    // you're not supposed to use attached objects on any other descendant.
+    for (int i = 0; i < 3; ++i) {
+        parentItem = parentItem->parentItem();
+        if (!parentItem)
+            return;
+        if (auto tableView = qobject_cast<QQuickTableView *>(parentItem)) {
+            setView(tableView);
+            return;
+        }
+    }
 }
 
 int QQuickTableViewPrivate::modelIndexAtCell(const QPoint &cell) const
@@ -4432,9 +4453,6 @@ void QQuickTableViewPrivate::initItemCallback(int modelIndex, QObject *object)
     setRequiredProperty(kRequiredProperty_selected, QVariant::fromValue(selected), modelIndex, object, true);
     setRequiredProperty(kRequiredProperty_editing, QVariant::fromValue(false), modelIndex, item, true);
     setRequiredProperty(kRequiredProperty_containsDrag, QVariant::fromValue(false), modelIndex, item, true);
-
-    if (auto attached = getAttachedObject(object))
-        attached->setView(q);
 }
 
 void QQuickTableViewPrivate::itemPooledCallback(int modelIndex, QObject *object)

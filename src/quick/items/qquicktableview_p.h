@@ -304,8 +304,7 @@ class Q_QUICK_EXPORT QQuickTableViewAttached : public QObject
     Q_PROPERTY(QQmlComponent *editDelegate READ editDelegate WRITE setEditDelegate NOTIFY editDelegateChanged FINAL)
 
 public:
-    QQuickTableViewAttached(QObject *parent)
-        : QObject(parent) {}
+    QQuickTableViewAttached(QObject *parent);
 
     QQuickTableView *view() const { return m_view; }
     void setView(QQuickTableView *newTableView) {

@@ -43,6 +43,10 @@ Item {
                 required property bool selected
                 required property bool editing
 
+                // Create an attached TableView object, so that we
+                // can check its values from the test.
+                property TableView dummy: TableView.view
+
                 Component.onCompleted: {
                     tableView.editItem = editRoot
                     tableView.editIndex = tableView.index(row, column)
