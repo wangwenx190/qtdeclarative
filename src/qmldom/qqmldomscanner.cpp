@@ -19,6 +19,10 @@ static void addLexToken(QList<Token> &tokens, int tokenKind, QQmlJS::Lexer &lexe
     switch (tokenKind) {
     case QQmlJSGrammar::T_DIVIDE_:
     case QQmlJSGrammar::T_DIVIDE_EQ:
+        if (lexer.state().currentChar.isSpace()) {
+            regexpMayFollow = false;
+            break;
+        }
         if (regexpMayFollow) {
             QQmlJS::Lexer::RegExpBodyPrefix prefix;
             if (tokenKind == QQmlJSGrammar::T_DIVIDE_)

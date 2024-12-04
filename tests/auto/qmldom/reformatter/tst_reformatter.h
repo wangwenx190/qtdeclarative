@@ -214,6 +214,14 @@ private slots:
             QTest::newRow("linebreakBasicFunction")
                     << QStringLiteral(u"linebreakFunction.qml")
                     << QStringLiteral(u"linebreakFunctionReformatted.qml") << lwOptions;
+            QTest::newRow("linebreakBinaryOp")
+                    << QStringLiteral(u"linebreakBinaryOp.qml")
+                    << QStringLiteral(u"linebreakBinaryOpReformattedWidth40.qml") << lwOptions;
+
+            lwOptions.maxLineLength = 60;
+            QTest::newRow("linebreakBinaryOp")
+                    << QStringLiteral(u"linebreakBinaryOp.qml")
+                    << QStringLiteral(u"linebreakBinaryOpReformattedWidth60.qml") << lwOptions;
         }
     }
 
