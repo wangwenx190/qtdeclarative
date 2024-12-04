@@ -184,7 +184,7 @@ void QQuickHandlerPoint::reset(const QVector<QQuickHandlerPoint> &points)
 
 /*!
     \readonly
-    \qmlproperty QPointF QtQuick::handlerPoint::position
+    \qmlproperty point QtQuick::handlerPoint::position
     \brief The position within the \c parent Item
 
     This is the position of the \l eventPoint relative to the bounds of
@@ -193,7 +193,7 @@ void QQuickHandlerPoint::reset(const QVector<QQuickHandlerPoint> &points)
 
 /*!
     \readonly
-    \qmlproperty QPointF QtQuick::handlerPoint::scenePosition
+    \qmlproperty point QtQuick::handlerPoint::scenePosition
     \brief The position within the scene
 
     This is the position of the \l eventPoint relative to the bounds of the Qt
@@ -202,7 +202,7 @@ void QQuickHandlerPoint::reset(const QVector<QQuickHandlerPoint> &points)
 
 /*!
     \readonly
-    \qmlproperty QPointF QtQuick::handlerPoint::pressPosition
+    \qmlproperty point QtQuick::handlerPoint::pressPosition
     \brief The pressed position within the \c parent Item
 
     This is the position at which this point was pressed, relative to the
@@ -211,7 +211,7 @@ void QQuickHandlerPoint::reset(const QVector<QQuickHandlerPoint> &points)
 
 /*!
     \readonly
-    \qmlproperty QPointF QtQuick::handlerPoint::scenePressPosition
+    \qmlproperty point QtQuick::handlerPoint::scenePressPosition
     \brief The pressed position within the scene
 
     This is the position at which this point was pressed, in the coordinate
@@ -220,7 +220,7 @@ void QQuickHandlerPoint::reset(const QVector<QQuickHandlerPoint> &points)
 
 /*!
     \readonly
-    \qmlproperty QPointF QtQuick::handlerPoint::sceneGrabPosition
+    \qmlproperty point QtQuick::handlerPoint::sceneGrabPosition
     \brief The grabbed position within the scene
 
     If this point has been grabbed by a Pointer Handler or an Item, it means
@@ -261,7 +261,7 @@ void QQuickHandlerPoint::reset(const QVector<QQuickHandlerPoint> &points)
 
 /*!
     \readonly
-    \qmlproperty qreal QtQuick::handlerPoint::rotation
+    \qmlproperty real QtQuick::handlerPoint::rotation
 
     This property holds the rotation angle of the stylus on a graphics tablet
     or the contact patch of a touchpoint on a touchscreen.
@@ -272,7 +272,7 @@ void QQuickHandlerPoint::reset(const QVector<QQuickHandlerPoint> &points)
 
 /*!
     \readonly
-    \qmlproperty qreal QtQuick::handlerPoint::pressure
+    \qmlproperty real QtQuick::handlerPoint::pressure
 
     This property tells how hard the user is pressing the stylus on a graphics
     tablet or the finger against a touchscreen, in the range from \c 0 (no
