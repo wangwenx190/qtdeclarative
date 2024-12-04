@@ -1546,13 +1546,14 @@ void QSGCurveProcessor::processStroke(const QQuadPath &strokePath,
     auto triangles = customTriangulator2(thePath, penWidth, joinStyle, capStyle, miterLimit);
 
     auto addCurveTriangle = [&](const QQuadPath::Element &element, const TriangleData &t) {
+        QSGCurveStrokeNode::TriangleFlags flags;
+        flags.setFlag(QSGCurveStrokeNode::TriangleFlag::Line, element.isLine());
         addTriangle(t.points,
                     { element.startPoint(), element.controlPoint(), element.endPoint() },
-                    t.normals,
-                    element.isLine());
+                    t.normals, flags);
     };
 
-    auto addBevelTriangle = [&](const TrianglePoints &p)
+    auto addBevelTriangle = [&](const TrianglePoints &p, QSGCurveStrokeNode::TriangleFlags flags)
     {
         QVector2D fp1 = p[0];
         QVector2D fp2 = p[2];
@@ -1574,12 +1575,13 @@ void QSGCurveProcessor::processStroke(const QQuadPath &strokePath,
         n[0] = (p[0] - p[1]).normalized();
         n[2] = (p[2] - p[1]).normalized();
 
-        addTriangle(p, { fp1, QVector2D(0.0f, 0.0f), fp2 }, n, true);
+        flags.setFlag(QSGCurveStrokeNode::TriangleFlag::Line);
+        addTriangle(p, { fp1, QVector2D(0.0f, 0.0f), fp2 }, n, flags);
     };
 
-    for (const auto &triangle : triangles) {
+    for (const auto &triangle : std::as_const(triangles)) {
         if (triangle.pathElementIndex < 0) {
-            addBevelTriangle(triangle.points);
+            addBevelTriangle(triangle.points, {});
             continue;
         }
         const auto &element = thePath.elementAt(triangle.pathElementIndex);

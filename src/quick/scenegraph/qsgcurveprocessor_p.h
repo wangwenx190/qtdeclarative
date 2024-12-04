@@ -17,6 +17,7 @@
 
 #include <QtQuick/qtquickexports.h>
 #include "util/qquadpath_p.h"
+#include "qsgcurvestrokenode_p.h"
 
 #include <QtCore/qloggingcategory.h>
 
@@ -34,7 +35,7 @@ public:
     typedef std::function<void(const std::array<QVector2D, 3> &,
                                const std::array<QVector2D, 3> &,
                                const std::array<QVector2D, 3> &,
-                               bool)> addStrokeTriangleCallback;
+                               QSGCurveStrokeNode::TriangleFlags)> addStrokeTriangleCallback;
 
     static void processFill(const QQuadPath &path,
                             Qt::FillRule fillRule,
