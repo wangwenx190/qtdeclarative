@@ -50,10 +50,7 @@ Return visitVariantAssociation(
     const QV4::Heap::VariantAssociationObject* association,
     Callable&& callable
 ) {
-    return visitVariantAssociation<Return>(
-        association,
-        std::forward<Callable>(callable),
-        std::forward<Callable>(callable));
+    return visitVariantAssociation<Return>(association, callable, callable);
 }
 
 template<typename Return, typename Callable>
@@ -61,10 +58,7 @@ Return visitVariantAssociation(
     QV4::Heap::VariantAssociationObject* association,
     Callable&& callable
 ) {
-    return visitVariantAssociation<Return>(
-        association,
-        std::forward<Callable>(callable),
-        std::forward<Callable>(callable));
+    return visitVariantAssociation<Return>(association, callable, callable);
 }
 
 static void mapPropertyKey(std::vector<QString>& mapping, const QString& key) {
