@@ -1071,7 +1071,7 @@ void QQmlJSCodeGenerator::generateVariantEqualityComparison(
 {
     // enumerations are ===-equal to their underlying type and they are stored as such.
     // Therefore, use the underlying type right away.
-    const auto contained = storableContent.isEnumeration()
+    const QQmlJSScope::ConstPtr contained = storableContent.isEnumeration()
               ? storableContent.storedType()
               : storableContent.containedType();
 
@@ -3466,11 +3466,11 @@ void QQmlJSCodeGenerator::generateEqualityOperation(
     const bool lhsIsOptional = m_typeResolver->isOptionalType(lhsContent);
     const bool rhsIsOptional = m_typeResolver->isOptionalType(rhsContent);
 
-    const auto rhsContained = rhsIsOptional
+    const QQmlJSScope::ConstPtr rhsContained = rhsIsOptional
             ? m_typeResolver->extractNonVoidFromOptionalType(rhsContent).containedType()
             : rhsContent.containedType();
 
-    const auto lhsContained = lhsIsOptional
+    const QQmlJSScope::ConstPtr lhsContained = lhsIsOptional
             ? m_typeResolver->extractNonVoidFromOptionalType(lhsContent).containedType()
             : lhsContent.containedType();
 
@@ -3967,7 +3967,7 @@ QString QQmlJSCodeGenerator::conversion(
     // If from is QJSPrimitiveValue and to contains a primitive we coerce using QJSPrimitiveValue
     if (from.isStoredIn(m_typeResolver->jsPrimitiveType()) && m_typeResolver->isPrimitive(to)) {
 
-        QString primitive = [&]() {
+        QString primitive = [&]() -> QString {
             if (contained == m_typeResolver->jsPrimitiveType())
                 return variable;
 

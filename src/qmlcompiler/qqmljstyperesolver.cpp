@@ -1648,7 +1648,7 @@ QQmlJSRegisterContent QQmlJSTypeResolver::valueType(QQmlJSRegisterContent list) 
 {
     QQmlJSScope::ConstPtr value;
 
-    auto valueType = [&](const QQmlJSScope::ConstPtr &scope) {
+    auto valueType = [&](const QQmlJSScope::ConstPtr &scope) -> QQmlJSScope::ConstPtr {
         if (scope->accessSemantics() == QQmlJSScope::AccessSemantics::Sequence)
             return scope->valueType();
 
