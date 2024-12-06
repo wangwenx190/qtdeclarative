@@ -28,7 +28,8 @@ QNetworkAccessManager *QQmlTypeLoaderThread::networkAccessManager() const
 {
     Q_ASSERT(isThisThread());
     if (!m_networkAccessManager) {
-        m_networkAccessManager = QQmlEnginePrivate::get(m_loader->engine())->createNetworkAccessManager(nullptr);
+        // TODO: We should be able to do this without the engine
+        m_networkAccessManager = QQmlEnginePrivate::get(m_loader->m_engine)->createNetworkAccessManager(nullptr);
         QObject::connect(thread(), &QThread::finished, m_networkAccessManager, &QObject::deleteLater);
         m_networkReplyProxy = new QQmlTypeLoaderNetworkReplyProxy(m_loader, threadObject());
         QObject::connect(thread(), &QThread::finished, m_networkReplyProxy, &QObject::deleteLater);
@@ -137,15 +138,19 @@ void QQmlTypeLoaderThread::callDownloadProgressChangedMain(const QQmlDataBlob::P
 void QQmlTypeLoaderThread::initializeExtensionMain(QQmlExtensionInterface *iface,
                                                 const char *uri)
 {
-    Q_ASSERT(m_loader->engine()->thread() == QThread::currentThread());
-    iface->initializeEngine(m_loader->engine(), uri);
+    // We can use m_engine because we're on the engine thread.
+    QQmlEngine *engine = m_loader->m_engine;
+    Q_ASSERT(engine->thread() == QThread::currentThread());
+    iface->initializeEngine(engine, uri);
 }
 
 void QQmlTypeLoaderThread::initializeEngineExtensionMain(QQmlEngineExtensionInterface *iface,
                                                 const char *uri)
 {
-    Q_ASSERT(m_loader->engine()->thread() == QThread::currentThread());
-    iface->initializeEngine(m_loader->engine(), uri);
+    // We can use m_engine because we're on the engine thread.
+    QQmlEngine *engine = m_loader->m_engine;
+    Q_ASSERT(engine->thread() == QThread::currentThread());
+    iface->initializeEngine(engine, uri);
 }
 
 void QQmlTypeLoaderThread::dropThread(const QQmlDataBlob::Ptr &b)

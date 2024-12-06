@@ -58,12 +58,14 @@ This enum describes the type of the data blob.
 Create a new QQmlDataBlob for \a url and of the provided \a type.
 */
 QQmlDataBlob::QQmlDataBlob(const QUrl &url, Type type, QQmlTypeLoader *manager)
-: m_typeLoader(manager), m_type(type), m_url(url), m_finalUrl(url), m_redirectCount(0),
-  m_inCallback(false), m_isDone(false)
+    : m_typeLoader(manager)
+    , m_type(type)
+    , m_url(manager->interceptUrl(url, (QQmlAbstractUrlInterceptor::DataType)type))
+    , m_finalUrl(url)
+    , m_redirectCount(0)
+    , m_inCallback(false)
+    , m_isDone(false)
 {
-    //Set here because we need to get the engine from the manager
-    if (const QQmlEngine *qmlEngine = m_typeLoader->engine())
-        m_url = qmlEngine->interceptUrl(m_url, (QQmlAbstractUrlInterceptor::DataType)m_type);
 }
 
 /*!  \internal */
@@ -259,6 +261,7 @@ bool QQmlDataBlob::isTypeLoaderThreadRunning() const
 
 bool QQmlDataBlob::isEngineThread() const
 {
+    // TODO: We should have a way to determine the thread without touching the engine itself.
     return m_typeLoader
             && m_typeLoader->m_engine
             && m_typeLoader->m_engine->thread()->isCurrentThread();

@@ -261,13 +261,11 @@ QQmlError QQmlTypeData::createTypeAndPropertyCaches(
     m_compiledData->resolvedTypes = resolvedTypeCache;
     m_compiledData->inlineComponentData = m_inlineComponentData;
 
-    QQmlEnginePrivate * const engine = QQmlEnginePrivate::get(typeLoader()->engine());
-
     QQmlPendingGroupPropertyBindings pendingGroupPropertyBindings;
 
     {
         QQmlPropertyCacheCreator<QV4::CompiledData::CompilationUnit> propertyCacheCreator(
-                &m_compiledData->propertyCaches, &pendingGroupPropertyBindings, engine,
+                &m_compiledData->propertyCaches, &pendingGroupPropertyBindings, m_typeLoader,
                 m_compiledData.data(), m_importCache.data(), typeClassName());
 
         QQmlError error = propertyCacheCreator.verifyNoICCycle();
@@ -281,7 +279,7 @@ QQmlError QQmlTypeData::createTypeAndPropertyCaches(
                 return result.error;
             } else {
                 QQmlComponentAndAliasResolver resolver(
-                            m_compiledData.data(), engine, &m_compiledData->propertyCaches);
+                        m_compiledData.data(), &m_compiledData->propertyCaches);
                 if (const QQmlError error = resolver.resolve(result.processedRoot);
                         error.isValid()) {
                     return error;
@@ -872,9 +870,8 @@ void QQmlTypeData::compile(const QQmlRefPointer<QQmlTypeNameCache> &typeNameCach
             && (m_document->javaScriptCompilationUnit->unitData()->flags
                 & QV4::CompiledData::Unit::PendingTypeCompilation);
 
-    QQmlEnginePrivate * const enginePrivate = QQmlEnginePrivate::get(typeLoader()->engine());
     QQmlTypeCompiler compiler(
-            enginePrivate, this, m_document.data(), resolvedTypeCache, dependencyHasher);
+            typeLoader(), this, m_document.data(), resolvedTypeCache, dependencyHasher);
     auto compilationUnit = compiler.compile();
     if (!compilationUnit) {
         qDeleteAll(*resolvedTypeCache);

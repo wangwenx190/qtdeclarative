@@ -384,23 +384,16 @@ void QQmlTypeLoader::networkReplyProgress(QNetworkReply *reply,
 }
 #endif // qml_network
 
-/*!
-Return the QQmlEngine associated with this loader
-*/
-QQmlEngine *QQmlTypeLoader::engine() const
-{
-    return m_engine;
-}
-
 /*! \internal
 Call the initializeEngine() method on \a iface.  Used by QQmlImportDatabase to ensure it
 gets called in the correct thread.
 */
 template<class Interface>
-void doInitializeEngine(Interface *iface, QQmlTypeLoaderThread *thread, QQmlEngine *engine,
-                      const char *uri)
+void doInitializeEngine(
+        Interface *iface, QQmlTypeLoaderThread *thread, QQmlEngine *engine, const char *uri)
 {
     // Can be called from either thread
+    // Must not touch engine if called from type loader thread
 
     if (thread && thread->isThisThread()) {
         thread->initializeEngine(iface, uri);
@@ -413,13 +406,13 @@ void doInitializeEngine(Interface *iface, QQmlTypeLoaderThread *thread, QQmlEngi
 void QQmlTypeLoader::initializeEngine(QQmlEngineExtensionInterface *iface, const char *uri)
 {
     // Can be called from either thread
-    doInitializeEngine(iface, m_thread, engine(), uri);
+    doInitializeEngine(iface, m_thread, m_engine, uri);
 }
 
 void QQmlTypeLoader::initializeEngine(QQmlExtensionInterface *iface, const char *uri)
 {
     // Can be called from either thread
-    doInitializeEngine(iface, m_thread, engine(), uri);
+    doInitializeEngine(iface, m_thread, m_engine, uri);
 }
 
 void QQmlTypeLoader::setData(const QQmlDataBlob::Ptr &blob, const QByteArray &data)
@@ -1008,7 +1001,7 @@ QQmlTypeLoader::~QQmlTypeLoader()
 
 QQmlImportDatabase *QQmlTypeLoader::importDatabase() const
 {
-    return &QQmlEnginePrivate::get(engine())->importDatabase;
+    return &QQmlEnginePrivate::get(m_engine)->importDatabase;
 }
 
 QUrl QQmlTypeLoader::normalize(const QUrl &unNormalizedUrl)

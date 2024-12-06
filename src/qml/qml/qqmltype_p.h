@@ -108,8 +108,11 @@ public:
     QTypeRevision metaObjectRevision() const;
     bool containsRevisionedAttributes() const;
 
-    QQmlAttachedPropertiesFunc attachedPropertiesFunction(QQmlEnginePrivate *engine) const;
-    const QMetaObject *attachedPropertiesType(QQmlEnginePrivate *engine) const;
+    QQmlAttachedPropertiesFunc attachedPropertiesFunction(QQmlEnginePrivate *enginePrivate) const;
+    QQmlAttachedPropertiesFunc attachedPropertiesFunction(QQmlTypeLoader *typeLoader) const;
+
+    const QMetaObject *attachedPropertiesType(QQmlEnginePrivate *enginePrivate) const;
+    const QMetaObject *attachedPropertiesType(QQmlTypeLoader *typeLoader) const;
 
     int parserStatusCast() const;
     const char *interfaceIId() const;

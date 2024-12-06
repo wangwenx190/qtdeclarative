@@ -25,11 +25,11 @@ DEFINE_BOOL_CONFIG_OPTION(
 Q_LOGGING_CATEGORY(lcQmlTypeCompiler, "qt.qml.typecompiler");
 
 QQmlTypeCompiler::QQmlTypeCompiler(
-        QQmlEnginePrivate *engine, QQmlTypeData *typeData, QmlIR::Document *parsedQML,
+        QQmlTypeLoader *typeLoader, QQmlTypeData *typeData, QmlIR::Document *parsedQML,
         QV4::CompiledData::ResolvedTypeReferenceMap *resolvedTypeCache,
         const QV4::CompiledData::DependentTypesHasher &dependencyHasher)
     : resolvedTypes(resolvedTypeCache)
-    , engine(engine)
+    , loader(typeLoader)
     , dependencyHasher(dependencyHasher)
     , document(parsedQML)
     , typeData(typeData)
@@ -51,8 +51,9 @@ QQmlRefPointer<QV4::CompiledData::CompilationUnit> QQmlTypeCompiler::compile()
 
 
     {
-        QQmlPropertyCacheCreator<QQmlTypeCompiler> propertyCacheBuilder(&m_propertyCaches, &pendingGroupPropertyBindings,
-                                                                        engine, this, imports(), typeData->typeClassName());
+        QQmlPropertyCacheCreator<QQmlTypeCompiler> propertyCacheBuilder(
+                &m_propertyCaches, &pendingGroupPropertyBindings,
+                loader, this, imports(), typeData->typeClassName());
         QQmlError cycleError = propertyCacheBuilder.verifyNoICCycle();
         if (cycleError.isValid()) {
             recordError(cycleError);
@@ -68,7 +69,7 @@ QQmlRefPointer<QV4::CompiledData::CompilationUnit> QQmlTypeCompiler::compile()
             } else {
                 // Resolve component boundaries and aliases
 
-                QQmlComponentAndAliasResolver resolver(this, enginePrivate(), &m_propertyCaches);
+                QQmlComponentAndAliasResolver resolver(this, &m_propertyCaches);
                 if (QQmlError error = resolver.resolve(result.processedRoot); error.isValid()) {
                     recordError(error);
                     return nullptr;
@@ -265,7 +266,7 @@ QQmlCompilePass::QQmlCompilePass(QQmlTypeCompiler *typeCompiler)
 
 SignalHandlerResolver::SignalHandlerResolver(QQmlTypeCompiler *typeCompiler)
     : QQmlCompilePass(typeCompiler)
-    , enginePrivate(typeCompiler->enginePrivate())
+    , typeLoader(typeCompiler->typeLoader())
     , qmlObjects(*typeCompiler->qmlObjects())
     , imports(typeCompiler->imports())
     , customParsers(typeCompiler->customParserCache())
@@ -306,13 +307,10 @@ bool SignalHandlerResolver::resolveSignalHandlerExpressions(
             const QmlIR::Object *attachedObj = qmlObjects.at(binding->value.objectIndex);
             auto *typeRef = resolvedType(binding->propertyNameIndex);
             QQmlType type = typeRef ? typeRef->type() : QQmlType();
-            if (!type.isValid()) {
-                imports->resolveType(
-                        QQmlTypeLoader::get(enginePrivate), bindingPropertyName, &type, nullptr,
-                        nullptr);
-            }
+            if (!type.isValid())
+                imports->resolveType(typeLoader, bindingPropertyName, &type, nullptr, nullptr);
 
-            const QMetaObject *attachedType = type.attachedPropertiesType(enginePrivate);
+            const QMetaObject *attachedType = type.attachedPropertiesType(typeLoader);
             if (!attachedType)
                 COMPILE_EXCEPTION(binding, tr("Non-existent attached object"));
             QQmlPropertyCache::ConstPtr cache = QQmlMetaType::propertyCache(attachedType);
@@ -544,8 +542,7 @@ bool QQmlEnumTypeResolver::tryQualifiedEnumAssignment(
         return true;
     }
     QQmlType type;
-    imports->resolveType(
-            QQmlTypeLoader::get(compiler->enginePrivate()), typeName, &type, nullptr, nullptr);
+    imports->resolveType(compiler->typeLoader(), typeName, &type, nullptr, nullptr);
 
     if (!type.isValid() && !isQtObject)
         return true;

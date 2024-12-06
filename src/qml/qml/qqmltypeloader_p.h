@@ -185,7 +185,6 @@ public:
     void loadWithCachedUnit(const QQmlDataBlob::Ptr &blob, const QQmlPrivate::CachedQmlUnit *unit, Mode mode = PreferSynchronous);
     void drop(const QQmlDataBlob::Ptr &blob);
 
-    QQmlEngine *engine() const;
     void initializeEngine(QQmlEngineExtensionInterface *, const char *);
     void initializeEngine(QQmlExtensionInterface *, const char *);
     void invalidate();

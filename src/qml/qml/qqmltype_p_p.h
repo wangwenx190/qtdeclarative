@@ -74,9 +74,10 @@ public:
         }
     }
 
-    const QQmlTypePrivate *attachedPropertiesBase(QQmlEnginePrivate *engine) const
+    const QQmlTypePrivate *attachedPropertiesBase(QQmlTypeLoader *typeLoader) const
     {
-        for (const QQmlTypePrivate *d = this; d; d = d->resolveCompositeBaseType(engine).d.data()) {
+        for (const QQmlTypePrivate *d = this; d;
+             d = d->resolveCompositeBaseType(typeLoader).d.data()) {
             if (d->regType == QQmlType::CppType)
                 return d->extraData.cppTypeData->attachedPropertiesType ? d : nullptr;
 
@@ -96,7 +97,7 @@ public:
         return regType == QQmlType::CppType && !(typeId.flags() & QMetaType::PointerToQObject);
     }
 
-    QQmlType resolveCompositeBaseType(QQmlEnginePrivate *engine) const;
+    QQmlType resolveCompositeBaseType(QQmlTypeLoader *typeLoader) const;
     QQmlPropertyCache::ConstPtr compositePropertyCache(QQmlTypeLoader *typeLoader) const;
 
     struct QQmlCppTypeData

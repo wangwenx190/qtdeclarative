@@ -47,7 +47,6 @@ public:
 
     QQmlComponentAndAliasResolver(
             ObjectContainer *compiler,
-            QQmlEnginePrivate *enginePrivate,
             QQmlPropertyCacheVector *propertyCaches);
 
     [[nodiscard]] QQmlError resolve(int root = 0);
@@ -114,7 +113,6 @@ private:
     }
 
     ObjectContainer *m_compiler = nullptr;
-    QQmlEnginePrivate *m_enginePrivate = nullptr;
 
     // Implicit component insertion may have added objects and thus we also need
     // to extend the symmetric propertyCaches. Therefore, non-const propertyCaches.
@@ -130,10 +128,8 @@ private:
 template<typename ObjectContainer>
 QQmlComponentAndAliasResolver<ObjectContainer>::QQmlComponentAndAliasResolver(
         ObjectContainer *compiler,
-        QQmlEnginePrivate *enginePrivate,
         QQmlPropertyCacheVector *propertyCaches)
     : m_compiler(compiler)
-    , m_enginePrivate(enginePrivate)
     , m_propertyCaches(propertyCaches)
 {
 }
@@ -445,7 +441,7 @@ QQmlError QQmlComponentAndAliasResolver<ObjectContainer>::resolveAliases(int com
 
             if (result == AllAliasesResolved) {
                 QQmlError error = aliasCacheCreator.appendAliasesToPropertyCache(
-                            component, objectIndex, m_enginePrivate);
+                            component, objectIndex);
                 if (error.isValid())
                     return error;
                 atLeastOneAliasResolved = true;

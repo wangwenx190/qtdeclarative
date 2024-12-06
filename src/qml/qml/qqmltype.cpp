@@ -138,12 +138,12 @@ bool QQmlType::availableInVersion(const QHashedStringRef &module, QTypeRevision 
     return availableInVersion(version);
 }
 
-QQmlType QQmlTypePrivate::resolveCompositeBaseType(QQmlEnginePrivate *engine) const
+QQmlType QQmlTypePrivate::resolveCompositeBaseType(QQmlTypeLoader *typeLoader) const
 {
     Q_ASSERT(isComposite());
-    if (!engine)
+    if (!typeLoader)
         return QQmlType();
-    QQmlRefPointer<QQmlTypeData> td(engine->typeLoader.getType(sourceUrl()));
+    QQmlRefPointer<QQmlTypeData> td(typeLoader->getType(sourceUrl()));
     if (td.isNull() || !td->isComplete())
         return QQmlType();
     QV4::CompiledData::CompilationUnit *compilationUnit = td->compilationUnit();
@@ -706,16 +706,27 @@ QTypeRevision QQmlType::metaObjectRevision() const
     return d ? d->revision : QTypeRevision();
 }
 
-QQmlAttachedPropertiesFunc QQmlType::attachedPropertiesFunction(QQmlEnginePrivate *engine) const
+QQmlAttachedPropertiesFunc QQmlType::attachedPropertiesFunction(
+        QQmlEnginePrivate *enginePrivate) const
 {
-    if (const QQmlTypePrivate *base = d ? d->attachedPropertiesBase(engine) : nullptr)
+    return attachedPropertiesFunction(&enginePrivate->typeLoader);
+}
+
+QQmlAttachedPropertiesFunc QQmlType::attachedPropertiesFunction(QQmlTypeLoader *typeLoader) const
+{
+    if (const QQmlTypePrivate *base = d ? d->attachedPropertiesBase(typeLoader) : nullptr)
         return base->extraData.cppTypeData->attachedPropertiesFunc;
     return nullptr;
 }
 
-const QMetaObject *QQmlType::attachedPropertiesType(QQmlEnginePrivate *engine) const
+const QMetaObject *QQmlType::attachedPropertiesType(QQmlEnginePrivate *enginePrivate) const
 {
-    if (const QQmlTypePrivate *base = d ? d->attachedPropertiesBase(engine) : nullptr)
+    return attachedPropertiesType(&enginePrivate->typeLoader);
+}
+
+const QMetaObject *QQmlType::attachedPropertiesType(QQmlTypeLoader *typeLoader) const
+{
+    if (const QQmlTypePrivate *base = d ? d->attachedPropertiesBase(typeLoader) : nullptr)
         return base->extraData.cppTypeData->attachedPropertiesType;
     return nullptr;
 }
