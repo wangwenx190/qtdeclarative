@@ -1380,7 +1380,7 @@ QObject *QtObject::createQmlObject(const QString &qml, QObject *parent, const QU
     QQmlComponent component(engine);
     QQmlComponentPrivate *componentPrivate = QQmlComponentPrivate::get(&component);
     componentPrivate->fromTypeData(typeData);
-    componentPrivate->progress = 1.0;
+    componentPrivate->setProgress(1.0);
 
     Scope scope(v4Engine());
     if (component.isError()) {
@@ -1528,7 +1528,7 @@ QQmlComponent *QtObject::createComponent(const QUrl &url, QQmlComponent::Compila
         return nullptr;
 
     QQmlComponent *c = new QQmlComponent(engine, context->resolvedUrl(url), mode, parent);
-    QQmlComponentPrivate::get(c)->creationContext = effectiveContext;
+    QQmlComponentPrivate::get(c)->setCreationContext(std::move(effectiveContext));
     QQmlData::get(c, true)->explicitIndestructibleSet = false;
     QQmlData::get(c)->indestructible = false;
     return c;
@@ -1563,7 +1563,7 @@ QQmlComponent *QtObject::createComponent(const QString &moduleUri, const QString
         v4Engine()->throwTypeError(
                     QStringLiteral("Invalid arguments; did you swap mode and parent"));
     }
-    QQmlComponentPrivate::get(c)->creationContext = effectiveContext;
+    QQmlComponentPrivate::get(c)->setCreationContext(std::move(effectiveContext));
     QQmlData::get(c, true)->explicitIndestructibleSet = false;
     QQmlData::get(c)->indestructible = false;
     return c;

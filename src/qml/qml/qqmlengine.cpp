@@ -1895,7 +1895,7 @@ QJSValue QQmlEnginePrivate::singletonInstance<QJSValue>(const QQmlType &type)
         }
         QObject *o = component.beginCreate(q->rootContext());
         auto *compPriv = QQmlComponentPrivate::get(&component);
-        if (compPriv->state.hasUnsetRequiredProperties()) {
+        if (compPriv->hasUnsetRequiredProperties()) {
             /* We would only get the errors from the component after (complete)Create.
                 We can't call create, as we need to convertAndInsert before completeCreate (otherwise
                 tst_qqmllanguage::compositeSingletonCircular fails).
@@ -1903,7 +1903,7 @@ QJSValue QQmlEnginePrivate::singletonInstance<QJSValue>(const QQmlType &type)
                 So create the unset required component errors manually.
             */
             delete o;
-            const auto requiredProperties = compPriv->state.requiredProperties();
+            const auto requiredProperties = compPriv->requiredProperties();
             QList<QQmlError> errors (requiredProperties->size());
             for (const auto &reqProp: *requiredProperties)
                 errors.push_back(QQmlComponentPrivate::unsetRequiredPropertyToQQmlError(reqProp));

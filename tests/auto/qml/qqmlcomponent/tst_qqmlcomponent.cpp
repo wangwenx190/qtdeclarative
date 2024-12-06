@@ -1547,8 +1547,8 @@ void tst_qqmlcomponent::loadFromQrc()
 
     QQmlComponentPrivate *p = QQmlComponentPrivate::get(&component);
     QVERIFY(p);
-    QVERIFY(p->compilationUnit);
-    QVERIFY(p->compilationUnit->baseCompilationUnit()->aotCompiledFunctions);
+    QVERIFY(p->compilationUnit());
+    QVERIFY(p->compilationUnit()->baseCompilationUnit()->aotCompiledFunctions);
 }
 
 void tst_qqmlcomponent::removeBinding()

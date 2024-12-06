@@ -305,7 +305,7 @@ public:
 
         if (component.isReady()) {
             QQmlRefPointer<QV4::ExecutableCompilationUnit> rootCompilationUnit
-                    = QQmlComponentPrivate::get(&component)->compilationUnit;
+                    = QQmlComponentPrivate::get(&component)->compilationUnit();
             TestCaseEnumerationResult result = enumerateTestCases(
                     rootCompilationUnit->baseCompilationUnit().data());
             m_testCases = result.testCases + result.finalizedPartialTestCases();

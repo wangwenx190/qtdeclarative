@@ -120,7 +120,7 @@ void QQmlApplicationEnginePrivate::startLoad(QAnyStringView uri, QAnyStringView 
     auto *componentPriv = QQmlComponentPrivate::get(c);
     componentPriv->prepareLoadFromModule(uri, typeName, QQmlTypeLoader::Synchronous);
 
-    const QQmlType type = componentPriv->loadHelper->type();
+    const QQmlType type = componentPriv->loadHelperType();
 
     if (type.sourceUrl().isValid()) {
         const auto qmlDirData = typeLoader.getQmldir(type.sourceUrl());

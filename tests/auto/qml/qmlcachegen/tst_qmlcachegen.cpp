@@ -224,7 +224,7 @@ void tst_qmlcachegen::loadGeneratedFile()
 
     auto componentPrivate = QQmlComponentPrivate::get(&component);
     QVERIFY(componentPrivate);
-    auto compilationUnit = componentPrivate->compilationUnit;
+    auto compilationUnit = componentPrivate->compilationUnit();
     QVERIFY(compilationUnit);
     auto unitData = compilationUnit->unitData();
     QVERIFY(unitData);
@@ -342,7 +342,7 @@ void tst_qmlcachegen::signalHandlerParameters()
     {
         auto componentPrivate = QQmlComponentPrivate::get(&component);
         QVERIFY(componentPrivate);
-        auto compilationUnit = componentPrivate->compilationUnit;
+        auto compilationUnit = componentPrivate->compilationUnit();
         QVERIFY(compilationUnit);
         QVERIFY(compilationUnit->unitData());
 
@@ -641,7 +641,7 @@ void tst_qmlcachegen::qrcScriptImport()
 
     auto componentPrivate = QQmlComponentPrivate::get(&component);
     QVERIFY(componentPrivate);
-    auto compilationUnit = componentPrivate->compilationUnit;
+    auto compilationUnit = componentPrivate->compilationUnit();
     QVERIFY(compilationUnit);
     auto unitData = compilationUnit->unitData();
     QVERIFY(unitData);
@@ -722,7 +722,7 @@ void tst_qmlcachegen::moduleScriptImport()
     {
         auto componentPrivate = QQmlComponentPrivate::get(&component);
         QVERIFY(componentPrivate);
-        auto compilationUnit = componentPrivate->compilationUnit->dependentScriptsPtr()
+        auto compilationUnit = componentPrivate->compilationUnit()->dependentScriptsPtr()
                                        ->first()->compilationUnit();
         QVERIFY(compilationUnit);
         auto unitData = compilationUnit->unitData();

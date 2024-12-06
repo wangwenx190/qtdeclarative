@@ -1835,13 +1835,12 @@ bool QQmlObjectCreator::populateInstance(int index, QObject *instance, QObject *
 /*!
     \internal
 */
-QQmlComponent *QQmlObjectCreator::createComponent(QQmlEngine *engine,
-                                                  QV4::ExecutableCompilationUnit *compilationUnit,
-                                                  int index, QObject *parent,
-                                                  const QQmlRefPointer<QQmlContextData> &context)
+QQmlComponent *QQmlObjectCreator::createComponent(
+        QQmlEngine *engine, QV4::ExecutableCompilationUnit *compilationUnit, int index,
+        QObject *parent, const QQmlRefPointer<QQmlContextData> &context)
 {
     QQmlComponent *component = new QQmlComponent(engine, compilationUnit, index, parent);
-    QQmlComponentPrivate::get(component)->creationContext = context;
+    QQmlComponentPrivate::get(component)->setCreationContext(context);
     QQmlData::get(component, /*create*/ true);
     return component;
 }

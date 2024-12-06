@@ -169,12 +169,11 @@ public:
     RequiredProperties *requiredProperties() {return &sharedState->requiredProperties;}
     bool componentHadTopLevelRequiredProperties() const {return sharedState->hadTopLevelRequiredProperties;}
 
-    static QQmlComponent *createComponent(QQmlEngine *engine,
-                                          QV4::ExecutableCompilationUnit *compilationUnit,
-                                          int index, QObject *parent,
-                                          const QQmlRefPointer<QQmlContextData> &context);
+    static QQmlComponent *createComponent(
+            QQmlEngine *engine, QV4::ExecutableCompilationUnit *compilationUnit, int index,
+            QObject *parent, const QQmlRefPointer<QQmlContextData> &context);
 
-    void removePendingBinding(QObject *target, int propertyIndex)
+    void removePendingBinding(QObject *target, int propertyIndex) const
     {
         QList<DeferredQPropertyBinding> &pendingBindings = sharedState.data()->allQPropertyBindings;
         pendingBindings.removeIf([&](const DeferredQPropertyBinding &deferred) {

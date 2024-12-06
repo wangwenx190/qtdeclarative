@@ -811,7 +811,7 @@ void tst_qqmljsscope::compilationUnitsAreCompatible()
     QVERIFY2(root, qPrintable(component.errorString()));
     QQmlComponentPrivate *cPriv = QQmlComponentPrivate::get(&component);
     QVERIFY(cPriv);
-    auto unit = cPriv->compilationUnit;
+    auto unit = cPriv->compilationUnit();
     QVERIFY(unit);
     QVERIFY(unit->unitData());
     getRuntimeInfoFromCompilationUnit(unit->unitData(), componentFunctions);

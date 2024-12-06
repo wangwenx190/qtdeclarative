@@ -5902,7 +5902,7 @@ void tst_qqmllanguage::selfReference()
     QVERIFY(!o.isNull());
 
     QQmlComponentPrivate *componentPrivate = QQmlComponentPrivate::get(&component);
-    auto compilationUnit = componentPrivate->compilationUnit;
+    auto compilationUnit = componentPrivate->compilationUnit();
     QVERIFY(compilationUnit);
 
     const QMetaObject *metaObject = o->metaObject();
