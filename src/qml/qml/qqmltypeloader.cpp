@@ -523,7 +523,7 @@ bool QQmlTypeLoader::Blob::fetchQmldir(
         const QUrl &url, const QQmlTypeLoader::Blob::PendingImportPtr &import, int priority,
         QList<QQmlError> *errors)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     QQmlRefPointer<QQmlQmldirData> data = typeLoader()->getQmldir(url);
 
@@ -551,7 +551,7 @@ void QQmlTypeLoader::Blob::importQmldirScripts(
         const QQmlTypeLoader::Blob::PendingImportPtr &import,
         const QQmlTypeLoaderQmldirContent &qmldir, const QUrl &qmldirUrl)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     const auto qmldirScripts = qmldir.scripts();
     for (const QQmlDirParser::Script &script : qmldirScripts) {
@@ -569,7 +569,7 @@ void postProcessQmldir(
         const QQmlTypeLoader::Blob::PendingImportPtr &import, const QString &qmldirFilePath,
         const URL &qmldirUrl)
 {
-    Q_ASSERT(self->isTypeLoaderThread());
+    self->assertTypeLoaderThread();
 
     const QQmlTypeLoaderQmldirContent qmldir = self->typeLoader()->qmldirContent(qmldirFilePath);
     if (!import->qualifier.isEmpty())
@@ -591,7 +591,7 @@ bool QQmlTypeLoader::Blob::updateQmldir(const QQmlRefPointer<QQmlQmldirData> &da
 {
     // TODO: Shouldn't this lock?
 
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     QString qmldirIdentifier = data->urlString();
     QString qmldirUrl = qmldirIdentifier.left(qmldirIdentifier.lastIndexOf(QLatin1Char('/')) + 1);
@@ -621,7 +621,7 @@ bool QQmlTypeLoader::Blob::updateQmldir(const QQmlRefPointer<QQmlQmldirData> &da
 
 bool QQmlTypeLoader::Blob::addScriptImport(const QQmlTypeLoader::Blob::PendingImportPtr &import)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
     const QUrl url(import->uri);
     QQmlTypeLoader *loader = typeLoader();
     QQmlRefPointer<QQmlScriptBlob> blob = loader->getScript(finalUrl().resolved(url), url);
@@ -632,7 +632,7 @@ bool QQmlTypeLoader::Blob::addScriptImport(const QQmlTypeLoader::Blob::PendingIm
 
 bool QQmlTypeLoader::Blob::addFileImport(const QQmlTypeLoader::Blob::PendingImportPtr &import, QList<QQmlError> *errors)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
     QQmlImports::ImportFlags flags;
 
     QUrl importUrl(import->uri);
@@ -693,7 +693,7 @@ static void addDependencyImportError(
 
 bool QQmlTypeLoader::Blob::addLibraryImport(const QQmlTypeLoader::Blob::PendingImportPtr &import, QList<QQmlError> *errors)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
     QQmlImportDatabase *importDatabase = typeLoader()->importDatabase();
 
     const QQmlImportDatabase::LocalQmldirSearchLocation searchMode =
@@ -812,14 +812,14 @@ bool QQmlTypeLoader::Blob::addLibraryImport(const QQmlTypeLoader::Blob::PendingI
 bool QQmlTypeLoader::Blob::addImport(const QV4::CompiledData::Import *import,
                                      QQmlImports::ImportFlags flags, QList<QQmlError> *errors)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
     return addImport(std::make_shared<PendingImport>(this, import, flags), errors);
 }
 
 bool QQmlTypeLoader::Blob::addImport(
         const QQmlTypeLoader::Blob::PendingImportPtr &import, QList<QQmlError> *errors)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     Q_ASSERT(errors);
 
@@ -840,7 +840,7 @@ bool QQmlTypeLoader::Blob::addImport(
 
 void QQmlTypeLoader::Blob::dependencyComplete(const QQmlDataBlob::Ptr &blob)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     if (blob->type() == QQmlDataBlob::QmldirFile) {
         QQmlQmldirData *data = static_cast<QQmlQmldirData *>(blob.data());
@@ -863,7 +863,7 @@ bool QQmlTypeLoader::Blob::loadDependentImports(
         QTypeRevision version, quint16 precedence, QQmlImports::ImportFlags flags,
         QList<QQmlError> *errors)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     for (const auto &import : imports) {
         if (import.flags & QQmlDirParser::Import::Optional)
@@ -900,7 +900,7 @@ bool QQmlTypeLoader::Blob::loadImportDependencies(
         const QQmlTypeLoader::Blob::PendingImportPtr &currentImport, const QString &qmldirUri,
         QQmlImports::ImportFlags flags, QList<QQmlError> *errors)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     QList<QQmlDirParser::Import> implicitImports
             = QQmlMetaType::moduleImports(currentImport->uri, currentImport->version);
@@ -968,7 +968,7 @@ QQmlMetaType::CacheMode QQmlTypeLoader::Blob::aotCacheMode() const
 
 bool QQmlTypeLoader::Blob::qmldirDataAvailable(const QQmlRefPointer<QQmlQmldirData> &data, QList<QQmlError> *errors)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
     return data->processImports(this, [&](const PendingImportPtr &import) {
         return updateQmldir(data, import, errors);
     });

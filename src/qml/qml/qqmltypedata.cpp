@@ -57,14 +57,14 @@ QV4::CompiledData::CompilationUnit *QQmlTypeData::compilationUnit() const
 
 void QQmlTypeData::registerCallback(TypeDataCallback *callback)
 {
-    Q_ASSERT(isEngineThread());
+    assertEngineThread();
     Q_ASSERT(!m_callbacks.contains(callback));
     m_callbacks.append(callback);
 }
 
 void QQmlTypeData::unregisterCallback(TypeDataCallback *callback)
 {
-    Q_ASSERT(isEngineThread());
+    assertEngineThread();
     Q_ASSERT(m_callbacks.contains(callback));
     m_callbacks.removeOne(callback);
     Q_ASSERT(!m_callbacks.contains(callback));
@@ -79,7 +79,7 @@ QQmlType QQmlTypeData::qmlType(const QString &inlineComponentName) const
 
 bool QQmlTypeData::tryLoadFromDiskCache()
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     if (!readCacheFile())
         return false;
@@ -103,7 +103,7 @@ bool QQmlTypeData::tryLoadFromDiskCache()
 
 bool QQmlTypeData::loadFromDiskCache(const QQmlRefPointer<QV4::CompiledData::CompilationUnit> &unit)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     m_compiledData = unit;
 
@@ -254,7 +254,7 @@ QQmlError QQmlTypeData::createTypeAndPropertyCaches(
         const QQmlRefPointer<QQmlTypeNameCache> &typeNameCache,
         const QV4::CompiledData::ResolvedTypeReferenceMap &resolvedTypeCache)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     Q_ASSERT(m_compiledData);
     m_compiledData->typeNameCache = typeNameCache;
@@ -344,7 +344,7 @@ void setupICs(
 template<typename Container>
 void QQmlTypeData::setCompileUnit(const Container &container)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     for (int i = 0; i != container->objectCount(); ++i) {
         auto const root = container->objectAt(i);
@@ -364,7 +364,7 @@ void QQmlTypeData::setCompileUnit(const Container &container)
 
 void QQmlTypeData::done()
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     auto cleanup = qScopeGuard([this]{
         m_backupSourceCode = SourceCodeData();
@@ -605,7 +605,7 @@ void QQmlTypeData::done()
 
 void QQmlTypeData::completed()
 {
-    Q_ASSERT(isEngineThread());
+    assertEngineThread();
     // Notify callbacks
     while (!m_callbacks.isEmpty()) {
         TypeDataCallback *callback = m_callbacks.takeFirst();
@@ -615,7 +615,7 @@ void QQmlTypeData::completed()
 
 bool QQmlTypeData::loadImplicitImport()
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     m_implicitImportLoaded = true; // Even if we hit an error, count as loaded (we'd just keep hitting the error)
 
@@ -652,7 +652,7 @@ bool QQmlTypeData::loadImplicitImport()
 
 void QQmlTypeData::dataReceived(const SourceCodeData &data)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     m_backupSourceCode = data;
 
@@ -680,7 +680,7 @@ void QQmlTypeData::dataReceived(const SourceCodeData &data)
 
 void QQmlTypeData::initializeFromCachedUnit(const QQmlPrivate::CachedQmlUnit *unit)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     if (auto cu = QQmlMetaType::obtainCompilationUnit(finalUrl())) {
         if (loadFromDiskCache(cu))
@@ -701,7 +701,7 @@ void QQmlTypeData::initializeFromCachedUnit(const QQmlPrivate::CachedQmlUnit *un
 
 bool QQmlTypeData::loadFromSource()
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     m_document.reset(new QmlIR::Document(isDebugging()));
     m_document->jsModule.sourceTimeStamp = m_backupSourceCode.sourceTimeStamp();
@@ -733,7 +733,7 @@ bool QQmlTypeData::loadFromSource()
 
 void QQmlTypeData::restoreIR(const QQmlRefPointer<QV4::CompiledData::CompilationUnit> &unit)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     m_document.reset(new QmlIR::Document(isDebugging()));
     QQmlIRLoader loader(unit->unitData(), m_document.data());
@@ -746,7 +746,7 @@ void QQmlTypeData::restoreIR(const QQmlRefPointer<QV4::CompiledData::Compilation
 
 void QQmlTypeData::continueLoadFromIR()
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     for (auto const& object: m_document->objects) {
         for (auto it = object->inlineComponentsBegin(); it != object->inlineComponentsEnd(); ++it) {
@@ -803,7 +803,7 @@ void QQmlTypeData::continueLoadFromIR()
 
 void QQmlTypeData::allDependenciesDone()
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     QQmlTypeLoader::Blob::allDependenciesDone();
 
@@ -841,7 +841,7 @@ void QQmlTypeData::allDependenciesDone()
 
 void QQmlTypeData::downloadProgressChanged(qreal p)
 {
-    Q_ASSERT(isEngineThread());
+    assertEngineThread();
 
     for (int ii = 0; ii < m_callbacks.size(); ++ii) {
         TypeDataCallback *callback = m_callbacks.at(ii);
@@ -860,7 +860,7 @@ void QQmlTypeData::compile(const QQmlRefPointer<QQmlTypeNameCache> &typeNameCach
                            QV4::CompiledData::ResolvedTypeReferenceMap *resolvedTypeCache,
                            const QV4::CompiledData::DependentTypesHasher &dependencyHasher)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     Q_ASSERT(m_compiledData.isNull());
 
@@ -904,7 +904,7 @@ void QQmlTypeData::compile(const QQmlRefPointer<QQmlTypeNameCache> &typeNameCach
 
 void QQmlTypeData::resolveTypes()
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     // Load the implicit import since it may have additional scripts.
     if (!m_implicitImportLoaded && !loadImplicitImport())
@@ -1012,7 +1012,7 @@ QQmlError QQmlTypeData::buildTypeResolutionCaches(
         QQmlRefPointer<QQmlTypeNameCache> *typeNameCache,
         QV4::CompiledData::ResolvedTypeReferenceMap *resolvedTypeCache) const
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     typeNameCache->adopt(new QQmlTypeNameCache(m_importCache));
 
@@ -1091,7 +1091,7 @@ bool QQmlTypeData::resolveType(const QString &typeName, QTypeRevision &version,
                                bool reportErrors, QQmlType::RegistrationType registrationType,
                                bool *typeRecursionDetected)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     QQmlImportNamespace *typeNamespace = nullptr;
     QList<QQmlError> errors;
@@ -1148,7 +1148,7 @@ void QQmlTypeData::scriptImported(
         const QQmlRefPointer<QQmlScriptBlob> &blob, const QV4::CompiledData::Location &location,
         const QString &nameSpace, const QString &qualifier)
 {
-    Q_ASSERT(isTypeLoaderThread());
+    assertTypeLoaderThread();
 
     ScriptReference ref;
     ref.script = blob;

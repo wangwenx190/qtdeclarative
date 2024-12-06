@@ -102,7 +102,7 @@ public:
                 const QQmlRefPointer<QQmlScriptBlob> &, const QV4::CompiledData::Location &,
                 const QString &, const QString &)
         {
-            Q_ASSERT(isTypeLoaderThread());
+            assertTypeLoaderThread();
         }
 
         void dependencyComplete(const QQmlDataBlob::Ptr &) override;
