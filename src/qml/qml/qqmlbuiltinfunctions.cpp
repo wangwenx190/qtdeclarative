@@ -1501,11 +1501,18 @@ QQmlComponent *QtObject::createComponent(const QUrl &url, QObject *parent) const
     return createComponent(url, QQmlComponent::PreferSynchronous, parent);
 }
 
+Q_DECL_COLD_FUNCTION
+static void throw_invalid_compilation_mode(QV4::ExecutionEngine *engine, QQmlComponent::CompilationMode mode)
+{
+    engine->throwError(QStringLiteral("Invalid compilation mode %1").arg(int(mode)));
+    //                                                                   ^ QTBUG-131906
+}
+
 QQmlComponent *QtObject::createComponent(const QUrl &url, QQmlComponent::CompilationMode mode,
                                          QObject *parent) const
 {
     if (mode != QQmlComponent::Asynchronous && mode != QQmlComponent::PreferSynchronous) {
-        v4Engine()->throwError(QStringLiteral("Invalid compilation mode %1").arg(mode));
+        throw_invalid_compilation_mode(v4Engine(), mode);
         return nullptr;
     }
 
@@ -1536,7 +1543,7 @@ QQmlComponent *QtObject::createComponent(const QString &moduleUri, const QString
 QQmlComponent *QtObject::createComponent(const QString &moduleUri, const QString &typeName, QQmlComponent::CompilationMode mode, QObject *parent) const
 {
     if (mode != QQmlComponent::Asynchronous && mode != QQmlComponent::PreferSynchronous) {
-        v4Engine()->throwError(QStringLiteral("Invalid compilation mode %1").arg(mode));
+        throw_invalid_compilation_mode(v4Engine(), mode);
         return nullptr;
     }
 
