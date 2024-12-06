@@ -114,6 +114,7 @@ built-ins/Array/prototype/splice/length-exceeding-integer-limit-shrink-array.js 
 built-ins/Array/prototype/splice/length-near-integer-limit-grow-array.js fails
 built-ins/Array/prototype/toLocaleString/primitive_this_value.js strictFails
 built-ins/Array/prototype/toLocaleString/primitive_this_value_getter.js strictFails
+built-ins/String/prototype/toLocaleUpperCase/special_casing.js passesWithICU
 built-ins/Array/prototype/unshift/clamps-to-integer-limit.js fails
 built-ins/Array/prototype/unshift/length-near-integer-limit.js fails
 built-ins/Array/prototype/unshift/throws-if-integer-limit-exceeded.js fails
@@ -246,8 +247,8 @@ built-ins/String/prototype/slice/this-value-not-obj-coercible.js fails
 built-ins/String/prototype/split/cstm-split-get-err.js fails
 built-ins/String/prototype/split/cstm-split-invocation.js fails
 built-ins/String/prototype/startsWith/return-abrupt-from-searchstring-regexp-test.js fails
-built-ins/String/prototype/toLocaleLowerCase/Final_Sigma_U180E.js nonICUFails
-built-ins/String/prototype/toLocaleLowerCase/special_casing_conditional.js nonICUFails
+built-ins/String/prototype/toLocaleLowerCase/Final_Sigma_U180E.js passesWithICU
+built-ins/String/prototype/toLocaleLowerCase/special_casing_conditional.js passesWithICU
 built-ins/String/prototype/toLowerCase/Final_Sigma_U180E.js fails
 built-ins/String/prototype/toLowerCase/special_casing_conditional.js fails
 built-ins/TypedArray/prototype/constructor.js fails
