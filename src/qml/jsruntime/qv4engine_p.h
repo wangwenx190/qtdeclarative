@@ -138,7 +138,7 @@ private:
     friend struct ExecutionContext;
     friend struct Heap::ExecutionContext;
 public:
-    enum class DiskCache {
+    enum class DiskCache : quint8 {
         Disabled    = 0,
         AotByteCode = 1 << 0,
         AotNative   = 1 << 1,

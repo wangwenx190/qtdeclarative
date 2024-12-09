@@ -20,6 +20,7 @@
 #include <private/qqmlmetatype_p.h>
 #include <private/qqmltypeloaderthread_p.h>
 #include <private/qv4compileddata_p.h>
+#include <private/qv4engine_p.h>
 
 #include <QtQml/qtqmlglobal.h>
 #include <QtQml/qqmlerror.h>
@@ -246,12 +247,16 @@ private:
     NetworkReplies m_networkReplies;
 #endif
     TypeCache m_typeCache;
-    int m_typeCacheTrimThreshold;
     ScriptCache m_scriptCache;
     QmldirCache m_qmldirCache;
     ImportDirCache m_importDirCache;
     ImportQmlDirCache m_importQmlDirCache;
     ChecksumCache m_checksumCache;
+    int m_typeCacheTrimThreshold;
+
+    QV4::ExecutionEngine::DiskCacheOptions m_diskCacheOptions
+            = QV4::ExecutionEngine::DiskCache::Enabled;
+    bool m_isDebugging = false;
 
     template<typename Loader>
     void doLoad(const Loader &loader, const QQmlDataBlob::Ptr &blob, Mode mode);

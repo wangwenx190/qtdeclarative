@@ -448,8 +448,15 @@ void QQmlTypeLoader::startThread()
 {
     ASSERT_ENGINETHREAD();
 
-    if (!m_thread)
+    if (!m_thread) {
+        // Read the relevant configuration values at the last possible moment before we start
+        // the thread. After the thread has been started, changing the configuration would result
+        // in UB. Therefore we can disregard this case.
+        QV4::ExecutionEngine *v4 = m_engine->handle();
+        m_isDebugging = v4->debugger() != nullptr;
+        m_diskCacheOptions = v4->diskCacheOptions();
         m_thread = new QQmlTypeLoaderThread(this);
+    }
 }
 
 void QQmlTypeLoader::shutdownThread()
@@ -910,25 +917,22 @@ bool QQmlTypeLoader::Blob::loadImportDependencies(
 
 bool QQmlTypeLoader::Blob::isDebugging() const
 {
-    return typeLoader()->engine()->handle()->debugger() != nullptr;
+    return typeLoader()->m_isDebugging;
 }
 
 bool QQmlTypeLoader::Blob::readCacheFile() const
 {
-    return typeLoader()->engine()->handle()->diskCacheOptions()
-            & QV4::ExecutionEngine::DiskCache::QmlcRead;
+    return typeLoader()->m_diskCacheOptions & QV4::ExecutionEngine::DiskCache::QmlcRead;
 }
 
 bool QQmlTypeLoader::Blob::writeCacheFile() const
 {
-    return typeLoader()->engine()->handle()->diskCacheOptions()
-            & QV4::ExecutionEngine::DiskCache::QmlcWrite;
+    return typeLoader()->m_diskCacheOptions & QV4::ExecutionEngine::DiskCache::QmlcWrite;
 }
 
 QQmlMetaType::CacheMode QQmlTypeLoader::Blob::aotCacheMode() const
 {
-    const QV4::ExecutionEngine::DiskCacheOptions options
-            = typeLoader()->engine()->handle()->diskCacheOptions();
+    const QV4::ExecutionEngine::DiskCacheOptions options = typeLoader()->m_diskCacheOptions;
     if (!(options & QV4::ExecutionEngine::DiskCache::Aot))
         return QQmlMetaType::RejectAll;
     if (options & QV4::ExecutionEngine::DiskCache::AotByteCode)
