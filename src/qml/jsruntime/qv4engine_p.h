@@ -21,7 +21,6 @@
 #include <private/qv4context_p.h>
 #include <private/qv4enginebase_p.h>
 #include <private/qv4executablecompilationunit_p.h>
-#include <private/qv4function_p.h>
 #include <private/qv4global_p.h>
 #include <private/qv4stacklimits_p.h>
 
@@ -696,19 +695,15 @@ public:
     bool checkStackLimits();
     int safeForAllocLength(qint64 len64);
 
-    bool canJIT(Function *f = nullptr)
+    template<typename Jittable>
+    bool canJIT(Jittable *jittable) const
     {
 #if QT_CONFIG(qml_jit)
-        if (!m_canAllocateExecutableMemory)
-            return false;
-        if (f) {
-            return f->kind != Function::AotCompiled
-                    && !f->isGenerator()
-                    && f->interpreterCallCount >= s_jitCallCountThreshold;
-        }
-        return true;
+        return m_canAllocateExecutableMemory
+                && jittable->isJittable()
+                && jittable->interpreterCallCount >= s_jitCallCountThreshold;
 #else
-        Q_UNUSED(f);
+        Q_UNUSED(jittable);
         return false;
 #endif
     }

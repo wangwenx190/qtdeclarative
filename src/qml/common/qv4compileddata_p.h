@@ -156,7 +156,7 @@ static_assert(sizeof(Location) == 4, "Location structure needs to have the expec
 
 struct RegExp
 {
-    enum Flags : unsigned int {
+    enum Flag : quint8 {
         RegExp_NoFlags    = 0x0,
         RegExp_Global     = 0x01,
         RegExp_IgnoreCase = 0x02,
@@ -164,6 +164,8 @@ struct RegExp
         RegExp_Sticky     = 0x08,
         RegExp_Unicode    = 0x10,
     };
+
+    Q_DECLARE_FLAGS(Flags, Flag);
 
     RegExp() : m_data(QSpecialIntegerBitfieldZero) {}
     RegExp(quint32 flags, quint32 stringIndex) : RegExp()

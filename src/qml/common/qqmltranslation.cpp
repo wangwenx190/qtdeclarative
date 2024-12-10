@@ -3,6 +3,8 @@
 
 #include "private/qqmltranslation_p.h"
 
+#include <QtCore/qcoreapplication.h>
+
 QQmlTranslation::QQmlTranslation(const Data &d) : data(d) { }
 QQmlTranslation::QQmlTranslation() : data(nullptr) { }
 

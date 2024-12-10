@@ -15,9 +15,9 @@
 // We mean it.
 //
 
-#include <QtCore/qstring.h>
+#include <private/qtqmlglobal_p.h>
 
-#include <private/qv4qmlcontext_p.h>
+#include <QtCore/qstring.h>
 
 QT_BEGIN_NAMESPACE
 

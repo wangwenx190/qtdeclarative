@@ -3,6 +3,10 @@
 
 #include "qv4engine_p.h"
 
+#include <wtf/BumpPointerAllocator.h>
+#include <wtf/OSAllocator.h>
+#include <wtf/PageAllocation.h>
+
 #include <private/qjsvalue_p.h>
 #include <private/qqmlbuiltinfunctions_p.h>
 #include <private/qqmlengine_p.h>

@@ -3,36 +3,36 @@
 
 #include "qqmlobjectcreator_p.h"
 
+#include <private/qjsvalue_p.h>
+#include <private/qqmlanybinding_p.h>
+#include <private/qqmlbinding_p.h>
+#include <private/qqmlboundsignal_p.h>
+#include <private/qqmlcomponent_p.h>
+#include <private/qqmlcomponentattached_p.h>
+#include <private/qqmlcustomparser_p.h>
+#include <private/qqmldebugconnector_p.h>
+#include <private/qqmldebugserviceinterfaces_p.h>
 #include <private/qqmlengine_p.h>
+#include <private/qqmlpropertybinding_p.h>
+#include <private/qqmlpropertyvalueinterceptor_p.h>
+#include <private/qqmlscriptdata_p.h>
+#include <private/qqmlscriptstring_p.h>
+#include <private/qqmlsourcecoordinate_p.h>
+#include <private/qqmlstringconverters_p.h>
+#include <private/qqmlvaluetypeproxybinding_p.h>
+#include <private/qqmlvme_p.h>
 #include <private/qqmlvmemetaobject_p.h>
 #include <private/qv4function_p.h>
 #include <private/qv4functionobject_p.h>
-#include <private/qv4qobjectwrapper_p.h>
-#include <private/qqmlbinding_p.h>
-#include <private/qqmlstringconverters_p.h>
-#include <private/qqmlboundsignal_p.h>
-#include <private/qqmlcomponentattached_p.h>
-#include <private/qqmlcomponent_p.h>
-#include <private/qqmlcustomparser_p.h>
-#include <private/qqmlscriptstring_p.h>
-#include <private/qqmlpropertyvalueinterceptor_p.h>
-#include <private/qqmlvaluetypeproxybinding_p.h>
-#include <private/qqmldebugconnector_p.h>
-#include <private/qqmldebugserviceinterfaces_p.h>
-#include <private/qqmlscriptdata_p.h>
-#include <private/qqmlsourcecoordinate_p.h>
-#include <private/qjsvalue_p.h>
 #include <private/qv4generatorobject_p.h>
+#include <private/qv4qobjectwrapper_p.h>
+#include <private/qv4referenceobject_p.h>
 #include <private/qv4resolvedtypereference_p.h>
-#include <private/qqmlpropertybinding_p.h>
-#include <private/qqmlanybinding_p.h>
-#include <QtQml/private/qqmlvme_p.h>
-
-#include <QScopedValueRollback>
 
 #include <qtqml_tracepoints_p.h>
-#include <QScopedValueRollback>
-#include <QLoggingCategory>
+
+#include <QtCore/qscopedvaluerollback.h>
+#include <QtCore/qloggingcategory.h>
 
 Q_STATIC_LOGGING_CATEGORY(lcQmlDefaultMethod, "qt.qml.defaultmethod")
 
@@ -947,8 +947,12 @@ bool QQmlObjectCreator::setPropertyBinding(const QQmlPropertyData *bindingProper
                 return false;
             }
 
-            if (valueType)
-                valueType->write(_qobject, bindingProperty->coreIndex(), QQmlPropertyData::BypassInterceptor);
+            if (valueType) {
+                valueType->write(
+                        _qobject, bindingProperty->coreIndex(),
+                        QQmlPropertyData::BypassInterceptor,
+                        QV4::ReferenceObject::AllProperties);
+            }
 
             return true;
         }

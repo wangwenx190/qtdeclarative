@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 
 #include "qqmljsbasicblocks_p.h"
-#include "qqmljsutils_p.h"
 
-#include <QtQml/private/qv4instr_moth_p.h>
+#include <private/qqmlglobal_p.h>
+#include <private/qqmljsutils_p.h>
+#include <private/qv4instr_moth_p.h>
 
 QT_BEGIN_NAMESPACE
 

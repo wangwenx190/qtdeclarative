@@ -372,7 +372,10 @@ bool QQmlInterceptorMetaObject::doIntercept(QMetaObject::Call c, int id, void **
                     // current value is explicitly set.
                     // So, we cannot return here if prevComponentValue == newComponentValue.
                     valueType->writeOnGadget(valueProp, std::move(prevComponentValue));
-                    valueType->write(object, id, QQmlPropertyData::DontRemoveBinding | QQmlPropertyData::BypassInterceptor);
+                    valueType->write(
+                        object, id,
+                        QQmlPropertyData::DontRemoveBinding | QQmlPropertyData::BypassInterceptor,
+                        QV4::ReferenceObject::AllProperties);
 
                     vi->write(newComponentValue);
                     return true;
