@@ -344,18 +344,11 @@ ExecutionEngine::ExecutionEngine(QJSEngine *jsEngine)
     , bumperPointerAllocator(new WTF::BumpPointerAllocator)
     , jsStack(new WTF::PageAllocation)
     , gcStack(new WTF::PageAllocation)
-    , globalCode(nullptr)
     , publicEngine(jsEngine)
     , m_engineId(engineSerial.fetchAndAddOrdered(2))
-    , regExpCache(nullptr)
-    , m_multiplyWrappedQObjects(nullptr)
 #if QT_CONFIG(qml_jit)
     , m_canAllocateExecutableMemory(OSAllocator::canAllocateExecutableMemory())
 #endif
-#if QT_CONFIG(qml_xml_http_request)
-    , m_xmlHttpRequestData(nullptr)
-#endif
-    , m_qmlEngine(nullptr)
 {
     if (m_engineId == 1) {
         initializeStaticMembers();

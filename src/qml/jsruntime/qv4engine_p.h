@@ -152,14 +152,14 @@ public:
 
     Q_DECLARE_FLAGS(DiskCacheOptions, DiskCache);
 
-    ExecutableAllocator *executableAllocator;
-    ExecutableAllocator *regExpAllocator;
+    ExecutableAllocator *executableAllocator = nullptr;
+    ExecutableAllocator *regExpAllocator = nullptr;
 
-    WTF::BumpPointerAllocator *bumperPointerAllocator; // Used by Yarr Regex engine.
+    WTF::BumpPointerAllocator *bumperPointerAllocator = nullptr; // Used by Yarr Regex engine.
 
-    WTF::PageAllocation *jsStack;
+    WTF::PageAllocation *jsStack = nullptr;
 
-    WTF::PageAllocation *gcStack;
+    WTF::PageAllocation *gcStack = nullptr;
 
     QML_NEARLY_ALWAYS_INLINE Value *jsAlloca(int nValues) {
         Value *ptr = jsStackTop;
@@ -167,11 +167,11 @@ public:
         return ptr;
     }
 
-    Function *globalCode;
+    Function *globalCode = nullptr;
 
     QJSEngine *jsEngine() const { return publicEngine; }
     QQmlEngine *qmlEngine() const { return m_qmlEngine; }
-    QJSEngine *publicEngine;
+    QJSEngine *publicEngine = nullptr;
 
     template<typename TypeLoader = QQmlTypeLoader>
     TypeLoader *typeLoader()
@@ -264,7 +264,7 @@ public:
         ThrowerObject,
         NJSObjects
     };
-    Value *jsObjects;
+    Value *jsObjects = nullptr;
     enum { NTypedArrayTypes = 9 }; // == TypedArray::NValues, avoid header dependency
 
     ExecutionContext *rootContext() const { return reinterpret_cast<ExecutionContext *>(jsObjects + RootContext); }
@@ -304,7 +304,7 @@ public:
     {
         return reinterpret_cast<FunctionObject *>(jsObjects + UrlSearchParams_Ctor);
     }
-    FunctionObject *typedArrayCtors;
+    FunctionObject *typedArrayCtors = nullptr;
 
     FunctionObject *getSymbolSpecies() const { return reinterpret_cast<FunctionObject *>(jsObjects + GetSymbolSpecies); }
 
@@ -340,7 +340,7 @@ public:
     Object *weakMapPrototype() const { return reinterpret_cast<Object *>(jsObjects + WeakMapProto); }
     Object *mapPrototype() const { return reinterpret_cast<Object *>(jsObjects + MapProto); }
     Object *intrinsicTypedArrayPrototype() const { return reinterpret_cast<Object *>(jsObjects + IntrinsicTypedArrayProto); }
-    Object *typedArrayPrototype;
+    Object *typedArrayPrototype = nullptr;
 
     Object *valueTypeWrapperPrototype() const { return reinterpret_cast<Object *>(jsObjects + ValueTypeProto); }
     Object *signalHandlerPrototype() const { return reinterpret_cast<Object *>(jsObjects + SignalHandlerProto); }
@@ -416,7 +416,7 @@ public:
 
         NJSStrings
     };
-    Value *jsStrings;
+    Value *jsStrings = nullptr;
 
     enum JSSymbols {
         Symbol_hasInstance,
@@ -433,7 +433,7 @@ public:
         Symbol_revokableProxy,
         NJSSymbols
     };
-    Value *jsSymbols;
+    Value *jsSymbols = nullptr;
 
     String *id_empty() const { return reinterpret_cast<String *>(jsStrings + String_Empty); }
     String *id_undefined() const { return reinterpret_cast<String *>(jsStrings + String_undefined); }
@@ -499,9 +499,9 @@ public:
     Symbol *symbol_unscopables() const { return reinterpret_cast<Symbol *>(jsSymbols + Symbol_unscopables); }
     Symbol *symbol_revokableProxy() const { return reinterpret_cast<Symbol *>(jsSymbols + Symbol_revokableProxy); }
 
-    quint32 m_engineId;
+    quint32 m_engineId = 0;
 
-    RegExpCache *regExpCache;
+    RegExpCache *regExpCache = nullptr;
 
     // Scarce resources are "exceptionally high cost" QVariant types where allowing the
     // normal JavaScript GC to clean them up is likely to lead to out-of-memory or other
@@ -521,9 +521,9 @@ public:
     // Normally the JS wrappers for QObjects are stored in the QQmlData/QObjectPrivate,
     // but any time a QObject is wrapped a second time in another engine, we have to do
     // bookkeeping.
-    MultiplyWrappedQObjectMap *m_multiplyWrappedQObjects;
+    MultiplyWrappedQObjectMap *m_multiplyWrappedQObjects = nullptr;
 #if QT_CONFIG(qml_jit)
-    const bool m_canAllocateExecutableMemory;
+    const bool m_canAllocateExecutableMemory = false;
 #endif
 
     quintptr protoIdCount = 1;
@@ -866,10 +866,10 @@ private:
     QScopedPointer<QV4::Promise::ReactionHandler> m_reactionHandler;
 
 #if QT_CONFIG(qml_xml_http_request)
-    void *m_xmlHttpRequestData;
+    void *m_xmlHttpRequestData = nullptr;
 #endif
 
-    QQmlEngine *m_qmlEngine;
+    QQmlEngine *m_qmlEngine = nullptr;
 
     QQmlDelayedCallQueue m_delayedCallQueue;
 
