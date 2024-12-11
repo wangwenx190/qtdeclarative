@@ -143,19 +143,6 @@ QQmlJSImportVisitor::QQmlJSImportVisitor(
 
     m_currentScope->setInternalName(u"global"_s);
 
-    QLatin1String jsGlobVars[] = { /* Not listed on the MDN page; browser and QML extensions: */
-                                   // console/debug api
-                                   QLatin1String("console"), QLatin1String("print"),
-                                   // garbage collector
-                                   QLatin1String("gc"),
-                                   // i18n
-                                   QLatin1String("qsTr"), QLatin1String("qsTrId"),
-                                   QLatin1String("QT_TR_NOOP"), QLatin1String("QT_TRANSLATE_NOOP"),
-                                   QLatin1String("QT_TRID_NOOP"),
-                                   // XMLHttpRequest
-                                   QLatin1String("XMLHttpRequest")
-    };
-
     QQmlJSScope::JavaScriptIdentifier globalJavaScript = {
         QQmlJSScope::JavaScriptIdentifier::LexicalScoped, QQmlJS::SourceLocation(), std::nullopt,
         true
@@ -164,8 +151,6 @@ QQmlJSImportVisitor::QQmlJSImportVisitor(
          ++globalName) {
         m_currentScope->insertJSIdentifier(QString::fromLatin1(*globalName), globalJavaScript);
     }
-    for (const auto &jsGlobVar : jsGlobVars)
-        m_currentScope->insertJSIdentifier(jsGlobVar, globalJavaScript);
 }
 
 QQmlJSImportVisitor::~QQmlJSImportVisitor() = default;
