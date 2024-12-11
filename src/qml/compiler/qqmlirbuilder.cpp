@@ -131,7 +131,7 @@ void Object::init(QQmlJS::MemoryPool *pool, int typeNameIndex, int idIndex,
     declarationsOverride = nullptr;
 }
 
-QString IRBuilder::sanityCheckFunctionNames(Object *obj, const QSet<QString> &illegalNames, QQmlJS::SourceLocation *errorLocation)
+QString IRBuilder::sanityCheckFunctionNames(Object *obj, QQmlJS::SourceLocation *errorLocation)
 {
     QSet<int> functionNames;
     for (auto functionit = obj->functionsBegin(); functionit != obj->functionsEnd(); ++functionit) {
@@ -151,7 +151,7 @@ QString IRBuilder::sanityCheckFunctionNames(Object *obj, const QSet<QString> &il
         const QString name = stringAt(f->nameIndex);
         if (name.at(0).isUpper())
             return tr("Method names cannot begin with an upper case letter");
-        if (illegalNames.contains(name))
+        if (QV4::Compiler::Codegen::isNameGlobal(name))
             return tr("Illegal method name");
     }
     return QString(); // no error
@@ -366,9 +366,8 @@ void ScriptDirectivesCollector::importModule(const QString &uri, const QString &
     document->imports << import;
 }
 
-IRBuilder::IRBuilder(const QSet<QString> &illegalNames)
-    : illegalNames(illegalNames)
-    , _object(nullptr)
+IRBuilder::IRBuilder()
+    : _object(nullptr)
     , _propertyDeclaration(nullptr)
     , pool(nullptr)
     , jsGenerator(nullptr)
@@ -643,7 +642,7 @@ bool IRBuilder::defineQMLObject(
         return false;
 
     QQmlJS::SourceLocation loc;
-    QString error = sanityCheckFunctionNames(obj, illegalNames, &loc);
+    QString error = sanityCheckFunctionNames(obj, &loc);
     if (!error.isEmpty()) {
         recordError(loc, error);
         return false;
@@ -1055,7 +1054,7 @@ bool IRBuilder::visit(QQmlJS::AST::UiPublicMember *node)
             }
         }
 
-        if (illegalNames.contains(signalName))
+        if (QV4::Compiler::Codegen::isNameGlobal(signalName))
             COMPILE_EXCEPTION(node->identifierToken, tr("Illegal signal name"));
 
         QString error = _object->appendSignal(signal);
@@ -1098,7 +1097,7 @@ bool IRBuilder::visit(QQmlJS::AST::UiPublicMember *node)
             QQmlJS::SourceLocation errorLocation;
             QString error;
 
-            if (illegalNames.contains(propName))
+            if (QV4::Compiler::Codegen::isNameGlobal(propName))
                 error = tr("Illegal property name");
             else
                 error = _object->appendProperty(property, propName, node->isDefaultMember(), node->defaultToken(), &errorLocation);
@@ -1452,7 +1451,7 @@ bool IRBuilder::appendAlias(QQmlJS::AST::UiPublicMember *node)
      QQmlJS::SourceLocation errorLocation;
      QString error;
 
-     if (illegalNames.contains(propName))
+     if (QV4::Compiler::Codegen::isNameGlobal(propName))
          error = tr("Illegal property name");
      else
          error = _object->appendAlias(alias, propName, node->isDefaultMember(), node->defaultToken(), &errorLocation);
@@ -1510,7 +1509,7 @@ bool IRBuilder::setId(const QQmlJS::SourceLocation &idLocation, QQmlJS::AST::Sta
     }
 
     QString idQString(str.toString());
-    if (illegalNames.contains(idQString))
+    if (QV4::Compiler::Codegen::isNameGlobal(idQString))
         COMPILE_EXCEPTION(loc, tr( "ID illegally masks global JavaScript property"));
 
     if (_object->idNameIndex != emptyStringIndex)
@@ -1989,14 +1988,13 @@ char *QmlUnitGenerator::writeBindings(char *bindingPtr, const Object *o, Binding
     return bindingPtr;
 }
 
-JSCodeGen::JSCodeGen(Document *document, const QSet<QString> &globalNames,
-                     QV4::Compiler::CodegenWarningInterface *iface,
-                     bool storeSourceLocations)
+JSCodeGen::JSCodeGen(
+        Document *document, QV4::Compiler::CodegenWarningInterface *iface,
+        bool storeSourceLocations)
     : QV4::Compiler::Codegen(&document->jsGenerator, /*strict mode*/ false, iface,
                              storeSourceLocations),
       document(document)
 {
-    m_globalNames = globalNames;
     _module = &document->jsModule;
     _fileNameIsUrl = true;
 }

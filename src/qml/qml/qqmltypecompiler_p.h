@@ -167,7 +167,6 @@ private:
     const QVector<QmlIR::Object*> &qmlObjects;
     const QQmlImports *imports;
     const QHash<int, QQmlCustomParser*> &customParsers;
-    const QSet<QString> &illegalNames;
     const QQmlPropertyCacheVector * const propertyCaches;
 };
 

@@ -25,6 +25,8 @@
 #include <private/qv4calldata_p.h>
 
 #include <QtCore/qsharedpointer.h>
+#include <QtCore/qxpfunctional.h>
+
 #include <stack>
 
 QT_BEGIN_NAMESPACE
@@ -69,6 +71,9 @@ public:
     Codegen(QV4::Compiler::JSUnitGenerator *jsUnitGenerator, bool strict,
             CodegenWarningInterface *iface = defaultCodegenWarningInterface(),
             bool storeSourceLocations = false);
+
+    static bool isNameGlobal(QAnyStringView name);
+    static void forEachGlobalName(qxp::function_ref<void(QLatin1StringView)> &&handler);
 
     void generateFromProgram(const QString &fileName,
                              const QString &finalUrl,
@@ -759,12 +764,6 @@ public:
         return *_returnLabel;
     }
 
-    void setGlobalNames(const QSet<QString>& globalNames) {
-        m_globalNames = globalNames;
-    }
-
-    static const char *s_globalNames[];
-
 protected:
     friend class ScanFunctions;
     friend struct ControlFlow;
@@ -815,7 +814,6 @@ protected:
     bool functionEndsWithReturn = false;
     bool _tailCallsAreAllowed = true;
     bool storeSourceLocations = false;
-    QSet<QString> m_globalNames;
 
     struct OptionalChainState
     {

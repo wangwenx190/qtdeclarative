@@ -34,17 +34,6 @@ Q_LOGGING_CATEGORY(lcAotCompiler, "qt.qml.compiler.aot", QtFatalMsg);
 
 static const int FileScopeCodeIndex = -1;
 
-static QSet<QString> getIllegalNames()
-{
-    QSet<QString> illegalNames;
-    for (const char **g = QV4::Compiler::Codegen::s_globalNames; *g != nullptr; ++g)
-        illegalNames.insert(QString::fromLatin1(*g));
-    return illegalNames;
-}
-
-Q_GLOBAL_STATIC_WITH_ARGS(QSet<QString>, illegalNames, (getIllegalNames()));
-
-
 void QQmlJSCompileError::print()
 {
     fprintf(stderr, "%s\n", qPrintable(message));
@@ -213,7 +202,7 @@ bool qCompileQmlFile(QmlIR::Document &irDocument, const QString &inputFileName,
     }
 
     {
-        QmlIR::IRBuilder irBuilder(*illegalNames());
+        QmlIR::IRBuilder irBuilder;
         if (!irBuilder.generateFromQml(sourceCode, inputFileName, &irDocument)) {
             error->appendDiagnostics(inputFileName, irBuilder.errors);
             return false;
@@ -224,7 +213,7 @@ bool qCompileQmlFile(QmlIR::Document &irDocument, const QString &inputFileName,
     QQmlJSAotFunctionMap aotFunctionsByIndex;
 
     {
-        QmlIR::JSCodeGen v4CodeGen(&irDocument, *illegalNames(), interface, storeSourceLocation);
+        QmlIR::JSCodeGen v4CodeGen(&irDocument, interface, storeSourceLocation);
 
         if (aotCompiler)
             aotCompiler->setDocument(&v4CodeGen, &irDocument);
@@ -441,7 +430,7 @@ bool qCompileJSFile(const QString &inputFileName, const QString &inputFileUrl, Q
         }
 
         {
-            QmlIR::JSCodeGen v4CodeGen(&irDocument, *illegalNames());
+            QmlIR::JSCodeGen v4CodeGen(&irDocument);
             v4CodeGen.generateFromProgram(inputFileName, inputFileUrl, sourceCode, program,
                                           &irDocument.jsModule, QV4::Compiler::ContextType::ScriptImportedByQML);
             if (v4CodeGen.hasError()) {

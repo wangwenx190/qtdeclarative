@@ -2293,6 +2293,25 @@ void ExecutionEngine::initQmlGlobalObject()
     lockObject(*globalObject);
 }
 
+static bool globalNamesAreStaticallyKnown(QV4::Object *globalObject)
+{
+    const Heap::InternalClass *ic = globalObject->internalClass();
+    const SharedInternalClassData<PropertyKey> &nameMap = ic->nameMap;
+    bool clean = true;
+    for (uint i = 0, end = ic->size; i < end; ++i) {
+        const QV4::PropertyKey id = nameMap.at(i);
+        if (id.isString()) {
+            if (!Compiler::Codegen::isNameGlobal(id.toQString())) {
+                qCritical() << id.toQString()
+                            << "is part of the JavaScript global object "
+                               "but not statically known to be global";
+                clean = false;
+            }
+        }
+    }
+    return clean;
+}
+
 void ExecutionEngine::initializeGlobal()
 {
     createQtObject();
@@ -2312,14 +2331,7 @@ void ExecutionEngine::initializeGlobal()
 
     qt_add_sqlexceptions(this);
 
-    {
-        for (uint i = 0; i < globalObject->internalClass()->size; ++i) {
-            if (globalObject->internalClass()->nameMap.at(i).isString()) {
-                QV4::PropertyKey id = globalObject->internalClass()->nameMap.at(i);
-                m_illegalNames.insert(id.toQString());
-            }
-        }
-    }
+    Q_ASSERT(globalNamesAreStaticallyKnown(globalObject));
 }
 
 void ExecutionEngine::createQtObject()
@@ -2339,11 +2351,6 @@ void ExecutionEngine::createQtObject()
     qtObjectWrapper->setPrototypeOf(qtNamespaceWrapper);
 
     globalObject->defineDefaultProperty(QStringLiteral("Qt"), qtObjectWrapper);
-}
-
-const QSet<QString> &ExecutionEngine::illegalNames() const
-{
-    return m_illegalNames;
 }
 
 void ExecutionEngine::setQmlEngine(QQmlEngine *engine)

@@ -147,10 +147,10 @@ QQmlJSImportVisitor::QQmlJSImportVisitor(
         QQmlJSScope::JavaScriptIdentifier::LexicalScoped, QQmlJS::SourceLocation(), std::nullopt,
         true
     };
-    for (const char **globalName = QV4::Compiler::Codegen::s_globalNames; *globalName != nullptr;
-         ++globalName) {
-        m_currentScope->insertJSIdentifier(QString::fromLatin1(*globalName), globalJavaScript);
-    }
+
+    QV4::Compiler::Codegen::forEachGlobalName([&](QLatin1StringView globalName) {
+        m_currentScope->insertJSIdentifier(globalName, globalJavaScript);
+    });
 }
 
 QQmlJSImportVisitor::~QQmlJSImportVisitor() = default;

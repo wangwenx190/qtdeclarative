@@ -716,9 +716,6 @@ public:
     void freezeObject(const QV4::Value &value);
     void lockObject(const QV4::Value &value);
 
-    // Return the list of illegal id names (the names of the properties on the global object)
-    const QSet<QString> &illegalNames() const;
-
 #if QT_CONFIG(qml_xml_http_request)
     void *xmlHttpRequestData() const { return m_xmlHttpRequestData; }
 #endif
@@ -860,7 +857,6 @@ private:
     QScopedPointer<QV4::Debugging::Debugger> m_debugger;
     QScopedPointer<QV4::Profiling::Profiler> m_profiler;
 #endif
-    QSet<QString> m_illegalNames;
 
     // used by generated Promise objects to handle 'then' events
     QScopedPointer<QV4::Promise::ReactionHandler> m_reactionHandler;

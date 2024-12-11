@@ -123,7 +123,7 @@ QQmlRefPointer<QV4::CompiledData::CompilationUnit> QQmlTypeCompiler::compile()
 
         document->jsModule.fileName = typeData->urlString();
         document->jsModule.finalUrl = typeData->finalUrlString();
-        QmlIR::JSCodeGen v4CodeGenerator(document, engine->v4engine()->illegalNames());
+        QmlIR::JSCodeGen v4CodeGenerator(document);
         for (QmlIR::Object *object : std::as_const(document->objects)) {
             if (!v4CodeGenerator.generateRuntimeFunctions(object)) {
                 Q_ASSERT(v4CodeGenerator.hasError());
@@ -269,7 +269,6 @@ SignalHandlerResolver::SignalHandlerResolver(QQmlTypeCompiler *typeCompiler)
     , qmlObjects(*typeCompiler->qmlObjects())
     , imports(typeCompiler->imports())
     , customParsers(typeCompiler->customParserCache())
-    , illegalNames(typeCompiler->enginePrivate()->v4engine()->illegalNames())
     , propertyCaches(typeCompiler->propertyCaches())
 {
 }
@@ -359,7 +358,7 @@ bool SignalHandlerResolver::resolveSignalHandlerExpressions(
                     unnamedParameter = true;
                 else if (unnamedParameter) {
                     COMPILE_EXCEPTION(binding, tr("Signal uses unnamed parameter followed by named parameter."));
-                } else if (illegalNames.contains(param)) {
+                } else if (QV4::Compiler::Codegen::isNameGlobal(param)) {
                     COMPILE_EXCEPTION(binding, tr("Signal parameter \"%1\" hides global variable.").arg(param));
                 }
             }

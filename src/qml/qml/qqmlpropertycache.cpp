@@ -12,6 +12,7 @@
 #include <private/qqmlpropertycachemethodarguments_p.h>
 #include <private/qqmlsignalnames_p.h>
 
+#include <private/qv4codegen_p.h>
 #include <private/qv4value_p.h>
 
 #include <QtCore/qdebug.h>
@@ -741,10 +742,10 @@ QQmlPropertyCacheMethodArguments *QQmlPropertyCache::createArgumentsObject(
     return args;
 }
 
-QString QQmlPropertyCache::signalParameterStringForJS(QV4::ExecutionEngine *engine, const QList<QByteArray> &parameterNameList, QString *errorString)
+QString QQmlPropertyCache::signalParameterStringForJS(
+        const QList<QByteArray> &parameterNameList, QString *errorString)
 {
     bool unnamedParameter = false;
-    const QSet<QString> &illegalNames = engine->illegalNames();
     QString parameters;
 
     const qsizetype count = parameterNameList.size();
@@ -761,7 +762,7 @@ QString QQmlPropertyCache::signalParameterStringForJS(QV4::ExecutionEngine *engi
             if (errorString)
                 *errorString = QCoreApplication::translate("QQmlRewrite", "Signal uses unnamed parameter followed by named parameter.");
             return QString();
-        } else if (illegalNames.contains(QString::fromUtf8(param))) {
+        } else if (QV4::Compiler::Codegen::isNameGlobal(param)) {
             if (errorString)
                 *errorString = QCoreApplication::translate("QQmlRewrite", "Signal parameter \"%1\" hides global variable.").arg(QString::fromUtf8(param));
             return QString();
