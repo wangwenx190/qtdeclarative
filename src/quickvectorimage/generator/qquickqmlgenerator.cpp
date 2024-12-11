@@ -169,12 +169,12 @@ void QQuickQmlGenerator::generatePath(const PathNodeInfo &info, const QRectF &ov
     if (!isNodeVisible(info))
         return;
 
-    if (m_inShapeItem) {
+    if (m_inShapeItemLevel > 0) {
         if (!info.isDefaultTransform)
             qWarning() << "Skipped transform for node" << info.nodeId << "type" << info.typeName << "(this is not supposed to happen)";
         optimizePaths(info, overrideBoundingRect);
     } else {
-        m_inShapeItem = true;
+        m_inShapeItemLevel++;
         stream() << shapeName() << " {";
 
         generateNodeBase(info);
@@ -186,7 +186,7 @@ void QQuickQmlGenerator::generatePath(const PathNodeInfo &info, const QRectF &ov
         //qCDebug(lcQuickVectorGraphics) << *node->qpath();
         m_indentLevel--;
         stream() << "}";
-        m_inShapeItem = false;
+        m_inShapeItemLevel--;
     }
 }
 
@@ -481,7 +481,7 @@ void QQuickQmlGenerator::generatePathContainer(const StructureNodeInfo &info)
         stream() << "preferredRendererType: Shape.CurveRenderer";
     m_indentLevel--;
 
-    m_inShapeItem = true;
+    m_inShapeItemLevel++;
 }
 
 void QQuickQmlGenerator::generateAnimateColor(const QString &targetName,
@@ -545,8 +545,9 @@ bool QQuickQmlGenerator::generateStructureNode(const StructureNodeInfo &info)
     if (!isNodeVisible(info))
         return false;
 
+    const bool isPathContainer = !info.forceSeparatePaths && info.isPathContainer;
     if (info.stage == StructureNodeStage::Start) {
-        if (!info.forceSeparatePaths && info.isPathContainer) {
+        if (isPathContainer) {
             generatePathContainer(info);
         } else {
             stream() << "Item {";
@@ -570,7 +571,8 @@ bool QQuickQmlGenerator::generateStructureNode(const StructureNodeInfo &info)
     } else {
         m_indentLevel--;
         stream() << "}";
-        m_inShapeItem = false;
+        if (isPathContainer)
+            m_inShapeItemLevel--;
     }
 
     return true;
@@ -647,8 +649,8 @@ bool QQuickQmlGenerator::generateRootNode(const StructureNodeInfo &info)
             m_indentLevel++;
         }
     } else {
-        if (m_inShapeItem) {
-            m_inShapeItem = false;
+        if (m_inShapeItemLevel > 0) {
+            m_inShapeItemLevel--;
             m_indentLevel--;
             stream() << "}";
         }

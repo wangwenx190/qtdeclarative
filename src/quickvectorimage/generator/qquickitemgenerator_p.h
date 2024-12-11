@@ -47,8 +47,7 @@ private:
     QQuickItem *currentItem();
     void addCurrentItem(QQuickItem *item, const NodeInfo &info);
 
-    bool m_inShapeItem = false;
-    QQuickShape *m_parentShapeItem = nullptr;
+    QStack<QQuickShape *> m_parentShapeItems;
 
     QStack<QQuickItem *> m_items;
 

@@ -95,7 +95,7 @@ private:
     QBuffer m_result;
     QTextStream m_stream;
     QString outputFileName;
-    bool m_inShapeItem = false;
+    int m_inShapeItemLevel = 0;
     QByteArray m_shapeTypeName;
     QString m_commentString;
     bool m_retainFilePaths = false;

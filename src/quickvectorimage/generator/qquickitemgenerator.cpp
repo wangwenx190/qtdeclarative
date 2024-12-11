@@ -95,7 +95,7 @@ void QQuickItemGenerator::generatePath(const PathNodeInfo &info, const QRectF &o
     if (!isNodeVisible(info))
         return;
 
-    if (m_inShapeItem) {
+    if (m_parentShapeItems.size()) {
         if (!info.isDefaultTransform)
             qCWarning(lcQuickVectorImage) << "Skipped transform for node" << info.nodeId << "type" << info.typeName << "(this is not supposed to happen)";
         optimizePaths(info, overrideBoundingRect);
@@ -105,16 +105,14 @@ void QQuickItemGenerator::generatePath(const PathNodeInfo &info, const QRectF &o
             shapeItem->setPreferredRendererType(QQuickShape::CurveRenderer);
         shapeItem->setContainsMode(QQuickShape::ContainsMode::FillContains); // TODO: configurable?
         addCurrentItem(shapeItem, info);
-        m_parentShapeItem = shapeItem;
-        m_inShapeItem = true;
+        m_parentShapeItems.push(shapeItem);
 
         generateNodeBase(info);
 
         optimizePaths(info, overrideBoundingRect);
         //qCDebug(lcQuickVectorGraphics) << *node->qpath();
         m_items.pop();
-        m_inShapeItem = false;
-        m_parentShapeItem = nullptr;
+        m_parentShapeItems.pop();
     }
 }
 
@@ -194,7 +192,7 @@ void QQuickItemGenerator::outputShapePath(const PathNodeInfo &info, const QPaint
     pathElementProp.append(&pathElementProp, pathSvg);
 
     shapePath->setParent(currentItem());
-    auto shapeDataProp = m_parentShapeItem->data();
+    auto shapeDataProp = m_parentShapeItems.top()->data();
     shapeDataProp.append(&shapeDataProp, shapePath);
 }
 
@@ -339,11 +337,10 @@ void QQuickItemGenerator::generateUseNode(const UseNodeInfo &info)
 
 void QQuickItemGenerator::generatePathContainer(const StructureNodeInfo &info)
 {
-    m_inShapeItem = true;
     auto *shapeItem = new QQuickShape;
     if (m_flags.testFlag(QQuickVectorImageGenerator::GeneratorFlag::CurveRenderer))
         shapeItem->setPreferredRendererType(QQuickShape::CurveRenderer);
-    m_parentShapeItem = shapeItem;
+    m_parentShapeItems.push(shapeItem);
     addCurrentItem(shapeItem, info);
 }
 
@@ -397,8 +394,9 @@ bool QQuickItemGenerator::generateStructureNode(const StructureNodeInfo &info)
     if (!isNodeVisible(info))
         return false;
 
+    const bool isPathContainer = !info.forceSeparatePaths && info.isPathContainer;
     if (info.stage == StructureNodeStage::Start) {
-        if (!info.forceSeparatePaths && info.isPathContainer) {
+        if (isPathContainer) {
             generatePathContainer(info);
         } else {
             QQuickItem *item = !info.viewBox.isEmpty() ? new QQuickVectorImageGenerator::Utils::ViewBoxItem(info.viewBox) : new QQuickItem;
@@ -407,8 +405,8 @@ bool QQuickItemGenerator::generateStructureNode(const StructureNodeInfo &info)
 
         generateNodeBase(info);
     } else {
-        m_inShapeItem = false;
-        m_parentShapeItem = nullptr;
+        if (isPathContainer)
+            m_parentShapeItems.pop();
         m_items.pop();
     }
 
@@ -449,9 +447,8 @@ bool QQuickItemGenerator::generateRootNode(const StructureNodeInfo &info)
         if (!info.forceSeparatePaths && info.isPathContainer)
             generatePathContainer(info);
     } else {
-        if (m_inShapeItem) {
-            m_inShapeItem = false;
-            m_parentShapeItem = nullptr;
+        if (m_parentShapeItems.size()) {
+            m_parentShapeItems.pop();
             m_items.pop();
         }
 

@@ -995,6 +995,7 @@ void QSvgVisitorImpl::visitStructureNodeEnd(const QSvgStructureNode *node)
 
     StructureNodeInfo info;
     fillCommonNodeInfo(node, info);
+    info.isPathContainer = isPathContainer(node);
     info.stage = StructureNodeStage::End;
 
     m_generator->generateStructureNode(info);
