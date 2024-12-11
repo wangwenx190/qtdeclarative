@@ -971,7 +971,7 @@
 /*!
     \qmlmethod QtQuick::TableView::positionViewAtRow(int row, PositionMode mode, real offset, rect subRect)
 
-    Positions {Flickable::}{contentY} such that \a row is at the position specified
+    Positions \l {Flickable::}{contentY} such that \a row is at the position specified
     by \a mode, \a offset and \a subRect.
 
     Convenience method for calling
@@ -983,7 +983,7 @@
 /*!
     \qmlmethod QtQuick::TableView::positionViewAtColumn(int column, PositionMode mode, real offset, rect subRect)
 
-    Positions {Flickable::}{contentX} such that \a column is at the position specified
+    Positions \l {Flickable::}{contentX} such that \a column is at the position specified
     by \a mode, \a offset and \a subRect.
 
     Convenience method for calling
