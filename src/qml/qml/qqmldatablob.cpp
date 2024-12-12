@@ -238,7 +238,10 @@ May only be called from the load thread, or after the blob isCompleteOrError().
 */
 QList<QQmlError> QQmlDataBlob::errors() const
 {
-    Q_ASSERT(isCompleteOrError() || (m_typeLoader && m_typeLoader->m_thread->isThisThread()));
+    Q_ASSERT(isCompleteOrError()
+             || !m_typeLoader
+             || !m_typeLoader->m_thread
+             || m_typeLoader->m_thread->isThisThread());
     return m_errors;
 }
 
@@ -251,9 +254,7 @@ bool QQmlDataBlob::isTypeLoaderThread() const
 
 bool QQmlDataBlob::isTypeLoaderThreadRunning() const
 {
-    return m_typeLoader
-            && m_typeLoader->m_thread
-            && !m_typeLoader->m_thread->isShutdown();
+    return m_typeLoader && m_typeLoader->m_thread;
 }
 
 bool QQmlDataBlob::isEngineThread() const

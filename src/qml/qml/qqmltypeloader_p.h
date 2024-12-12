@@ -176,8 +176,8 @@ public:
     bool isTypeLoaded(const QUrl &url) const;
     bool isScriptLoaded(const QUrl &url) const;
 
-    void lock() { m_thread->lock(); }
-    void unlock() { m_thread->unlock(); }
+    void lock() { ensureThread()->lock(); }
+    void unlock() { ensureThread()->unlock(); }
 
     void load(const QQmlDataBlob::Ptr &,  Mode = PreferSynchronous);
     void loadWithStaticData(const QQmlDataBlob::Ptr &blob, const QByteArray &, Mode = PreferSynchronous);
@@ -207,6 +207,12 @@ private:
 
     void startThread();
     void shutdownThread();
+    QQmlTypeLoaderThread *ensureThread()
+    {
+        if (!m_thread)
+            startThread();
+        return m_thread;
+    }
 
     void loadThread(const QQmlDataBlob::Ptr &);
     void loadWithStaticDataThread(const QQmlDataBlob::Ptr &, const QByteArray &);
@@ -230,7 +236,7 @@ private:
     typedef QStringHash<QQmlTypeLoaderQmldirContent *> ImportQmlDirCache;
 
     QQmlEngine *m_engine;
-    QQmlTypeLoaderThread *m_thread;
+    QQmlTypeLoaderThread *m_thread = nullptr;
 
 #if QT_CONFIG(qml_debug)
     QScopedPointer<QQmlProfiler> m_profiler;

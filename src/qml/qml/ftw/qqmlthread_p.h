@@ -32,10 +32,6 @@ public:
     QQmlThread();
     virtual ~QQmlThread();
 
-    void startup();
-    void shutdown();
-    bool isShutdown() const;
-
     void lock();
     void unlock();
     void wakeOne();
@@ -65,6 +61,10 @@ public:
 
     void waitForNextMessage();
     void discardMessages();
+
+protected:
+    void startup();
+    void shutdown();
 
 private:
     friend class QQmlThreadPrivate;

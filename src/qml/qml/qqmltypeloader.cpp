@@ -82,11 +82,7 @@ void QQmlTypeLoader::invalidate()
 {
     ASSERT_ENGINETHREAD();
 
-    if (m_thread) {
-        shutdownThread();
-        delete m_thread;
-        m_thread = nullptr;
-    }
+    shutdownThread();
 
 #if QT_CONFIG(qml_network)
     // Need to delete the network replies after
@@ -113,11 +109,11 @@ struct PlainLoader {
     }
     void load(QQmlTypeLoader *loader, const QQmlDataBlob::Ptr &blob) const
     {
-        loader->m_thread->load(blob);
+        loader->ensureThread()->load(blob);
     }
     void loadAsync(QQmlTypeLoader *loader, const QQmlDataBlob::Ptr &blob) const
     {
-        loader->m_thread->loadAsync(blob);
+        loader->ensureThread()->loadAsync(blob);
     }
 };
 
@@ -131,11 +127,11 @@ struct StaticLoader {
     }
     void load(QQmlTypeLoader *loader, const QQmlDataBlob::Ptr &blob) const
     {
-        loader->m_thread->loadWithStaticData(blob, data);
+        loader->ensureThread()->loadWithStaticData(blob, data);
     }
     void loadAsync(QQmlTypeLoader *loader, const QQmlDataBlob::Ptr &blob) const
     {
-        loader->m_thread->loadWithStaticDataAsync(blob, data);
+        loader->ensureThread()->loadWithStaticDataAsync(blob, data);
     }
 };
 
@@ -149,11 +145,11 @@ struct CachedLoader {
     }
     void load(QQmlTypeLoader *loader, const QQmlDataBlob::Ptr &blob) const
     {
-        loader->m_thread->loadWithCachedUnit(blob, unit);
+        loader->ensureThread()->loadWithCachedUnit(blob, unit);
     }
     void loadAsync(QQmlTypeLoader *loader, const QQmlDataBlob::Ptr &blob) const
     {
-        loader->m_thread->loadWithCachedUnitAsync(blob, unit);
+        loader->ensureThread()->loadWithCachedUnitAsync(blob, unit);
     }
 };
 
@@ -163,11 +159,11 @@ void QQmlTypeLoader::doLoad(const Loader &loader, const QQmlDataBlob::Ptr &blob,
     // Can be called from either thread.
 #ifdef DATABLOB_DEBUG
     qWarning("QQmlTypeLoader::doLoad(%s): %s thread", qPrintable(blob->urlString()),
-             m_thread->isThisThread()?"Compile":"Engine");
+             (m_thread && m_thread->isThisThread()) ? "Compile" : "Engine");
 #endif
     blob->startLoading();
 
-    if (m_thread->isThisThread()) {
+    if (m_thread && m_thread->isThisThread()) {
         unlock();
         loader.loadThread(this, blob);
         lock();
@@ -185,9 +181,9 @@ void QQmlTypeLoader::doLoad(const Loader &loader, const QQmlDataBlob::Ptr &blob,
                 blob->setIsAsync(true);
         } else {
             Q_ASSERT(mode == Synchronous);
-            while (!blob->isCompleteOrError()) {
+            Q_ASSERT(m_thread);
+            while (!blob->isCompleteOrError())
                 m_thread->waitForNextMessage();
-            }
         }
     }
 }
@@ -228,7 +224,8 @@ void QQmlTypeLoader::drop(const QQmlDataBlob::Ptr &blob)
 
     // We must not destroy a QQmlDataBlob from the main thread
     // since it will shuffle its dependencies around.
-    m_thread->drop(blob);
+    if (m_thread)
+        m_thread->drop(blob);
 }
 
 void QQmlTypeLoader::loadWithStaticDataThread(const QQmlDataBlob::Ptr &blob, const QByteArray &data)
@@ -248,14 +245,6 @@ void QQmlTypeLoader::loadWithCachedUnitThread(const QQmlDataBlob::Ptr &blob, con
 void QQmlTypeLoader::loadThread(const QQmlDataBlob::Ptr &blob)
 {
     ASSERT_LOADTHREAD();
-
-    // Don't continue loading if we've been shutdown
-    if (m_thread->isShutdown()) {
-        QQmlError error;
-        error.setDescription(QLatin1String("Interrupted by shutdown"));
-        blob->setError(error);
-        return;
-    }
 
     if (blob->m_url.isEmpty()) {
         QQmlError error;
@@ -377,9 +366,8 @@ void doInitializeEngine(Interface *iface, QQmlTypeLoaderThread *thread, QQmlEngi
                       const char *uri)
 {
     // Can be called from either thread
-    Q_ASSERT(thread->isThisThread() || engine->thread() == QThread::currentThread());
 
-    if (thread->isThisThread()) {
+    if (thread && thread->isThisThread()) {
         thread->initializeEngine(iface, uri);
     } else {
         Q_ASSERT(engine->thread() == QThread::currentThread());
@@ -460,16 +448,18 @@ void QQmlTypeLoader::startThread()
 {
     ASSERT_ENGINETHREAD();
 
-    if (m_thread && m_thread->isShutdown())
-        m_thread->startup();
+    if (!m_thread)
+        m_thread = new QQmlTypeLoaderThread(this);
 }
 
 void QQmlTypeLoader::shutdownThread()
 {
     ASSERT_ENGINETHREAD();
 
-    if (m_thread && !m_thread->isShutdown())
-        m_thread->shutdown();
+    if (m_thread) {
+        delete m_thread;
+        m_thread = nullptr;
+    }
 }
 
 QQmlTypeLoader::Blob::PendingImport::PendingImport(
@@ -959,7 +949,6 @@ Constructs a new type loader that uses the given \a engine.
 */
 QQmlTypeLoader::QQmlTypeLoader(QQmlEngine *engine)
     : m_engine(engine)
-    , m_thread(new QQmlTypeLoaderThread(this))
     , m_typeCacheTrimThreshold(TYPELOADER_MINIMUM_TRIM_THRESHOLD)
 {
 }
@@ -1017,7 +1006,7 @@ QQmlRefPointer<QQmlTypeData> QQmlTypeLoader::getType(const QUrl &unNormalizedUrl
             // NB: We do not want to know whether the thread is the main thread, but specifically
             //     that the thread is _not_ the thread we're waiting for.
             //     If !QT_CONFIG(qml_type_loader_thread) the QML thread is the main thread.
-            if (!m_thread->isThisThread()) {
+            if (m_thread && !m_thread->isThisThread()) {
                 while (!typeData->isCompleteOrError())
                     m_thread->waitForNextMessage();
             }
@@ -1436,7 +1425,7 @@ void QQmlTypeLoader::clearCache()
     m_importQmlDirCache.clear();
     m_checksumCache.clear();
 
-    startThread();
+    // The thread will auto-restart next time we need it.
 }
 
 void QQmlTypeLoader::updateTypeCacheTrimThreshold()

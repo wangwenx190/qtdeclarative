@@ -34,16 +34,15 @@ public:
     inline void wait() { _wait.wait(&_mutex); }
     inline void wakeOne() { _wait.wakeOne(); }
 
-    bool m_threadProcessing; // Set when the thread is processing messages
-    bool m_mainProcessing; // Set when the main thread is processing messages
-    bool m_shutdown; // Set by main thread to request a shutdown
-    bool m_mainThreadWaiting; // Set by main thread if it is waiting for the message queue to empty
+    bool m_threadProcessing  = false; // Set when the thread is processing messages
+    bool m_mainProcessing    = false; // Set when the main thread is processing messages
+    bool m_mainThreadWaiting = false; // Set by main thread if it is waiting for the message queue to empty
 
     typedef QFieldList<QQmlThread::Message, &QQmlThread::Message::next> MessageList;
     MessageList threadList;
     MessageList mainList;
 
-    QQmlThread::Message *mainSync;
+    QQmlThread::Message *mainSync = nullptr;
     ThreadObject m_threadObject;
 
     void triggerMainEvent();
@@ -86,9 +85,7 @@ bool QQmlThreadPrivate::ThreadObject::event(QEvent *e)
     return QObject::event(e);
 }
 
-QQmlThreadPrivate::QQmlThreadPrivate(QQmlThread *q)
-: q(q), m_threadProcessing(false), m_mainProcessing(false), m_shutdown(false),
-  m_mainThreadWaiting(false), mainSync(nullptr), m_threadObject(this)
+QQmlThreadPrivate::QQmlThreadPrivate(QQmlThread *q) : q(q), m_threadObject(this)
 {
     setObjectName(QStringLiteral("QQmlThread"));
     // This size is aligned with the recursion depth limits in the parser/codegen. In case of
@@ -147,12 +144,6 @@ void QQmlThreadPrivate::threadEvent()
             lock();
 
             delete threadList.takeFirst();
-        } else if (m_shutdown) {
-            quit();
-            wakeOne();
-            unlock();
-
-            return;
         } else {
             wakeOne();
 
@@ -181,7 +172,6 @@ QQmlThread::~QQmlThread()
  */
 void QQmlThread::startup()
 {
-    d->m_shutdown = false;
     d->start();
     d->m_threadObject.moveToThread(d);
 }
@@ -189,17 +179,14 @@ void QQmlThread::startup()
 void QQmlThread::shutdown()
 {
     d->lock();
-    Q_ASSERT(!d->m_shutdown);
 
-    d->m_shutdown = true;
+    d->quit();
 
-    if (d->mainSync)
+    if (d->mainSync) {
+        delete d->mainSync;
+        d->mainSync = nullptr;
         d->wakeOne();
-
-    if (QCoreApplication::closingDown())
-        d->quit();
-    else
-        d->triggerThreadEvent();
+    }
 
     d->unlock();
     d->QThread::wait();
@@ -207,11 +194,6 @@ void QQmlThread::shutdown()
     // Discard all remaining messages.
     // We don't need the lock anymore because the thread is dead.
     discardMessages();
-}
-
-bool QQmlThread::isShutdown() const
-{
-    return d->m_shutdown;
 }
 
 void QQmlThread::lock()
@@ -306,14 +288,8 @@ void QQmlThread::internalCallMethodInMain(Message *message)
         d->triggerMainEvent();
     }
 
-    while (d->mainSync) {
-        if (d->m_shutdown) {
-            delete d->mainSync;
-            d->mainSync = nullptr;
-            break;
-        }
+    while (d->mainSync)
         d->wait();
-    }
 
     d->unlock();
 }

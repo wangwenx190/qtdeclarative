@@ -18,6 +18,11 @@ QQmlTypeLoaderThread::QQmlTypeLoaderThread(QQmlTypeLoader *loader)
     startup();
 }
 
+QQmlTypeLoaderThread::~QQmlTypeLoaderThread()
+{
+    shutdown();
+}
+
 #if QT_CONFIG(qml_network)
 QNetworkAccessManager *QQmlTypeLoaderThread::networkAccessManager() const
 {
