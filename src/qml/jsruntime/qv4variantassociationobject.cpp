@@ -291,7 +291,7 @@ namespace QV4 {
             Scope scope(variantAssociation->engine());
             ScopedArrayObject mapping(scope, heapAssociation->propertyIndexMapping);
             ScopedString scopedKey(scope, indexToKey(mapping, index));
-            QString key = scopedKey->toQString();
+            const QString key = scopedKey->toQString();
 
             if (!visitVariantAssociation<bool>(heapAssociation, [key](auto association) {
                 return association->contains(key);
@@ -312,9 +312,9 @@ namespace QV4 {
             Scope scope(variantAssociation->engine());
             ScopedArrayObject mapping(scope, heapAssociation->propertyIndexMapping);
             ScopedString scopedKey(scope, indexToKey(mapping, index));
-            QString key = scopedKey->toQString();
+            const QString key = scopedKey->toQString();
 
-            visitVariantAssociation<void>(heapAssociation, [a, key](auto association){
+            visitVariantAssociation<void>(heapAssociation, [a, key](auto association) {
                 if (association->contains(key))
                     association->insert(key, *static_cast<QVariant*>(a[0]));
             });
@@ -352,7 +352,7 @@ namespace QV4 {
 
                     return engine->fromVariant(
                         association->value(key),
-                        d(), hasElement ? keyToIndex(mapping.getPointer(), scopedKey.getPointer()) : -1,
+                        d(), keyToIndex(mapping.getPointer(), scopedKey.getPointer()),
                         Heap::ReferenceObject::Flag::CanWriteBack |
                         Heap::ReferenceObject::Flag::IsVariant);
                 }
