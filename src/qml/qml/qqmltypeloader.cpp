@@ -199,28 +199,32 @@ void QQmlTypeLoader::doLoad(const Loader &loader, const QQmlDataBlob::Ptr &blob,
     blob->startLoading();
 
     if (m_thread && m_thread->isThisThread()) {
-        unlock();
         loader.loadThread(this, blob);
-        lock();
-    } else if (mode == Asynchronous) {
-        blob->setIsAsync(true);
-        unlock();
-        loader.loadAsync(this, blob);
-        lock();
-    } else {
-        unlock();
-        loader.load(this, blob);
-        lock();
-        if (mode == PreferSynchronous) {
-            if (!blob->isCompleteOrError())
-                blob->setIsAsync(true);
-        } else {
-            Q_ASSERT(mode == Synchronous);
-            Q_ASSERT(m_thread);
-            while (!blob->isCompleteOrError())
-                m_thread->waitForNextMessage();
-        }
+        return;
     }
+
+    if (mode == Asynchronous) {
+        blob->setIsAsync(true);
+        loader.loadAsync(this, blob);
+        return;
+    }
+
+    loader.load(this, blob);
+    if (blob->isCompleteOrError())
+        return;
+
+    if (mode == PreferSynchronous) {
+        blob->setIsAsync(true);
+        return;
+    }
+
+    Q_ASSERT(mode == Synchronous);
+    Q_ASSERT(m_thread);
+
+    LockHolder<QQmlTypeLoader> lock(this);
+    do {
+        m_thread->waitForNextMessage();
+    } while (!blob->isCompleteOrError());
 }
 
 /*!
@@ -1044,23 +1048,23 @@ QQmlRefPointer<QQmlTypeData> QQmlTypeLoader::getType(const QUrl &unNormalizedUrl
         return typeData;
     };
 
-    // TODO: How long should we actually hold on to the lock?
-    //       Currently, if we are in the type loader thread. The lock is held through the whole
-    //       load() below. That's quite excessive.
-    LockHolder<QQmlTypeLoader> holder(this);
+    QQmlRefPointer<QQmlTypeData> typeData;
+    {
+        LockHolder<QQmlTypeLoader> holder(this);
 
-    QQmlRefPointer<QQmlTypeData> typeData = m_typeCache.value(url);
-    if (typeData)
-        return handleExisting(typeData);
+        typeData = m_typeCache.value(url);
+        if (typeData)
+            return handleExisting(typeData);
 
-    // Trim before adding the new type, so that we don't immediately trim it away
-    if (m_typeCache.size() >= m_typeCacheTrimThreshold)
-        trimCache();
+        // Trim before adding the new type, so that we don't immediately trim it away
+        if (m_typeCache.size() >= m_typeCacheTrimThreshold)
+            trimCache();
 
-    typeData = QQml::makeRefPointer<QQmlTypeData>(url, this);
+        typeData = QQml::makeRefPointer<QQmlTypeData>(url, this);
 
-    // TODO: if (compiledData == 0), is it safe to omit this insertion?
-    m_typeCache.insert(url, typeData);
+        // TODO: if (compiledData == 0), is it safe to omit this insertion?
+        m_typeCache.insert(url, typeData);
+    }
 
     QQmlMetaType::CachedUnitLookupError error = QQmlMetaType::CachedUnitLookupError::NoError;
     const QQmlMetaType::CacheMode cacheMode = typeData->aotCacheMode();
@@ -1082,14 +1086,10 @@ QQmlTypeData will not be cached.
 */
 QQmlRefPointer<QQmlTypeData> QQmlTypeLoader::getType(const QByteArray &data, const QUrl &url, Mode mode)
 {
-    // TODO: This can be called from either thread. But why do we lock here? Or, why do we not
-    //       cache the resulting QQmlTypeData?
-
-    LockHolder<QQmlTypeLoader> holder(this);
+    // Can be called from either thread.
 
     QQmlRefPointer<QQmlTypeData> typeData = QQml::makeRefPointer<QQmlTypeData>(url, this);
     QQmlTypeLoader::loadWithStaticData(QQmlDataBlob::Ptr(typeData.data()), data, mode);
-
     return typeData;
 }
 
@@ -1099,12 +1099,15 @@ QQmlRefPointer<QV4::CompiledData::CompilationUnit> QQmlTypeLoader::injectScript(
     ASSERT_ENGINETHREAD();
 
     QQmlRefPointer<QQmlScriptBlob> blob = QQml::makeRefPointer<QQmlScriptBlob>(relativeUrl, this);
-
-    LockHolder<QQmlTypeLoader> holder(this);
     QQmlPrivate::CachedQmlUnit cached { unit, nullptr, nullptr};
+
+    {
+        LockHolder<QQmlTypeLoader> holder(this);
+        m_scriptCache.insert(relativeUrl, blob);
+    }
+
     loadWithCachedUnit(blob.data(), &cached, Synchronous);
     Q_ASSERT(blob->isComplete());
-    m_scriptCache.insert(relativeUrl, blob);
     return blob->scriptData()->compilationUnit();
 }
 
@@ -1114,7 +1117,7 @@ Return a QQmlScriptBlob for \a url.  The QQmlScriptData may be cached.
 QQmlRefPointer<QQmlScriptBlob> QQmlTypeLoader::getScript(
         const QUrl &unNormalizedUrl, const QUrl &relativeUrl)
 {
-    // TODO: Can be called from either thread and hold on to the lock for too long.
+    // Can be called from either thread
 
     Q_ASSERT(!unNormalizedUrl.isRelative() &&
             (QQmlFile::urlToLocalFileOrQrc(unNormalizedUrl).isEmpty() ||
@@ -1122,29 +1125,32 @@ QQmlRefPointer<QQmlScriptBlob> QQmlTypeLoader::getScript(
 
     const QUrl url = normalize(unNormalizedUrl);
 
-    LockHolder<QQmlTypeLoader> holder(this);
+    QQmlRefPointer<QQmlScriptBlob> scriptBlob;
+    {
+        LockHolder<QQmlTypeLoader> holder(this);
+        scriptBlob = m_scriptCache.value(url);
 
-    QQmlRefPointer<QQmlScriptBlob> scriptBlob = m_scriptCache.value(url);
+        // Also try the relative URL since manually registering native modules doesn't require
+        // passing an absolute URL and we don't have a reference URL for native modules.
+        if (!scriptBlob && unNormalizedUrl != relativeUrl)
+            scriptBlob = m_scriptCache.value(relativeUrl);
 
-    // Also try the relative URL since manually registering native modules doesn't require
-    // passing an absolute URL and we don't have a reference URL for native modules.
-    if (!scriptBlob && unNormalizedUrl != relativeUrl)
-        scriptBlob = m_scriptCache.value(relativeUrl);
+        if (scriptBlob)
+            return scriptBlob;
 
-    if (!scriptBlob) {
         scriptBlob = QQml::makeRefPointer<QQmlScriptBlob>(url, this);
         m_scriptCache.insert(url, scriptBlob);
+    }
 
-        QQmlMetaType::CachedUnitLookupError error = QQmlMetaType::CachedUnitLookupError::NoError;
-        const QQmlMetaType::CacheMode cacheMode = scriptBlob->aotCacheMode();
-        if (const QQmlPrivate::CachedQmlUnit *cachedUnit = (cacheMode != QQmlMetaType::RejectAll)
-                ? QQmlMetaType::findCachedCompilationUnit(scriptBlob->url(), cacheMode, &error)
-                : nullptr) {
-            QQmlTypeLoader::loadWithCachedUnit(QQmlDataBlob::Ptr(scriptBlob.data()), cachedUnit);
-        } else {
-            scriptBlob->setCachedUnitStatus(error);
-            QQmlTypeLoader::load(QQmlDataBlob::Ptr(scriptBlob.data()));
-        }
+    QQmlMetaType::CachedUnitLookupError error = QQmlMetaType::CachedUnitLookupError::NoError;
+    const QQmlMetaType::CacheMode cacheMode = scriptBlob->aotCacheMode();
+    if (const QQmlPrivate::CachedQmlUnit *cachedUnit = (cacheMode != QQmlMetaType::RejectAll)
+            ? QQmlMetaType::findCachedCompilationUnit(scriptBlob->url(), cacheMode, &error)
+            : nullptr) {
+        QQmlTypeLoader::loadWithCachedUnit(QQmlDataBlob::Ptr(scriptBlob.data()), cachedUnit);
+    } else {
+        scriptBlob->setCachedUnitStatus(error);
+        QQmlTypeLoader::load(QQmlDataBlob::Ptr(scriptBlob.data()));
     }
 
     return scriptBlob;
@@ -1160,16 +1166,19 @@ QQmlRefPointer<QQmlQmldirData> QQmlTypeLoader::getQmldir(const QUrl &url)
     Q_ASSERT(!url.isRelative() &&
             (QQmlFile::urlToLocalFileOrQrc(url).isEmpty() ||
              !QDir::isRelativePath(QQmlFile::urlToLocalFileOrQrc(url))));
-    LockHolder<QQmlTypeLoader> holder(this);
 
-    QQmlRefPointer<QQmlQmldirData> qmldirData = m_qmldirCache.value(url);
+    QQmlRefPointer<QQmlQmldirData> qmldirData;
+    {
+        LockHolder<QQmlTypeLoader> holder(this);
+        qmldirData = m_qmldirCache.value(url);
+        if (qmldirData)
+            return qmldirData;
 
-    if (!qmldirData) {
         qmldirData = QQml::makeRefPointer<QQmlQmldirData>(url, this);
         m_qmldirCache.insert(url, qmldirData);
-        QQmlTypeLoader::load(QQmlDataBlob::Ptr(qmldirData.data()));
     }
 
+    QQmlTypeLoader::load(QQmlDataBlob::Ptr(qmldirData.data()));
     return qmldirData;
 }
 

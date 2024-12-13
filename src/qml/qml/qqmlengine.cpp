@@ -2170,9 +2170,7 @@ LoadHelper::LoadHelper(
     , m_typeName(typeName.toString())
     , m_mode(mode)
 {
-    m_typeLoader->lock();
     m_typeLoader->loadWithStaticData(this, QByteArray(), m_mode);
-    m_typeLoader->unlock();
 }
 
 void LoadHelper::registerCallback(QQmlComponentPrivate *callback)
