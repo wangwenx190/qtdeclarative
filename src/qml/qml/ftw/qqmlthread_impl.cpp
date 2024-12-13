@@ -19,6 +19,13 @@ QT_BEGIN_NAMESPACE
 class QQmlThreadPrivate : public QThread
 {
 public:
+    struct ThreadObject : public QObject
+    {
+        ThreadObject(QQmlThreadPrivate *p);
+        bool event(QEvent *e) override;
+        QQmlThreadPrivate *p;
+    };
+
     QQmlThreadPrivate(QQmlThread *);
     QQmlThread *q;
 
@@ -37,6 +44,7 @@ public:
     MessageList mainList;
 
     QQmlThread::Message *mainSync;
+    ThreadObject m_threadObject;
 
     void triggerMainEvent();
     void triggerThreadEvent();
@@ -48,18 +56,11 @@ protected:
     bool event(QEvent *) override;
 
 private:
-    struct MainObject : public QObject {
-        MainObject(QQmlThreadPrivate *p);
-        bool event(QEvent *e) override;
-        QQmlThreadPrivate *p;
-    };
-    MainObject m_mainObject;
-
     QMutex _mutex;
     QWaitCondition _wait;
 };
 
-QQmlThreadPrivate::MainObject::MainObject(QQmlThreadPrivate *p)
+QQmlThreadPrivate::ThreadObject::ThreadObject(QQmlThreadPrivate *p)
 : p(p)
 {
 }
@@ -68,26 +69,26 @@ QQmlThreadPrivate::MainObject::MainObject(QQmlThreadPrivate *p)
 void QQmlThreadPrivate::triggerMainEvent()
 {
     Q_ASSERT(q->isThisThread());
-    QCoreApplication::postEvent(&m_mainObject, new QEvent(QEvent::User));
+    QCoreApplication::postEvent(this, new QEvent(QEvent::User));
 }
 
 // Trigger even in thread.  Must be called from main thread.
 void QQmlThreadPrivate::triggerThreadEvent()
 {
     Q_ASSERT(!q->isThisThread());
-    QCoreApplication::postEvent(this, new QEvent(QEvent::User));
+    QCoreApplication::postEvent(&m_threadObject, new QEvent(QEvent::User));
 }
 
-bool QQmlThreadPrivate::MainObject::event(QEvent *e)
+bool QQmlThreadPrivate::ThreadObject::event(QEvent *e)
 {
     if (e->type() == QEvent::User)
-        p->mainEvent();
+        p->threadEvent();
     return QObject::event(e);
 }
 
 QQmlThreadPrivate::QQmlThreadPrivate(QQmlThread *q)
 : q(q), m_threadProcessing(false), m_mainProcessing(false), m_shutdown(false),
-  m_mainThreadWaiting(false), mainSync(nullptr), m_mainObject(this)
+  m_mainThreadWaiting(false), mainSync(nullptr), m_threadObject(this)
 {
     setObjectName(QStringLiteral("QQmlThread"));
     // This size is aligned with the recursion depth limits in the parser/codegen. In case of
@@ -98,7 +99,7 @@ QQmlThreadPrivate::QQmlThreadPrivate(QQmlThread *q)
 bool QQmlThreadPrivate::event(QEvent *e)
 {
     if (e->type() == QEvent::User)
-        threadEvent();
+        mainEvent();
     return QThread::event(e);
 }
 
@@ -182,7 +183,7 @@ void QQmlThread::startup()
 {
     d->m_shutdown = false;
     d->start();
-    d->moveToThread(d);
+    d->m_threadObject.moveToThread(d);
 }
 
 void QQmlThread::shutdown()
@@ -248,7 +249,7 @@ QThread *QQmlThread::thread() const
  */
 QObject *QQmlThread::threadObject() const
 {
-    return d;
+    return &d->m_threadObject;
 }
 
 void QQmlThread::internalCallMethodInThread(Message *message)
