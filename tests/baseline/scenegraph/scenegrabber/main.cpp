@@ -5,6 +5,7 @@
 #include <QtCore/QDebug>
 #include <QtCore/QFileInfo>
 #include <QtCore/QHashFunctions>
+#include <QtGui/QCursor>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QImage>
 #include <QtCore/QLoggingCategory>
@@ -280,6 +281,8 @@ int main(int argc, char *argv[])
         v.setPosition(preferredScreenRect.topLeft());
         v.show();
     }
+
+    QCursor::setPos(preferredScreenRect.topLeft());
 
     int retVal = a.exec();
     qCDebug(lcGrabber) << "...retVal=" << retVal;
