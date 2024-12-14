@@ -298,7 +298,10 @@ int main(int argv, char *argc[])
         qInfo() << "will log to" << fileName;
         logFile = new QFile(fileName);
         logFileLock = new QMutex;
-        logFile->open(QFile::WriteOnly | QFile::Truncate | QFile::Text);
+        if (!logFile->open(QFile::WriteOnly | QFile::Truncate | QFile::Text)) {
+            qWarning("Failed to open file %s: %s",
+                     qPrintable(logFile->fileName()), qPrintable(logFile->errorString()));
+        }
         qInstallMessageHandler([](QtMsgType t, const QMessageLogContext &, const QString &msg) {
             QMutexLocker l(logFileLock);
             logFile->write(QString::number(int(t)).toUtf8());
