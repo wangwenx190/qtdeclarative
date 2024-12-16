@@ -101,7 +101,7 @@ class Q_QML_EXPORT QQmlEnginePrivate : public QJSEnginePrivate
 {
     Q_DECLARE_PUBLIC(QQmlEngine)
 public:
-    explicit QQmlEnginePrivate(QQmlEngine *q) : importDatabase(&typeLoader), typeLoader(q) {}
+    explicit QQmlEnginePrivate(QQmlEngine *q) : typeLoader(q) {}
     ~QQmlEnginePrivate() override;
 
     void init();
@@ -152,7 +152,6 @@ public:
     void referenceScarceResources();
     void dereferenceScarceResources();
 
-    QQmlImportDatabase importDatabase;
     QQmlTypeLoader typeLoader;
 
     QString offlineStoragePath;

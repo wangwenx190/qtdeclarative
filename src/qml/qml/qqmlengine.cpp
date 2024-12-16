@@ -1620,7 +1620,7 @@ void QQmlEnginePrivate::cleanupScarceResources()
 void QQmlEngine::addImportPath(const QString& path)
 {
     Q_D(QQmlEngine);
-    d->importDatabase.addImportPath(path);
+    d->typeLoader.addImportPath(path);
 }
 
 /*!
@@ -1641,7 +1641,7 @@ void QQmlEngine::addImportPath(const QString& path)
 QStringList QQmlEngine::importPathList() const
 {
     Q_D(const QQmlEngine);
-    return d->importDatabase.importPathList();
+    return d->typeLoader.importPathList();
 }
 
 /*!
@@ -1659,7 +1659,7 @@ QStringList QQmlEngine::importPathList() const
 void QQmlEngine::setImportPathList(const QStringList &paths)
 {
     Q_D(QQmlEngine);
-    d->importDatabase.setImportPathList(paths);
+    d->typeLoader.setImportPathList(paths);
 }
 
 
@@ -1677,7 +1677,7 @@ void QQmlEngine::setImportPathList(const QStringList &paths)
 void QQmlEngine::addPluginPath(const QString& path)
 {
     Q_D(QQmlEngine);
-    d->importDatabase.addPluginPath(path);
+    d->typeLoader.addPluginPath(path);
 }
 
 /*!
@@ -1692,7 +1692,7 @@ void QQmlEngine::addPluginPath(const QString& path)
 QStringList QQmlEngine::pluginPathList() const
 {
     Q_D(const QQmlEngine);
-    return d->importDatabase.pluginPathList();
+    return d->typeLoader.pluginPathList();
 }
 
 /*!
@@ -1708,7 +1708,7 @@ QStringList QQmlEngine::pluginPathList() const
 void QQmlEngine::setPluginPathList(const QStringList &paths)
 {
     Q_D(QQmlEngine);
-    d->importDatabase.setPluginPathList(paths);
+    d->typeLoader.setPluginPathList(paths);
 }
 
 #if QT_CONFIG(library)
@@ -1731,8 +1731,7 @@ bool QQmlEngine::importPlugin(const QString &filePath, const QString &uri, QList
 {
     Q_D(QQmlEngine);
     QQmlTypeLoaderQmldirContent qmldir;
-    QQmlPluginImporter importer(
-                uri, QTypeRevision(), &d->importDatabase, &qmldir, &d->typeLoader, errors);
+    QQmlPluginImporter importer(uri, QTypeRevision(),  &qmldir, &d->typeLoader, errors);
     return importer.importDynamicPlugin(filePath, uri, false).isValid();
 }
 #endif

@@ -124,6 +124,32 @@ static bool unloadPlugin(const std::pair<const QString, QmlPlugin> &plugin)
     return true;
 }
 
+/*!
+    \internal
+*/
+static QTypeRevision lockModule(const QString &uri, const QString &typeNamespace,
+                                             QTypeRevision version, QList<QQmlError> *errors)
+{
+    if (!version.hasMajorVersion()) {
+        version = QQmlMetaType::latestModuleVersion(uri);
+        if (!version.isValid())
+            errors->prepend(QQmlImports::moduleNotFoundError(uri, version));
+    }
+    if (version.hasMajorVersion() && !typeNamespace.isEmpty()
+        && !QQmlMetaType::protectModule(uri, version, true)) {
+        // Not being able to protect the module means there are not types registered for it,
+        // means the plugin we loaded didn't provide any, means we didn't find the module.
+        // We output the generic error message as depending on the load order of imports we may
+        // hit this path or another one that only figures "plugin is already loaded but module
+        // unavailable" and doesn't try to protect it anymore.
+        errors->prepend(QQmlImports::moduleNotFoundError(uri, version));
+        return QTypeRevision();
+    }
+
+    return version;
+}
+
+
 void qmlClearEnginePlugins()
 {
     PluginMapPtr plugins(qmlPluginsById());
@@ -168,7 +194,7 @@ void QQmlPluginImporter::finalizePlugin(QObject *instance, const QString &plugin
     // only called from the engine specific loader thread and importDynamicPlugin as well as
     // importStaticPlugin are the only places of access.
 
-    database->initializedPlugins.insert(pluginId);
+    typeLoader->setPluginInitialized(pluginId);
     if (auto *extensionIface = qobject_cast<QQmlExtensionInterface *>(instance))
         typeLoader->initializeEngine(extensionIface, uri.toUtf8().constData());
     else if (auto *engineIface = qobject_cast<QQmlEngineExtensionInterface *>(instance))
@@ -195,8 +221,7 @@ QTypeRevision QQmlPluginImporter::importStaticPlugin(QObject *instance, const QS
                 return QTypeRevision();
             }
 
-            importVersion = QQmlImportDatabase::lockModule(
-                        uri, qmldir->typeNamespace(), importVersion, errors);
+            importVersion = lockModule(uri, qmldir->typeNamespace(), importVersion, errors);
             if (!importVersion.isValid())
                 return QTypeRevision();
         }
@@ -207,7 +232,7 @@ QTypeRevision QQmlPluginImporter::importStaticPlugin(QObject *instance, const QS
         // other QML loader threads and thus not process the initializeEngine call).
     }
 
-    if (!database->initializedPlugins.contains(pluginId))
+    if (!typeLoader->isPluginInitialized(pluginId))
         finalizePlugin(instance, pluginId);
 
     return QQmlImports::validVersion(importVersion);
@@ -219,7 +244,7 @@ QTypeRevision QQmlPluginImporter::importDynamicPlugin(
     QObject *instance = nullptr;
     QTypeRevision importVersion = version;
 
-    const bool engineInitialized = database->initializedPlugins.contains(pluginId);
+    const bool engineInitialized = typeLoader->isPluginInitialized(pluginId);
     {
         PluginMapPtr plugins(qmlPluginsById());
         bool typesRegistered = plugins->find(pluginId) != plugins->end();
@@ -234,14 +259,13 @@ QTypeRevision QQmlPluginImporter::importDynamicPlugin(
                     // try again with plugin
                     break;
                 case QQmlMetaType::RegistrationResult::Success:
-                    importVersion = QQmlImportDatabase::lockModule(
-                                uri, qmldir->typeNamespace(), importVersion, errors);
+                    importVersion = lockModule(uri, qmldir->typeNamespace(), importVersion, errors);
                     if (!importVersion.isValid())
                         return QTypeRevision();
                     // instance and loader intentionally left at nullptr
                     plugins->insert(std::make_pair(pluginId, QmlPlugin()));
                     // Not calling initializeEngine with null instance
-                    database->initializedPlugins.insert(pluginId);
+                    typeLoader->setPluginInitialized(pluginId);
                     return importVersion;
                 case QQmlMetaType::RegistrationResult::Failure:
                     return QTypeRevision();
@@ -263,7 +287,7 @@ QTypeRevision QQmlPluginImporter::importDynamicPlugin(
                     if (errors) {
                         QQmlError error;
                         error.setDescription(
-                                    QQmlImportDatabase::tr("File name case mismatch for \"%1\"")
+                                    QQmlImports::tr("File name case mismatch for \"%1\"")
                                     .arg(absoluteFilePath));
                         errors->prepend(error);
                     }
@@ -292,8 +316,7 @@ QTypeRevision QQmlPluginImporter::importDynamicPlugin(
                     return QTypeRevision();
                 }
 
-                importVersion = QQmlImportDatabase::lockModule(
-                            uri, qmldir->typeNamespace(), importVersion, errors);
+                importVersion = lockModule(uri, qmldir->typeNamespace(), importVersion, errors);
                 if (!importVersion.isValid())
                     return QTypeRevision();
             } else {
@@ -326,7 +349,7 @@ QTypeRevision QQmlPluginImporter::importDynamicPlugin(
   \internal
 
   Searches for a plugin called \a baseName in \a qmldirPluginPath, taking the
-  path of the qmldir file itself, and the plugin paths of the QQmlImportDatabase
+  path of the qmldir file itself, and the plugin paths of the QQmlTypeLoader
   into account.
 
   The baseName is amended with a platform-dependent prefix and suffix to
@@ -341,7 +364,7 @@ QTypeRevision QQmlPluginImporter::importDynamicPlugin(
   \endtable
 
   If the \a qmldirPluginPath is absolute, it is searched first. Then each of the
-  filePluginPath entries in the QQmlImportDatabase is checked in turn. If the
+  filePluginPath entries in the QQmlTypeLoader is checked in turn. If the
   entry is relative, it is resolved on top of the path of the qmldir file,
   otherwise it is taken verbatim. If a "." is found in the filePluginPath, and
   \a qmldirPluginPath is relative, then \a qmldirPluginPath is used in its
@@ -388,7 +411,7 @@ QString QQmlPluginImporter::resolvePlugin(const QString &qmldirPluginPath, const
     };
 #endif
 
-    QStringList searchPaths = database->filePluginPath;
+    QStringList searchPaths = typeLoader->pluginPathList();
     bool qmldirPluginPathIsRelative = QDir::isRelativePath(qmldirPluginPath);
     if (!qmldirPluginPathIsRelative)
         searchPaths.prepend(qmldirPluginPath);
@@ -473,7 +496,7 @@ bool QQmlPluginImporter::populatePluginDataVector(QVector<StaticPluginData> &res
             if (metaTagsUriList.isEmpty()) {
                 if (errors) {
                     QQmlError error;
-                    error.setDescription(QQmlImportDatabase::tr(
+                    error.setDescription(QQmlImports::tr(
                                              "static plugin for module \"%1\" with name \"%2\" "
                                              "has no metadata URI")
                                          .arg(uri, QString::fromUtf8(
@@ -508,7 +531,7 @@ QTypeRevision QQmlPluginImporter::importPlugins() {
             && qmldirPath.endsWith(u'/' + QString(uri).replace(u'.', u'/'));
     const QString moduleId = canUseUris ? uri : qmldir->qmldirLocation();
 
-    if (!database->modulesForWhichPluginsHaveBeenLoaded.contains(moduleId)) {
+    if (!typeLoader->isModulePluginProcessingDone(moduleId)) {
         // First search for listed qmldir plugins dynamically. If we cannot resolve them all, we
         // continue searching static plugins that has correct metadata uri. Note that since we
         // only know the uri for a static plugin, and not the filename, we cannot know which
@@ -560,7 +583,7 @@ QTypeRevision QQmlPluginImporter::importPlugins() {
                                     const QQmlError poppedError = errors->takeFirst();
                                     QQmlError error;
                                     error.setDescription(
-                                                QQmlImportDatabase::tr(
+                                                QQmlImports::tr(
                                                     "static plugin for module \"%1\" with "
                                                     "name \"%2\" cannot be loaded: %3")
                                                 .arg(uri, QString::fromUtf8(
@@ -588,11 +611,11 @@ QTypeRevision QQmlPluginImporter::importPlugins() {
             if (errors) {
                 QQmlError error;
                 if (qmldirPluginCount > 1 && staticPluginsFound > 0) {
-                    error.setDescription(QQmlImportDatabase::tr(
+                    error.setDescription(QQmlImports::tr(
                                              "could not resolve all plugins for module \"%1\"")
                                          .arg(uri));
                  } else {
-                    error.setDescription(QQmlImportDatabase::tr(
+                    error.setDescription(QQmlImports::tr(
                                              "module \"%1\" plugin \"%2\" not found")
                                          .arg(uri, qmldirPlugins[dynamicPluginsFound].name));
                 }
@@ -602,7 +625,7 @@ QTypeRevision QQmlPluginImporter::importPlugins() {
             return QTypeRevision();
         }
 
-        database->modulesForWhichPluginsHaveBeenLoaded.insert(moduleId);
+        typeLoader->setModulePluginProcessingDone(moduleId);
     }
     return QQmlImports::validVersion(importVersion);
 }

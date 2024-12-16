@@ -35,7 +35,6 @@ QT_BEGIN_NAMESPACE
 class QQmlTypeNameCache;
 class QDir;
 class QQmlImportNamespace;
-class QQmlImportDatabase;
 class QQmlTypeLoader;
 class QQmlTypeLoaderQmldirContent;
 class QTypeRevision;
@@ -119,6 +118,7 @@ public:
 class Q_QML_EXPORT QQmlImports final : public QQmlRefCounted<QQmlImports>
 {
     Q_DISABLE_COPY_MOVE(QQmlImports)
+    Q_DECLARE_TR_FUNCTIONS(QQmlImports)
 public:
     enum ImportVersion { FullyVersioned, PartiallyVersioned, Unversioned };
 
@@ -217,9 +217,9 @@ public:
 
     static QTypeRevision validVersion(QTypeRevision version = QTypeRevision());
 
-private:
-    friend class QQmlImportDatabase;
+    static QQmlError moduleNotFoundError(const QString &uri, QTypeRevision version);
 
+private:
     QQmlImportNamespace *importNamespace(const QString &prefix);
 
     bool resolveType(
@@ -249,7 +249,7 @@ private:
             QQmlTypeLoader *typeLoader,  const QString &qmldirIdentifier, const QString &uri,
             QQmlTypeLoaderQmldirContent *qmldir, QList<QQmlError> *errors);
 
-    QString resolvedUri(const QString &dir_arg, QQmlImportDatabase *database);
+    QString resolvedUri(const QString &dir_arg, QQmlTypeLoader *typeLoader);
 
     QUrl m_baseUrl;
     QString m_base;
@@ -265,200 +265,6 @@ private:
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(QQmlImports::ImportFlags)
-
-class Q_QML_EXPORT QQmlImportDatabase
-{
-    Q_DECLARE_TR_FUNCTIONS(QQmlImportDatabase)
-public:
-    enum PathType { Local, Remote, LocalOrRemote };
-
-    enum LocalQmldirSearchLocation {
-        QmldirFileAndCache,
-        QmldirCacheOnly,
-    };
-
-    enum LocalQmldirResult {
-        QmldirFound,
-        QmldirNotFound,
-        QmldirInterceptedToRemote,
-        QmldirRejected
-    };
-
-    QQmlImportDatabase(QQmlTypeLoader *typeLoader);
-    ~QQmlImportDatabase() { clearDirCache(); }
-
-    bool removeDynamicPlugin(const QString &pluginId);
-    QStringList dynamicPlugins() const;
-
-    QStringList importPathList(PathType type = LocalOrRemote) const;
-    void setImportPathList(const QStringList &paths);
-    void addImportPath(const QString& dir);
-
-    QStringList pluginPathList() const { return filePluginPath; }
-    void setPluginPathList(const QStringList &paths);
-
-    void addPluginPath(const QString& path);
-
-    static void sanitizeUNCPath(QString *path)
-    {
-        // This handles the UNC path case as when the path is retrieved from the QUrl it
-        // will convert the host name from upper case to lower case. So the absoluteFilePath
-        // is changed at this point to make sure it will match later on in that case.
-        if (path->startsWith(QStringLiteral("//"))) {
-            // toLocalFile() since that faithfully restores all the things you can do to a
-            // path but not a URL, in particular weird characters like '%'.
-            *path = QUrl::fromLocalFile(*path).toLocalFile();
-        }
-    }
-
-    template<typename Callback>
-    LocalQmldirResult locateLocalQmldir(
-            const QString &uri, QTypeRevision version, LocalQmldirSearchLocation location,
-            const Callback &callback);
-
-    static QTypeRevision lockModule(const QString &uri, const QString &typeNamespace,
-                                    QTypeRevision version, QList<QQmlError> *errors);
-
-private:
-    friend class QQmlImports;
-    friend class QQmlPluginImporter;
-
-    QString absoluteFilePath(const QString &path) const;
-    void clearDirCache();
-
-    bool hasUrlInterceptors() const;
-    QUrl interceptUrl(const QUrl &url, QQmlAbstractUrlInterceptor::DataType type) const;
-
-    struct QmldirCache {
-        QTypeRevision version;
-        QString qmldirFilePath;
-        QString qmldirPathUrl;
-        QmldirCache *next;
-    };
-    // Maps from an import to a linked list of qmldir info.
-    // Used in QQmlImports::locateQmldir()
-    QStringHash<QmldirCache *> qmldirCache;
-
-    // XXX thread
-    QStringList filePluginPath;
-    QStringList fileImportPath;
-
-    QSet<QString> modulesForWhichPluginsHaveBeenLoaded;
-    QSet<QString> initializedPlugins;
-    QQmlTypeLoader *typeLoader;
-};
-
-template<typename Callback>
-QQmlImportDatabase::LocalQmldirResult QQmlImportDatabase::locateLocalQmldir(
-        const QString &uri, QTypeRevision version,
-        QQmlImportDatabase::LocalQmldirSearchLocation location, const Callback &callback)
-{
-    // Check cache first
-
-    LocalQmldirResult result = QmldirNotFound;
-    QmldirCache *cacheTail = nullptr;
-
-    QmldirCache **cachePtr = qmldirCache.value(uri);
-    QmldirCache *cacheHead = cachePtr ? *cachePtr : nullptr;
-    if (cacheHead) {
-        cacheTail = cacheHead;
-        do {
-            if (cacheTail->version == version) {
-                if (cacheTail->qmldirFilePath.isEmpty()) {
-                    return cacheTail->qmldirPathUrl.isEmpty()
-                            ? QmldirNotFound
-                            : QmldirInterceptedToRemote;
-                }
-                if (callback(cacheTail->qmldirFilePath, cacheTail->qmldirPathUrl))
-                    return QmldirFound;
-                result = QmldirRejected;
-            }
-        } while (cacheTail->next && (cacheTail = cacheTail->next));
-    }
-
-
-    // Do not try to construct the cache if it already had any entries for the URI.
-    // Otherwise we might duplicate cache entries.
-    if (location == QmldirCacheOnly || result != QmldirNotFound)
-        return result;
-
-    const bool hasInterceptors = hasUrlInterceptors();
-
-    // Interceptor might redirect remote files to local ones.
-    QStringList localImportPaths = importPathList(hasInterceptors ? LocalOrRemote : Local);
-
-    // Search local import paths for a matching version
-    const QStringList qmlDirPaths = QQmlImports::completeQmldirPaths(
-                uri, localImportPaths, version);
-
-    QString qmldirAbsoluteFilePath;
-    for (QString qmldirPath : qmlDirPaths) {
-        if (hasInterceptors) {
-            const QUrl intercepted = interceptUrl(
-                        QQmlImports::urlFromLocalFileOrQrcOrUrl(qmldirPath),
-                        QQmlAbstractUrlInterceptor::QmldirFile);
-            qmldirPath = QQmlFile::urlToLocalFileOrQrc(intercepted);
-            if (result != QmldirInterceptedToRemote
-                    && qmldirPath.isEmpty()
-                    && !QQmlFile::isLocalFile(intercepted)) {
-                result = QmldirInterceptedToRemote;
-            }
-        }
-
-        qmldirAbsoluteFilePath = absoluteFilePath(qmldirPath);
-        if (!qmldirAbsoluteFilePath.isEmpty()) {
-            QString url;
-            const QString absolutePath = qmldirAbsoluteFilePath.left(
-                        qmldirAbsoluteFilePath.lastIndexOf(u'/') + 1);
-            if (absolutePath.at(0) == u':') {
-                url = QStringLiteral("qrc") + absolutePath;
-            } else {
-                url = QUrl::fromLocalFile(absolutePath).toString();
-                sanitizeUNCPath(&qmldirAbsoluteFilePath);
-            }
-
-            QmldirCache *cache = new QmldirCache;
-            cache->version = version;
-            cache->qmldirFilePath = qmldirAbsoluteFilePath;
-            cache->qmldirPathUrl = url;
-            cache->next = nullptr;
-            if (cacheTail)
-                cacheTail->next = cache;
-            else
-                qmldirCache.insert(uri, cache);
-            cacheTail = cache;
-
-            if (result != QmldirFound)
-                result = callback(qmldirAbsoluteFilePath, url) ? QmldirFound : QmldirRejected;
-
-            // Do not return here. Rather, construct the complete cache for this URI.
-        }
-    }
-
-    // Nothing found? Add an empty cache entry to signal that for further requests.
-    if (result == QmldirNotFound || result == QmldirInterceptedToRemote) {
-        QmldirCache *cache = new QmldirCache;
-        cache->version = version;
-        cache->next = cacheHead;
-        if (result == QmldirInterceptedToRemote) {
-            // The actual value doesn't matter as long as it's not empty.
-            // We only use it to discern QmldirInterceptedToRemote from QmldirNotFound above.
-            cache->qmldirPathUrl = QStringLiteral("intercepted");
-        }
-        qmldirCache.insert(uri, cache);
-
-        if (result == QmldirNotFound) {
-            qCDebug(lcQmlImport)
-                    << "locateLocalQmldir:" << qPrintable(uri) << "module's qmldir file not found";
-        }
-    } else {
-        qCDebug(lcQmlImport)
-                << "locateLocalQmldir:" << qPrintable(uri) << "module's qmldir found at"
-                << qmldirAbsoluteFilePath;
-    }
-
-    return result;
-}
 
 void qmlClearEnginePlugins();// For internal use by qmlClearRegisteredProperties
 

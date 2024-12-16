@@ -131,7 +131,7 @@ public:
                           // Note: to be able to import the QQmlJSScopeTests
                           // correctly, we need an additional import path. Use
                           // this application's binary directory as done by
-                          // QQmlImportDatabase
+                          // QQmlTypeLoader
                           QCoreApplication::applicationDirPath(),
                   },
                   nullptr)

@@ -30,13 +30,12 @@ class QQmlPluginImporter
     Q_DISABLE_COPY_MOVE(QQmlPluginImporter)
 
 public:
-    QQmlPluginImporter(const QString &uri, QTypeRevision version, QQmlImportDatabase *database,
-                   const QQmlTypeLoaderQmldirContent *qmldir, QQmlTypeLoader *typeLoader,
-                   QList<QQmlError> *errors)
+    QQmlPluginImporter(
+            const QString &uri, QTypeRevision version, const QQmlTypeLoaderQmldirContent *qmldir,
+            QQmlTypeLoader *typeLoader, QList<QQmlError> *errors)
         : uri(uri)
         , qmldirPath(truncateToDirectory(qmldir->qmldirLocation()))
         , qmldir(qmldir)
-        , database(database)
         , typeLoader(typeLoader)
         , errors(errors)
         , version(version)
@@ -49,8 +48,8 @@ public:
     QTypeRevision importStaticPlugin(QObject *instance, const QString &pluginId);
     QTypeRevision importPlugins();
 
-    static bool removePlugin(const QString &pluginId);
-    static QStringList plugins();
+    Q_AUTOTEST_EXPORT static bool removePlugin(const QString &pluginId);
+    Q_AUTOTEST_EXPORT static QStringList plugins();
 
 private:
     struct StaticPluginData {
@@ -69,7 +68,6 @@ private:
     const QString qmldirPath;
 
     const QQmlTypeLoaderQmldirContent *qmldir = nullptr;
-    QQmlImportDatabase *database = nullptr;
     QQmlTypeLoader *typeLoader = nullptr;
     QList<QQmlError> *errors = nullptr;
 

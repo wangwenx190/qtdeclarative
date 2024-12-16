@@ -80,6 +80,9 @@ public:
         using PendingImportPtr = std::shared_ptr<PendingImport>;
 
         void importQmldirScripts(const PendingImportPtr &import, const QQmlTypeLoaderQmldirContent &qmldir, const QUrl &qmldirUrl);
+        bool handleLocalQmldirForImport(
+                const PendingImportPtr &import, const QString &qmldirFilePath,
+                const QString &qmldirUrl, QList<QQmlError> *errors);
 
     protected:
         bool addImport(const QV4::CompiledData::Import *import, QQmlImports::ImportFlags,
@@ -149,7 +152,18 @@ public:
         return &engine->typeLoader;
     }
 
-    QQmlImportDatabase *importDatabase() const;
+    static void sanitizeUNCPath(QString *path)
+    {
+        // This handles the UNC path case as when the path is retrieved from the QUrl it
+        // will convert the host name from upper case to lower case. So the absoluteFilePath
+        // is changed at this point to make sure it will match later on in that case.
+        if (path->startsWith(QStringLiteral("//"))) {
+            // toLocalFile() since that faithfully restores all the things you can do to a
+            // path but not a URL, in particular weird characters like '%'.
+            *path = QUrl::fromLocalFile(*path).toLocalFile();
+        }
+    }
+
     ChecksumCache *checksumCache() { return &m_checksumCache; }
     const ChecksumCache *checksumCache() const { return &m_checksumCache; }
 
@@ -203,6 +217,28 @@ public:
     void setProfiler(QQmlProfiler *profiler);
 #endif // QT_CONFIG(qml_debug)
 
+    QStringList importPathList() const { return m_importPaths; }
+    void setImportPathList(const QStringList &paths);
+    void addImportPath(const QString& dir);
+
+    QStringList pluginPathList() const { return m_pluginPaths; }
+    void setPluginPathList(const QStringList &paths);
+    void addPluginPath(const QString& path);
+
+    void setPluginInitialized(const QString &plugin) { m_initializedPlugins.insert(plugin); }
+    bool isPluginInitialized(const QString &plugin) const
+    {
+        return m_initializedPlugins.contains(plugin);
+    }
+
+    void setModulePluginProcessingDone(const QString &module)
+    {
+        m_modulesForWhichPluginsHaveBeenProcessed.insert(module);
+    }
+    bool isModulePluginProcessingDone(const QString &module)
+    {
+        return m_modulesForWhichPluginsHaveBeenProcessed.contains(module);
+    }
 
 private:
     friend class QQmlDataBlob;
@@ -210,6 +246,22 @@ private:
 #if QT_CONFIG(qml_network)
     friend class QQmlTypeLoaderNetworkReplyProxy;
 #endif // qml_network
+
+    enum PathType { Local, Remote, LocalOrRemote };
+
+    enum LocalQmldirResult {
+        QmldirFound,
+        QmldirNotFound,
+        QmldirInterceptedToRemote,
+        QmldirRejected
+    };
+
+    struct QmldirInfo {
+        QTypeRevision version;
+        QString qmldirFilePath;
+        QString qmldirPathUrl;
+        QmldirInfo *next;
+    };
 
     void startThread();
     void shutdownThread();
@@ -234,6 +286,13 @@ private:
     void setData(const QQmlDataBlob::Ptr &, const QString &fileName);
     void setData(const QQmlDataBlob::Ptr &, const QQmlDataBlob::SourceCodeData &);
     void setCachedUnit(const QQmlDataBlob::Ptr &blob, const QQmlPrivate::CachedQmlUnit *unit);
+
+    QStringList importPathList(PathType type) const;
+    void clearQmldirInfo();
+
+    LocalQmldirResult locateLocalQmldir(
+            QQmlTypeLoader::Blob *blob, const QQmlTypeLoader::Blob::PendingImportPtr &import,
+            QList<QQmlError> *errors);
 
     typedef QHash<QUrl, QQmlRefPointer<QQmlTypeData>> TypeCache;
     typedef QHash<QUrl, QQmlRefPointer<QQmlScriptBlob>> ScriptCache;
@@ -264,6 +323,23 @@ private:
     QV4::ExecutionEngine::DiskCacheOptions m_diskCacheOptions
             = QV4::ExecutionEngine::DiskCache::Enabled;
     bool m_isDebugging = false;
+
+    // Maps from an import to a linked list of qmldir info.
+    // Used in locateLocalQmldir()
+    QStringHash<QmldirInfo *> m_qmldirInfo;
+
+    QStringList m_importPaths;
+    QStringList m_pluginPaths;
+
+    // Modules for which plugins have been loaded and processed in the context of this type
+    // loader's engine. Plugins can have engine-specific initialization callbacks. This is why
+    // we have to keep track of this.
+    QSet<QString> m_modulesForWhichPluginsHaveBeenProcessed;
+
+    // Plugins that have been initialized in the context of this engine. In theory, the same
+    // plugin can be used for multiple modules. Therefore, we need to keep track of this
+    // separately from m_modulesForWhichPluginsHaveBeenProcessed.
+    QSet<QString> m_initializedPlugins;
 
     template<typename Loader>
     void doLoad(const Loader &loader, const QQmlDataBlob::Ptr &blob, Mode mode);
