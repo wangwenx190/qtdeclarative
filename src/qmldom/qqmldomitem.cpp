@@ -2505,18 +2505,13 @@ DomItem DomItem::fromCode(const QString &code, DomType fileType)
 {
     if (code.isEmpty())
         return DomItem();
-    auto env =
-            DomEnvironment::create(QStringList(),
-                                   QQmlJS::Dom::DomEnvironment::Option::SingleThreaded
-                                           | QQmlJS::Dom::DomEnvironment::Option::NoDependencies);
 
+    auto env = DomEnvironment::create({}, DomEnvironment::Option::NoDependencies);
     DomItem tFile;
-
     env->loadFile(
             FileToLoad::fromMemory(env, QString(), code),
             [&tFile](Path, const DomItem &, const DomItem &newIt) { tFile = newIt; },
             std::make_optional(fileType));
-    env->loadPendingDependencies();
     return tFile.fileObject();
 }
 
