@@ -94,6 +94,7 @@ private slots:
     void assignLiteralToVar();
     void assignLiteralToJSValue();
     void assignEmptyStrings();
+    void reassignEqualToVar();
     void bindJSValueToVar();
     void bindJSValueToVariant();
     void bindJSValueToType();
@@ -1157,6 +1158,31 @@ void tst_qqmllanguage::assignEmptyStrings()
     QVERIFY(object->stringProperty().isEmpty());
     QVERIFY(!object->byteArrayProperty().isNull());
     QVERIFY(object->byteArrayProperty().isEmpty());
+}
+
+void tst_qqmllanguage::reassignEqualToVar()
+{
+    QQmlComponent component(&engine, testFileUrl("reassignEqualToVar.qml"));
+    VERIFY_ERRORS(0);
+    QScopedPointer<QObject> object(component.create());
+    QVERIFY(object != nullptr);
+
+    QCOMPARE(object->property("discriminator").toBool(), false);
+    QCOMPARE(object->property("varVal").toInt(), 100);
+    const int initialChanges = object->property("changes").toInt();
+
+    QEXPECT_FAIL("", "The initial change signal should not be sent. See QTBUG-131905", Continue);
+    QCOMPARE(initialChanges, 0);
+
+    object->setProperty("discriminator", true);
+    QCOMPARE(object->property("discriminator").toBool(), true);
+    QCOMPARE(object->property("varVal").toInt(), 100);
+    QCOMPARE(object->property("changes").toInt(), initialChanges);
+
+    object->setProperty("discriminator", false);
+    QCOMPARE(object->property("discriminator").toBool(), false);
+    QCOMPARE(object->property("varVal").toInt(), 100);
+    QCOMPARE(object->property("changes").toInt(), initialChanges);
 }
 
 void tst_qqmllanguage::bindJSValueToVar()
@@ -3775,7 +3801,6 @@ void tst_qqmllanguage::variantNotify()
     QScopedPointer<QObject> object(component.create());
     QVERIFY(object != nullptr);
 
-    QEXPECT_FAIL("", "var properties always trigger notify", Continue);
     QCOMPARE(object->property("notifyCount").toInt(), 1);
 }
 

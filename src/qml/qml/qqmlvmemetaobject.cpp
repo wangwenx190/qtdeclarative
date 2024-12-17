@@ -10,17 +10,18 @@
 
 #include <private/qqmlglobal_p.h>
 
-#include <private/qv4object_p.h>
-#include <private/qv4variantobject_p.h>
-#include <private/qv4variantassociationobject_p.h>
-#include <private/qv4functionobject_p.h>
-#include <private/qv4scopedvalue_p.h>
-#include <private/qv4jscall_p.h>
-#include <private/qv4qobjectwrapper_p.h>
-#include <private/qv4sequenceobject_p.h>
 #include <private/qqmlpropertycachecreator_p.h>
 #include <private/qqmlpropertycachemethodarguments_p.h>
 #include <private/qqmlvaluetypewrapper_p.h>
+#include <private/qv4functionobject_p.h>
+#include <private/qv4jscall_p.h>
+#include <private/qv4object_p.h>
+#include <private/qv4qobjectwrapper_p.h>
+#include <private/qv4runtime_p.h>
+#include <private/qv4scopedvalue_p.h>
+#include <private/qv4sequenceobject_p.h>
+#include <private/qv4variantassociationobject_p.h>
+#include <private/qv4variantobject_p.h>
 
 #include <QtCore/qsequentialiterable.h>
 
@@ -1256,9 +1257,13 @@ void QQmlVMEMetaObject::writeVarProperty(int id, const QV4::Value &value)
     if (!md)
         return;
 
+    const QV4::Value &oldValue = (*md)[id];
+    if (QV4::RuntimeHelpers::strictEqual(oldValue, value))
+        return;
+
     // Importantly, if the current value is a scarce resource, we need to ensure that it
     // gets automatically released by the engine if no other references to it exist.
-    const QV4::VariantObject *oldVariant = (md->data() + id)->as<QV4::VariantObject>();
+    const QV4::VariantObject *oldVariant = oldValue.as<QV4::VariantObject>();
     if (oldVariant)
         oldVariant->removeVmePropertyReference();
 
