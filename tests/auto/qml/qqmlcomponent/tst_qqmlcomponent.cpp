@@ -149,6 +149,7 @@ private slots:
     void loadFromModuleFailures_data();
     void loadFromModuleFailures();
     void loadFromModuleRequired();
+    void loadUrlRequired();
     void loadFromQrc();
     void removeBinding();
     void complexObjectArgument();
@@ -1566,11 +1567,61 @@ void tst_qqmlcomponent::loadFromModuleRequired()
 
     QQmlEngine engine;
     qmlRegisterType<SingleRequiredProperty>("qqmlcomponenttest", 1, 0, "SingleRequiredProperty");
-    QQmlComponent component(&engine, "qqmlcomponenttest", "SingleRequiredProperty");
-    QVERIFY2(!component.isError(), qPrintable(component.errorString()));
+    const QString error = QStringLiteral("Required property i was not initialized");
+    {
+        QQmlComponent component(&engine, "qqmlcomponenttest", "SingleRequiredProperty");
+        QVERIFY2(!component.isError(), qPrintable(component.errorString()));
+        QScopedPointer<QObject> root(component.create());
+        QVERIFY(!root);
+        QVERIFY(component.isError());
+        QCOMPARE(component.errorString(), qPrintable(":-1 " + error  + "\n"));
+    }
+    {
+        QQmlComponent component(&engine, "qqmlcomponenttest", "SingleRequiredProperty");
+        QVERIFY2(!component.isError(), qPrintable(component.errorString()));
+        QScopedPointer<QObject> root(component.beginCreate(engine.rootContext()));
+        QVERIFY(!root.isNull());
+        QVERIFY2(!component.isError(), qPrintable(component.errorString()));
 
-    QScopedPointer<QObject> root(component.create());
-    QVERIFY(!root);
+        // forgetting to set the required properties ...
+        component.completeCreate();
+
+        // ... produces an error.
+        QVERIFY(component.isError());
+        QCOMPARE(component.errorString(), qPrintable(":-1 " + error  + "\n"));
+    }
+}
+
+void tst_qqmlcomponent::loadUrlRequired()
+{
+    QQmlEngine engine;
+    qmlRegisterType<SingleRequiredProperty>("qqmlcomponenttest2", 1, 0, "SingleRequiredProperty");
+    const QUrl url = testFileUrl("loadUrlRequired.qml");
+    const QString error = QStringLiteral("Required property i was not initialized");
+    {
+        QQmlComponent component(&engine);
+        component.loadUrl(url);
+        QVERIFY2(!component.isError(), qPrintable(component.errorString()));
+        QScopedPointer<QObject> root(component.create());
+        QVERIFY(!root);
+        QVERIFY(component.isError());
+        QCOMPARE(component.errorString(), qPrintable(url.toString() + ":2 " + error  + "\n"));
+    }
+    {
+        QQmlComponent component(&engine);
+        component.loadUrl(url);
+        QVERIFY2(!component.isError(), qPrintable(component.errorString()));
+        QScopedPointer<QObject> root(component.beginCreate(engine.rootContext()));
+        QVERIFY(!root.isNull());
+        QVERIFY2(!component.isError(), qPrintable(component.errorString()));
+
+        // forgetting to set the required properties ...
+        component.completeCreate();
+
+        // ... produces an error.
+        QVERIFY(component.isError());
+        QCOMPARE(component.errorString(), qPrintable(url.toString() + ":2 " + error  + "\n"));
+    }
 }
 
 void tst_qqmlcomponent::loadFromQrc()
