@@ -12,4 +12,5 @@ QQmlFormatSettings::QQmlFormatSettings(const QString &toolName) : QQmlToolingSet
     addOption(s_newlineSetting, QStringLiteral("native"));
     addOption(s_objectsSpacingSetting);
     addOption(s_functionsSpacingSetting);
+    addOption(s_sortImportsSetting);
 }

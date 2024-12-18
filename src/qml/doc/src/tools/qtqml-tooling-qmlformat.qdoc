@@ -89,6 +89,11 @@ The following options are available:
     \li
     \li Override the new line format to use (native macos unix windows).
 \row
+    \li -S, --sort-imports
+    \li
+    \li Sort imports alphabetically
+        (Warning: this might change semantics if a given name identifies types in multiple modules!).
+\row
     \li --objects-spacing
     \li
     \li Ensure spaces between objects (only works with normalize option).

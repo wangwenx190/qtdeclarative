@@ -93,7 +93,7 @@ static bool parseFile(const QString &filename, const QQmlFormatOptions &options)
     auto lwOptions = options.optionsForCode(code);
     WriteOutChecks checks = WriteOutCheck::Default;
     //Disable writeOutChecks for some usecases
-    if (options.forceEnabled() || options.isMaxColumnWidthSet() || code.size() > 32000
+    if (options.sortImports() || options.forceEnabled() || options.isMaxColumnWidthSet() || code.size() > 32000
         || fileItem.internalKind() == DomType::JsFile) {
         checks = WriteOutCheck::None;
     }
@@ -179,6 +179,11 @@ QQmlFormatOptions buildCommandLineOptions(const QCoreApplication &app)
 
     parser.addOption(QCommandLineOption(QStringList() << "functions-spacing", QStringLiteral("Ensure spaces between functions (only works with normalize option).")));
 
+    parser.addOption(
+        QCommandLineOption({ "S", "sort-imports" },
+                           QStringLiteral("Sort imports alphabetically "
+                                          "(Warning: this might change semantics if a given name identifies types in multiple modules!).")));
+
     parser.addPositionalArgument("filenames", "files to be processed by qmlformat");
 
     parser.process(app);
@@ -222,6 +227,7 @@ QQmlFormatOptions buildCommandLineOptions(const QCoreApplication &app)
     options.setNormalizeEnabled(parser.isSet("normalize"));
     options.setObjectsSpacing(parser.isSet("objects-spacing"));
     options.setFunctionsSpacing(parser.isSet("functions-spacing"));
+    options.setSortImports(parser.isSet("sort-imports"));
 
     options.setIndentWidth(indentWidth);
     options.setIndentWidthSet(parser.isSet("indent-width"));

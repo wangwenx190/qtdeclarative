@@ -503,7 +503,18 @@ void QmlFile::writeOut(const DomItem &self, OutWriter &ow) const
     for (const DomItem &p : self.field(Fields::pragmas).values()) {
         p.writeOut(ow);
     }
-    for (auto i : self.field(Fields::imports).values()) {
+    auto imports = self.field(Fields::imports).values();
+
+    if (ow.lineWriter.options().sortImports) {
+        std::stable_sort (imports.begin(), imports.end(),
+                         [](const DomItem& item1, const DomItem& item2) {
+                             const auto uri1 = item1[Fields::uri].toString();
+                             const auto uri2 = item2[Fields::uri].toString();
+                             return uri1 < uri2;
+                         });
+    }
+
+    for (const DomItem& i : imports) {
         i.writeOut(ow);
     }
     ow.ensureNewline(2);

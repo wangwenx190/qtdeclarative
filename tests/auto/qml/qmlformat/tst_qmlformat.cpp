@@ -346,6 +346,10 @@ void TestQmlformat::testFormat_data()
             << "normalizedObjectsSpacing.qml"
             << "normalizedObjectsSpacing.formatted.qml" << QStringList { "-n", "--objects-spacing" } << RunOption::OnCopy;
 
+    QTest::newRow("sorting imports")
+        << "sortingImports.qml"
+        << "sortingImports.formatted.qml" << QStringList { "-S" } << RunOption::OnCopy;
+
     QTest::newRow("ids new lines")
             << "checkIdsNewline.qml"
             << "checkIdsNewline.formatted.qml" << QStringList { "-n" } << RunOption::OnCopy;

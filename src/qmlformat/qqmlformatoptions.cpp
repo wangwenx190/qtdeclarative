@@ -88,4 +88,7 @@ void QQmlFormatOptions::applySettings(const QQmlFormatSettings &settings)
 
     if (settings.isSet(QQmlFormatSettings::s_functionsSpacingSetting))
         setFunctionsSpacing(settings.value(QQmlFormatSettings::s_functionsSpacingSetting).toBool());
+
+    if (settings.isSet(QQmlFormatSettings::s_sortImportsSetting))
+        setSortImports(settings.value(QQmlFormatSettings::s_sortImportsSetting).toBool());
 }

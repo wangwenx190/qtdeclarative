@@ -73,6 +73,9 @@ public:
     bool functionsSpacing() const { return m_options.functionsSpacing; }
     void setFunctionsSpacing(bool spacing) { m_options.functionsSpacing = spacing; }
 
+    bool sortImports() const { return m_options.sortImports; }
+    void setSortImports(bool sort) { m_options.sortImports = sort; }
+
     int indentWidth() const { return m_options.formatOptions.indentSize; }
     void setIndentWidth(int width) { m_options.formatOptions.indentSize = width; }
 

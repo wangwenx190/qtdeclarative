@@ -30,6 +30,7 @@ public:
     static const inline QLatin1StringView s_newlineSetting = QLatin1String("NewlineType");
     static const inline QLatin1StringView s_objectsSpacingSetting = QLatin1String("ObjectsSpacing");
     static const inline QLatin1StringView s_functionsSpacingSetting = QLatin1String("FunctionsSpacing");
+    static const inline QLatin1StringView s_sortImportsSetting = QLatin1String("SortImports");
 };
 
 QT_END_NAMESPACE

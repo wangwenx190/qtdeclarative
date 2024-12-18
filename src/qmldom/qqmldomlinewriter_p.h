@@ -96,6 +96,7 @@ public:
     AttributesSequence attributesSequence = AttributesSequence::Normalize;
     bool objectsSpacing = false;
     bool functionsSpacing = false;
+    bool sortImports = false;
 };
 
 using PendingSourceLocationId = int;
