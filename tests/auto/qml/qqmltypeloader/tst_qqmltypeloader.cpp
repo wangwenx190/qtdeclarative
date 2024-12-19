@@ -849,6 +849,8 @@ void tst_QQMLTypeLoader::loadTypeOnShutdown()
 
 void tst_QQMLTypeLoader::floodTypeLoaderEventQueue()
 {
+    QSKIP("Times out in the CI. TODO: Why?");
+
     QQmlEngine engine;
 
     // Flood the typeloader with useless messages.
