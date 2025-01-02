@@ -9642,20 +9642,6 @@
                         "arguments": [
                         ],
                         "isJavaScriptFunction": true,
-                        "name": "dumpObjectTree"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                        ],
-                        "isJavaScriptFunction": true,
-                        "name": "dumpObjectInfo"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                        ],
-                        "isJavaScriptFunction": true,
                         "name": "aboutToQuit"
                     },
                     {
@@ -9771,20 +9757,6 @@
                         ],
                         "isJavaScriptFunction": true,
                         "name": "objectNameChanged"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                        ],
-                        "isJavaScriptFunction": true,
-                        "name": "dumpObjectTree"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                        ],
-                        "isJavaScriptFunction": true,
-                        "name": "dumpObjectInfo"
                     }
                 ],
                 "object": true,
@@ -9828,20 +9800,6 @@
                         ],
                         "isJavaScriptFunction": true,
                         "name": "objectNameChanged"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                        ],
-                        "isJavaScriptFunction": true,
-                        "name": "dumpObjectTree"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                        ],
-                        "isJavaScriptFunction": true,
-                        "name": "dumpObjectInfo"
                     }
                 ],
                 "object": true,
@@ -9875,20 +9833,6 @@
                         ],
                         "isJavaScriptFunction": true,
                         "name": "objectNameChanged"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                        ],
-                        "isJavaScriptFunction": true,
-                        "name": "dumpObjectTree"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                        ],
-                        "isJavaScriptFunction": true,
-                        "name": "dumpObjectInfo"
                     }
                 ],
                 "object": true,
@@ -9922,20 +9866,6 @@
                         ],
                         "isJavaScriptFunction": true,
                         "name": "objectNameChanged"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                        ],
-                        "isJavaScriptFunction": true,
-                        "name": "dumpObjectTree"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                        ],
-                        "isJavaScriptFunction": true,
-                        "name": "dumpObjectInfo"
                     },
                     {
                         "access": "public",
