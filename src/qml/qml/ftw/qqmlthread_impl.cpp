@@ -37,6 +37,7 @@ public:
     bool m_threadProcessing  = false; // Set when the thread is processing messages
     bool m_mainProcessing    = false; // Set when the main thread is processing messages
     bool m_mainThreadWaiting = false; // Set by main thread if it is waiting for the message queue to empty
+    bool m_shutdown          = false; // Set by main thread to announce shutdown in progress
 
     typedef QFieldList<QQmlThread::Message, &QQmlThread::Message::next> MessageList;
     MessageList threadList;
@@ -172,6 +173,7 @@ QQmlThread::~QQmlThread()
  */
 void QQmlThread::startup()
 {
+    Q_ASSERT(!d->m_shutdown);
     d->start();
     d->m_threadObject.moveToThread(d);
 }
@@ -180,13 +182,16 @@ void QQmlThread::shutdown()
 {
     d->lock();
 
+    // The type loader thread may have multiple messages that ask for a callback into the main
+    // thread. Simply deleting mainSync once is not enough to stop that. We need to explicitly
+    // tell the type loader thread not to wait for the main thread anymore. Therefore m_shutdown.
+    Q_ASSERT(!d->m_shutdown);
+    d->m_shutdown = true;
+
     d->quit();
 
-    if (d->mainSync) {
-        delete d->mainSync;
-        d->mainSync = nullptr;
+    if (d->mainSync)
         d->wakeOne();
-    }
 
     d->unlock();
     d->QThread::wait();
@@ -194,6 +199,8 @@ void QQmlThread::shutdown()
     // Discard all remaining messages.
     // We don't need the lock anymore because the thread is dead.
     discardMessages();
+
+    d->m_shutdown = false;
 }
 
 void QQmlThread::lock()
@@ -288,8 +295,14 @@ void QQmlThread::internalCallMethodInMain(Message *message)
         d->triggerMainEvent();
     }
 
-    while (d->mainSync)
+    while (d->mainSync) {
+        if (d->m_shutdown) {
+            delete d->mainSync;
+            d->mainSync = nullptr;
+            break;
+        }
         d->wait();
+    }
 
     d->unlock();
 }
