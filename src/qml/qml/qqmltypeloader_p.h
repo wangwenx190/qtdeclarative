@@ -32,14 +32,15 @@
 
 QT_BEGIN_NAMESPACE
 
-class QQmlScriptBlob;
-class QQmlQmldirData;
-class QQmlTypeData;
+class QQmlEngine;
 class QQmlEngineExtensionInterface;
 class QQmlExtensionInterface;
+class QQmlNetworkAccessManagerFactory;
 class QQmlProfiler;
+class QQmlQmldirData;
+class QQmlScriptBlob;
+class QQmlTypeData;
 class QQmlTypeLoaderThread;
-class QQmlEngine;
 
 class Q_QML_EXPORT QQmlTypeLoader
 {
@@ -240,6 +241,12 @@ public:
         return m_modulesForWhichPluginsHaveBeenProcessed.contains(module);
     }
 
+#if QT_CONFIG(qml_network)
+    QQmlNetworkAccessManagerFactory *networkAccessManagerFactory() const;
+    void setNetworkAccessManagerFactory(QQmlNetworkAccessManagerFactory *factory);
+    QNetworkAccessManager *createNetworkAccessManager(QObject *parent) const;
+#endif
+
 private:
     friend class QQmlDataBlob;
     friend class QQmlTypeLoaderThread;
@@ -340,6 +347,15 @@ private:
     // plugin can be used for multiple modules. Therefore, we need to keep track of this
     // separately from m_modulesForWhichPluginsHaveBeenProcessed.
     QSet<QString> m_initializedPlugins;
+
+#if QT_CONFIG(qml_network)
+    QQmlNetworkAccessManagerFactory *m_networkAccessManagerFactory = nullptr;
+
+    // We need a separate mutex because the network access manger factory can be accessed not
+    // only from the engine thread and the type loader thread, but also from any WorkerScripts
+    // running in parallel to both.
+    mutable QMutex m_networkAccessManagerMutex;
+#endif
 
     template<typename Loader>
     void doLoad(const Loader &loader, const QQmlDataBlob::Ptr &blob, Mode mode);

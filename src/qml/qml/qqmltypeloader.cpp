@@ -19,6 +19,7 @@
 #include <QtQml/qqmlengine.h>
 #include <QtQml/qqmlextensioninterface.h>
 #include <QtQml/qqmlfile.h>
+#include <QtQml/qqmlnetworkaccessmanagerfactory.h>
 
 #include <qtqml_tracepoints_p.h>
 
@@ -588,6 +589,34 @@ void QQmlTypeLoader::addPluginPath(const QString& path)
         m_pluginPaths.prepend(path);
     }
 }
+
+#if QT_CONFIG(qml_network)
+QQmlNetworkAccessManagerFactory *QQmlTypeLoader::networkAccessManagerFactory() const
+{
+    ASSERT_ENGINETHREAD();
+    QMutexLocker locker(&m_networkAccessManagerMutex);
+    return m_networkAccessManagerFactory;
+}
+
+void QQmlTypeLoader::setNetworkAccessManagerFactory(QQmlNetworkAccessManagerFactory *factory)
+{
+    ASSERT_ENGINETHREAD();
+    QMutexLocker locker(&m_networkAccessManagerMutex);
+    m_networkAccessManagerFactory = factory;
+}
+
+QNetworkAccessManager *QQmlTypeLoader::createNetworkAccessManager(QObject *parent) const
+{
+    // Can be called from both threads, or even from a WorkerScript
+    {
+        QMutexLocker locker(&m_networkAccessManagerMutex);
+        if (m_networkAccessManagerFactory)
+            return m_networkAccessManagerFactory->create(parent);
+    }
+
+    return new QNetworkAccessManager(parent);
+}
+#endif // QT_CONFIG(qml_network)
 
 void QQmlTypeLoader::clearQmldirInfo()
 {

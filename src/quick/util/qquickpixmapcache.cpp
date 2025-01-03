@@ -437,7 +437,7 @@ QNetworkAccessManager *QQuickPixmapReader::networkAccessManager()
 {
     if (!accessManager) {
         Q_ASSERT(readerThreadExecutionEnforcer());
-        accessManager = QQmlEnginePrivate::get(engine)->createNetworkAccessManager(
+        accessManager = QQmlEnginePrivate::get(engine)->typeLoader.createNetworkAccessManager(
                 readerThreadExecutionEnforcer());
     }
     return accessManager;

@@ -769,8 +769,7 @@ QSharedPointer<QQmlImageProviderBase> QQmlEnginePrivate::imageProvider(const QSt
 void QQmlEngine::setNetworkAccessManagerFactory(QQmlNetworkAccessManagerFactory *factory)
 {
     Q_D(QQmlEngine);
-    QMutexLocker locker(&d->networkAccessManagerMutex);
-    d->networkAccessManagerFactory = factory;
+    d->typeLoader.setNetworkAccessManagerFactory(factory);
 }
 
 /*!
@@ -781,27 +780,14 @@ void QQmlEngine::setNetworkAccessManagerFactory(QQmlNetworkAccessManagerFactory 
 QQmlNetworkAccessManagerFactory *QQmlEngine::networkAccessManagerFactory() const
 {
     Q_D(const QQmlEngine);
-    return d->networkAccessManagerFactory;
+    return d->typeLoader.networkAccessManagerFactory();
 }
 
-QNetworkAccessManager *QQmlEnginePrivate::createNetworkAccessManager(QObject *parent) const
+QNetworkAccessManager *QQmlEnginePrivate::getNetworkAccessManager()
 {
-    QMutexLocker locker(&networkAccessManagerMutex);
-    QNetworkAccessManager *nam;
-    if (networkAccessManagerFactory) {
-        nam = networkAccessManagerFactory->create(parent);
-    } else {
-        nam = new QNetworkAccessManager(parent);
-    }
-
-    return nam;
-}
-
-QNetworkAccessManager *QQmlEnginePrivate::getNetworkAccessManager() const
-{
-    Q_Q(const QQmlEngine);
+    Q_Q(QQmlEngine);
     if (!networkAccessManager)
-        networkAccessManager = createNetworkAccessManager(const_cast<QQmlEngine*>(q));
+        networkAccessManager = typeLoader.createNetworkAccessManager(q);
     return networkAccessManager;
 }
 
@@ -819,8 +805,9 @@ QNetworkAccessManager *QQmlEnginePrivate::getNetworkAccessManager() const
 */
 QNetworkAccessManager *QQmlEngine::networkAccessManager() const
 {
+    // ### Qt7: This method is clearly not const since it _creates_ the network access manager.
     Q_D(const QQmlEngine);
-    return d->getNetworkAccessManager();
+    return const_cast<QQmlEnginePrivate *>(d)->getNetworkAccessManager();
 }
 #endif // qml_network
 

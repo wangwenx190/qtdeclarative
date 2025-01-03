@@ -28,8 +28,7 @@ QNetworkAccessManager *QQmlTypeLoaderThread::networkAccessManager() const
 {
     Q_ASSERT(isThisThread());
     if (!m_networkAccessManager) {
-        // TODO: We should be able to do this without the engine
-        m_networkAccessManager = QQmlEnginePrivate::get(m_loader->m_engine)->createNetworkAccessManager(nullptr);
+        m_networkAccessManager = m_loader->createNetworkAccessManager(nullptr);
         QObject::connect(thread(), &QThread::finished, m_networkAccessManager, &QObject::deleteLater);
         m_networkReplyProxy = new QQmlTypeLoaderNetworkReplyProxy(m_loader, threadObject());
         QObject::connect(thread(), &QThread::finished, m_networkReplyProxy, &QObject::deleteLater);

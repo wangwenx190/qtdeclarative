@@ -139,10 +139,8 @@ public:
 
     QQmlObjectCreator *activeObjectCreator = nullptr;
 #if QT_CONFIG(qml_network)
-    QNetworkAccessManager *createNetworkAccessManager(QObject *parent) const;
-    QNetworkAccessManager *getNetworkAccessManager() const;
-    mutable QNetworkAccessManager *networkAccessManager = nullptr;
-    mutable QQmlNetworkAccessManagerFactory *networkAccessManagerFactory = nullptr;
+    QNetworkAccessManager *getNetworkAccessManager();
+    QNetworkAccessManager *networkAccessManager = nullptr;
 #endif
     mutable QRecursiveMutex imageProviderMutex;
     QHash<QString,QSharedPointer<QQmlImageProviderBase> > imageProviders;
@@ -198,8 +196,6 @@ public:
     static void activateDesignerMode();
 
     static std::atomic<bool> qml_debugging_enabled;
-
-    mutable QMutex networkAccessManagerMutex;
 
     QQmlGadgetPtrWrapper *valueTypeInstance(QMetaType type)
     {
