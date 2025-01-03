@@ -1742,7 +1742,7 @@ static void QQmlComponent_setQmlParent(QObject *me, QObject *parent)
     it is not destroyed by the garbage collector. This is true regardless of whether \l{Item::parent} is set afterwards,
     because setting the Item parent does not change object ownership. Only the graphical parent is changed.
 
-    As of \c {QtQuick 1.1}, this method accepts an optional \a properties argument that specifies a
+    This method accepts an optional \a properties argument that specifies a
     map of initial property values for the created object. These values are applied before the object
     creation is finalized. This is more efficient than setting property values after object creation,
     particularly where large sets of property values are defined, and also allows property bindings
