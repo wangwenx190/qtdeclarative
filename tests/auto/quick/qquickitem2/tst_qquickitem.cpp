@@ -3477,6 +3477,7 @@ void tst_QQuickItem::changeListener()
 
     // QTBUG-54732: all listeners should get invoked even if they remove themselves while iterating the listeners
     std::array<TestListener *, 5> listeners;
+    auto sweeper = QScopeGuard([&listeners]() { qDeleteAll(listeners); });
     for (int i = 0; i < 5; ++i)
         listeners[i] = new TestListener(true);
 
