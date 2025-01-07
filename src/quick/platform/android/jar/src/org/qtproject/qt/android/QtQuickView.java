@@ -4,8 +4,6 @@
 package org.qtproject.qt.android;
 
 import android.content.Context;
-import android.view.View;
-import android.view.ViewGroup;
 import android.util.Log;
 
 import java.lang.IllegalArgumentException;
