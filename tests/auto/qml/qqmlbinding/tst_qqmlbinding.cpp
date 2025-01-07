@@ -752,24 +752,16 @@ void tst_qqmlbinding::qQmlPropertyToPropertyBinding()
                   QObject *sourceObject, const QString &sourcePropertyName) {
         QQmlProperty targetProperty(targetObject, targetPropertyName);
         QQmlProperty sourceProperty(sourceObject, sourcePropertyName);
-        QQmlAnyBinding binding;
-
-        binding = new QQmlPropertyToPropertyBinding(
-                &engine,
-                sourceObject, QQmlPropertyPrivate::get(sourceProperty)->encodedIndex(),
-                targetObject, targetProperty.index());
+        QQmlAnyBinding binding
+                = QQmlPropertyToPropertyBinding::create(&engine, sourceProperty, targetProperty);
         binding.installOn(targetProperty);
     };
 
     installPropertyBinding(target.data(), "left"_L1,   source.data(), "a.left"_L1);
     installPropertyBinding(target.data(), "top"_L1,    source.data(), "b.top"_L1);
 
-    // TODO: We cannot install a QQmlPropertyToPropertyBinding on bindable properties
-    //       This is because it derives from QQmlAbstractBinding which is only meant for
-    //       non-bindable properties.
-
-    // installPropertyBinding(target.data(), "right"_L1,  source.data(), "a.right"_L1);
-    // installPropertyBinding(target.data(), "bottom"_L1, source.data(), "b.bottom"_L1);
+    installPropertyBinding(target.data(), "right"_L1,  source.data(), "a.right"_L1);
+    installPropertyBinding(target.data(), "bottom"_L1, source.data(), "b.bottom"_L1);
 
     QCOMPARE(target->top(), 0);
     QCOMPARE(target->bottom(), 0);
@@ -780,13 +772,13 @@ void tst_qqmlbinding::qQmlPropertyToPropertyBinding()
     QCOMPARE(target->top(), 0);
     QCOMPARE(target->bottom(), 0);
     QCOMPARE(target->left(), 11);
-    // QCOMPARE(target->right(), 33);
+    QCOMPARE(target->right(), 11 + 33);
 
     source->bindableB().setValue(QRectF(55, 66, 77, 88));
     QCOMPARE(target->top(), 66);
-    // QCOMPARE(target->bottom(), 88);
+    QCOMPARE(target->bottom(), 66 + 88);
     QCOMPARE(target->left(), 11);
-    // QCOMPARE(target->right(), 33);
+    QCOMPARE(target->right(), 11 + 33);
 }
 
 QTEST_MAIN(tst_qqmlbinding)

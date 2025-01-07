@@ -981,10 +981,8 @@ void QQDMIncubationTask::initializeRequiredProperties(QQmlDelegateModelItem *mod
                             object, propName, requiredProperties,
                             engine, &wasInRequired);
                 if (wasInRequired) {
-                    QQmlAnyBinding binding;
-                    binding = new QQmlPropertyToPropertyBinding(
-                            engine, itemOrProxy, QQmlPropertyIndex(i),
-                            targetProp.object(), targetProp.index());
+                    QQmlAnyBinding binding = QQmlPropertyToPropertyBinding::create(
+                        engine, QQmlProperty(itemOrProxy, propName), targetProp);
                     binding.installOn(targetProp);
                 }
             }

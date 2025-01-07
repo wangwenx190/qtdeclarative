@@ -830,12 +830,9 @@ void QQuickApplicationWindow::classBegin()
     auto *context = qmlContext(this);
     auto installPropertyBinding = [&](QObject *targetObject, const QString &targetPropertyName,
                                       QObject *sourceObject, const QString &sourcePropertyName) {
-        QQmlProperty targetProperty(targetObject, targetPropertyName);
-        QQmlProperty sourceProperty(sourceObject, sourcePropertyName);
-        QQmlAnyBinding binding;
-        binding = new QQmlPropertyToPropertyBinding(context->engine(),
-                sourceObject, QQmlPropertyPrivate::get(sourceProperty)->encodedIndex(),
-                targetObject, targetProperty.index());
+        const QQmlProperty targetProperty(targetObject, targetPropertyName);
+        QQmlAnyBinding binding = QQmlPropertyToPropertyBinding::create(
+                context->engine(), QQmlProperty(sourceObject, sourcePropertyName),  targetProperty);
         binding.installOn(targetProperty);
     };
 
