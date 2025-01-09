@@ -296,25 +296,6 @@ QQmlError QQmlTypeData::createTypeAndPropertyCaches(
     return QQmlError();
 }
 
-static bool addTypeReferenceChecksumsToHash(
-        const QList<QQmlTypeData::TypeReference> &typeRefs,
-        QHash<quintptr, QByteArray> *checksums, QCryptographicHash *hash)
-{
-    for (const auto &typeRef: typeRefs) {
-        if (typeRef.typeData) {
-            const auto unit = typeRef.typeData->compilationUnit()->unitData();
-            hash->addData({unit->md5Checksum, sizeof(unit->md5Checksum)});
-        } else if (const QMetaObject *mo = typeRef.type.metaObject()) {
-            const auto propertyCache = QQmlMetaType::propertyCache(mo);
-            bool ok = false;
-            hash->addData(propertyCache->checksum(checksums, &ok));
-            if (!ok)
-                return false;
-        }
-    }
-    return true;
-}
-
 // local helper function for inline components
 namespace  {
 using InlineComponentData = QV4::CompiledData::InlineComponentData;
@@ -479,12 +460,7 @@ void QQmlTypeData::done()
     }
 
     const auto dependencyHasher = [&resolvedTypeCache, this]() {
-        QCryptographicHash hash(QCryptographicHash::Md5);
-        return (resolvedTypeCache.addToHash(&hash, typeLoader()->checksumCache())
-                && ::addTypeReferenceChecksumsToHash(
-                    m_compositeSingletons, typeLoader()->checksumCache(), &hash))
-                ? hash.result()
-                : QByteArray();
+        return typeLoader()->hashDependencies(&resolvedTypeCache, m_compositeSingletons);
     };
 
     // verify if any dependencies changed if we're using a cache

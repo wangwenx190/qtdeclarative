@@ -158,19 +158,21 @@ public:
         }
     }
 
-    // TODO: Handing out those pointers to internals is certainly dangerous.
-    //       The relevant functionality needs to move behind the locks.
-
-    ChecksumCache *checksumCache()
+    // We can't include QQmlTypeData here.
+    // Use a template specialized only for QQmlTypeData::TypeReference instead.
+    template<typename TypeReference>
+    QByteArray hashDependencies(
+            QV4::CompiledData::ResolvedTypeReferenceMap *resolvedTypeCache,
+            const QList<TypeReference> &compositeSingletons)
     {
         QQmlTypeLoaderThreadDataPtr data(&m_data);
-        return &data->checksumCache;
-    }
 
-    const ChecksumCache *checksumCache() const
-    {
-        QQmlTypeLoaderThreadDataConstPtr data(&m_data);
-        return &data->checksumCache;
+        QCryptographicHash hash(QCryptographicHash::Md5);
+        return (resolvedTypeCache->addToHash(&hash, &data->checksumCache)
+                    && addTypeReferenceChecksumsToHash(
+                        compositeSingletons, &data->checksumCache, &hash))
+                ? hash.result()
+                : QByteArray();
     }
 
     static QUrl normalize(const QUrl &unNormalizedUrl);
@@ -336,6 +338,26 @@ private:
     template<typename Loader>
     void doLoad(const Loader &loader, const QQmlDataBlob::Ptr &blob, Mode mode);
     void updateTypeCacheTrimThreshold(const QQmlTypeLoaderSharedDataPtr &data);
+
+    template<typename TypeReference>
+    static bool addTypeReferenceChecksumsToHash(
+            const QList<TypeReference> &typeRefs,
+            QHash<quintptr, QByteArray> *checksums, QCryptographicHash *hash)
+    {
+        for (const auto &typeRef: typeRefs) {
+            if (typeRef.typeData) {
+                const auto unit = typeRef.typeData->compilationUnit()->unitData();
+                hash->addData({unit->md5Checksum, sizeof(unit->md5Checksum)});
+            } else if (const QMetaObject *mo = typeRef.type.metaObject()) {
+                const auto propertyCache = QQmlMetaType::propertyCache(mo);
+                bool ok = false;
+                hash->addData(propertyCache->checksum(checksums, &ok));
+                if (!ok)
+                    return false;
+            }
+        }
+        return true;
+    }
 
     QQmlMetaType::CacheMode aotCacheMode();
 
