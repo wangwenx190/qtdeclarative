@@ -917,6 +917,11 @@ void tst_TapHandler::longPress()
     QQuickView window;
     QVERIFY(QQuickTest::showView(window, testFileUrl("buttons.qml")));
 
+    // TODO fix showView() after we know whether this fixes flakiness
+    const QPoint pos(485, 285);
+    window.setPosition(pos);
+    QTRY_COMPARE(window.position(), pos);
+
     QQuickItem *button = window.rootObject()->findChild<QQuickItem*>(buttonName);
     QVERIFY(button);
     QQuickTapHandler *tapHandler = button->findChild<QQuickTapHandler*>(buttonName);
