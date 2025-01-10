@@ -180,10 +180,10 @@ private:
         auto &preList = m_regionComments[region].preComments();
         index_type idx = preList.size();
         m_regionComments[region].addComment(comment);
-        return Path::Field(Fields::regionComments)
-                .key(fileLocationRegionName(region))
-                .field(Fields::preComments)
-                .index(idx);
+        return Path::fromField(Fields::regionComments)
+                .withKey(fileLocationRegionName(region))
+                .withField(Fields::preComments)
+                .withIndex(idx);
     }
 
     Path addPostComment(const Comment &comment, FileLocationRegion region)
@@ -191,10 +191,10 @@ private:
         auto &postList = m_regionComments[region].postComments();
         index_type idx = postList.size();
         m_regionComments[region].addComment(comment);
-        return Path::Field(Fields::regionComments)
-                .key(fileLocationRegionName(region))
-                .field(Fields::postComments)
-                .index(idx);
+        return Path::fromField(Fields::regionComments)
+                .withKey(fileLocationRegionName(region))
+                .withField(Fields::postComments)
+                .withIndex(idx);
     }
 
     QMap<FileLocationRegion, CommentedElement> m_regionComments;

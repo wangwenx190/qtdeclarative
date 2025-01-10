@@ -394,7 +394,7 @@ void AstRangesVisitor::addItemRanges(
     {
         auto subMaps = itemLocations->subItems();
         for (auto it = subMaps.begin(), end = subMaps.end(); it != end; ++it) {
-            addItemRanges(item.path(it.key()), it.value(), currentP.path(it.key()));
+            addItemRanges(item.path(it.key()), it.value(), currentP.withPath(it.key()));
         }
     }
 }
@@ -742,7 +742,7 @@ void CommentCollector::collectComments(
                 // update file locations with the comment region
                 const auto base = FileLocations::treeOf(currentItem);
                 const auto fileLocations = FileLocations::ensure(
-                        base, Path::Field(Fields::comments).path(commentPath));
+                        base, Path::fromField(Fields::comments).withPath(commentPath));
 
                 FileLocations::addRegion(fileLocations, MainRegion,
                                          comment.info().sourceLocation());
@@ -762,7 +762,7 @@ bool RegionComments::iterateDirectSubpaths(const DomItem &self, DirectVisitor vi
         cont = cont
                 && self.dvItemField(visitor, Fields::regionComments, [this, &self]() -> DomItem {
                        const Path pathFromOwner =
-                               self.pathFromOwner().field(Fields::regionComments);
+                               self.pathFromOwner().withField(Fields::regionComments);
                        auto map = Map::fromFileRegionMap(pathFromOwner, m_regionComments);
                        return self.subMapItem(map);
                    });

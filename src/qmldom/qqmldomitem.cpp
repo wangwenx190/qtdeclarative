@@ -1449,7 +1449,7 @@ bool DomItem::visitTree(const Path &basePath, DomItem::ChildrenVisitor visitor,
                     Path pNow;
                     if (!(options & VisitOption::NoPath)) {
                         pNow = basePath;
-                        pNow = pNow.appendComponent(c);
+                        pNow = pNow.withComponent(c);
                     }
                     if (!filter(*this, c, DomItem{}))
                         return true;
@@ -2438,7 +2438,7 @@ bool DomItem::iterateDirectSubpaths(DirectVisitor v) const
 DomItem DomItem::subReferencesItem(const PathEls::PathComponent &c, const QList<Path> &paths) const
 {
     return subListItem(
-                List::fromQList<Path>(pathFromOwner().appendComponent(c), paths,
+                List::fromQList<Path>(pathFromOwner().withComponent(c), paths,
                                       [](const DomItem &list, const PathEls::PathComponent &p, const Path &el) {
                     return list.subReferenceItem(p, el);
                 }));
@@ -2450,7 +2450,7 @@ DomItem DomItem::subReferenceItem(const PathEls::PathComponent &c, const Path &r
         return DomItem(m_top, m_owner, m_ownerPath, Reference(referencedObject, Path(c)));
     } else {
         return DomItem(m_top, m_owner, m_ownerPath,
-                       Reference(referencedObject, pathFromOwner().appendComponent(c)));
+                       Reference(referencedObject, pathFromOwner().withComponent(c)));
     }
 }
 
@@ -2793,7 +2793,7 @@ Path DomElement::pathFromOwner(const DomItem &) const
 Path DomElement::canonicalPath(const DomItem &self) const
 {
     Q_ASSERT(m_pathFromOwner && "uninitialized DomElement");
-    return self.owner().canonicalPath().path(m_pathFromOwner);
+    return self.owner().canonicalPath().withPath(m_pathFromOwner);
 }
 
 DomItem DomElement::containingObject(const DomItem &self) const
@@ -3059,7 +3059,7 @@ bool OwningItem::iterateDirectSubpaths(const DomItem &self, DirectVisitor visito
     cont = cont && self.dvItemField(visitor, Fields::errors, [&self, this]() {
         QMultiMap<Path, ErrorMessage> myErrors = localErrors();
         return self.subMapItem(Map(
-                self.pathFromOwner().field(Fields::errors),
+                self.pathFromOwner().withField(Fields::errors),
                 [myErrors](const DomItem &map, const QString &key) {
                     auto it = myErrors.find(Path::fromString(key));
                     if (it != myErrors.end())
@@ -3469,11 +3469,11 @@ MutableDomItem MutableDomItem::addPreComment(const Comment &comment, FileLocatio
         auto commentedElement = rcPtr->regionComments()[region];
         idx = commentedElement.preComments().size();
         commentedElement.addComment(comment);
-        MutableDomItem res = path(Path::Field(Fields::comments)
-                                          .field(Fields::regionComments)
-                                          .key(fileLocationRegionName(region))
-                                          .field(Fields::preComments)
-                                          .index(idx));
+        MutableDomItem res = path(Path::fromField(Fields::comments)
+                                          .withField(Fields::regionComments)
+                                          .withKey(fileLocationRegionName(region))
+                                          .withField(Fields::preComments)
+                                          .withIndex(idx));
         Q_ASSERT(res);
         return res;
     }
@@ -3488,11 +3488,11 @@ MutableDomItem MutableDomItem::addPostComment(const Comment &comment, FileLocati
         auto commentedElement = rcPtr->regionComments()[region];
         idx = commentedElement.postComments().size();
         commentedElement.addComment(comment);
-        MutableDomItem res = path(Path::Field(Fields::comments)
-                                          .field(Fields::regionComments)
-                                          .key(fileLocationRegionName(region))
-                                          .field(Fields::postComments)
-                                          .index(idx));
+        MutableDomItem res = path(Path::fromField(Fields::comments)
+                                          .withField(Fields::regionComments)
+                                          .withKey(fileLocationRegionName(region))
+                                          .withField(Fields::postComments)
+                                          .withIndex(idx));
         Q_ASSERT(res);
         return res;
     }
