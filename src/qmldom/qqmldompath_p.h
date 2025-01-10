@@ -644,7 +644,6 @@ public:
     static Path Current(PathCurrent c);
     static Path Current(QStringView s=u"");
     static Path Current(const QString &s);
-    static Path Empty();
     // add
     Path empty() const;
     Path field(const QString &name) const;

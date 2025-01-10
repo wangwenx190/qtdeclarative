@@ -589,11 +589,6 @@ Path Path::Current(QStringView s)
                     QStringList(), QVector<Component>(1,Component(PathEls::Current(s)))));
 }
 
-Path Path::Empty()
-{
-    return Path();
-}
-
 Path Path::empty() const
 {
     if (m_endOffset != 0)
