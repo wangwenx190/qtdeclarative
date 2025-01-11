@@ -280,24 +280,6 @@ Source Path::split() const
     return Source{Path(), *this};
 }
 
-bool inQString(QStringView el, const QString &base)
-{
-    if (quintptr(base.constData()) > quintptr(el.begin())
-        || quintptr(base.constData() + base.size()) < quintptr(el.begin()))
-        return false;
-    ptrdiff_t diff = base.constData() - el.begin();
-    return diff >= 0 && diff < base.size();
-}
-
-bool inQString(const QString &el, const QString &base)
-{
-    if (quintptr(base.constData()) > quintptr(el.constData())
-        || quintptr(base.constData() + base.size()) < quintptr(el.constData()))
-        return false;
-    ptrdiff_t diff = base.constData() - el.constData();
-    return diff >= 0 && diff < base.size() && diff + el.size() < base.size();
-}
-
 Path Path::fromString(QStringView s, const ErrorHandler &errorHandler)
 {
     if (s.isEmpty())
@@ -677,11 +659,46 @@ Path Path::withCurrent(QStringView s) const
                     QStringList(), QVector<Component>(1,Component(PathEls::Current(s))), m_data));
 }
 
+static QVector<Path::Component>
+reverseAndConcat(const std::vector<QVector<Path::Component> *> &list, qsizetype size)
+{
+    using Component = Path::Component;
+
+    QVector<Component> components;
+    components.reserve(size);
+    for (auto it = list.crbegin(), end = list.crend(); it != end; ++it) {
+        for (auto it2 = (**it).cbegin(), end2 = (**it).cend(); it2 != end2; ++it2) {
+            components.append(*it2);
+            if (components.size() >= size)
+                return components;
+        }
+    }
+    return components;
+}
+
+static std::pair<std::vector<QVector<Path::Component> *>, QStringList>
+collectBackwards(PathEls::PathData *pathStart, qsizetype size)
+{
+    using Component = Path::Component;
+    std::vector<QVector<Component> *> componentList;
+    qsizetype foundComponents = 0;
+    QStringList addedStrs;
+    for (auto data = pathStart; data; data = data->parent.get()) {
+        addedStrs.append(data->strData);
+        componentList.push_back(&data->components);
+        foundComponents += data->components.size();
+
+        if (foundComponents >= size)
+            return std::make_pair(componentList, addedStrs);
+    }
+    return std::make_pair(componentList, addedStrs);
+}
+
 Path Path::withPath(const Path &toAdd, bool avoidToAddAsBase) const
 {
     if (toAdd.length() == 0)
         return *this;
-    int resLength = length() + toAdd.length();
+    const int resLength = length() + toAdd.length();
     if (m_endOffset != 0) {
         Path thisExtended = this->expandBack();
         if (thisExtended.length() > resLength)
@@ -702,53 +719,17 @@ Path Path::withPath(const Path &toAdd, bool avoidToAddAsBase) const
                 return toAddExtended;
         }
     }
-    QVector<Component> components;
-    components.reserve(toAdd.length());
-    QStringList addedStrs;
-    bool addHasStr = false;
-    auto data = toAdd.m_data.get();
-    while (data) {
-        if (!data->strData.isEmpty()) {
-            addHasStr = true;
-            break;
-        }
-        data = data->parent.get();
-    }
-    if (addHasStr) {
-        QStringList myStrs;
-        data = m_data.get();
-        while (data) {
-            myStrs.append(data->strData);
-            data = data->parent.get();
-        }
-        data = toAdd.m_data.get();
-        while (data) {
-            for (int ij = 0; ij < data->strData.size(); ++ij) {
-                bool hasAlready = false;
-                for (int ii = 0; ii < myStrs.size() && !hasAlready; ++ii)
-                    hasAlready = inQString(data->strData[ij], myStrs[ii]);
-                if (!hasAlready)
-                    addedStrs.append(data->strData[ij]);
-            }
-            data = data->parent.get();
-        }
-    }
-    QStringList toAddStrs;
-    for (int i = 0; i < toAdd.length(); ++i) {
-        components.append(toAdd.component(i));
-        QStringView compStrView = toAdd.component(i).stringView();
-        if (!compStrView.isEmpty()) {
-            for (int j = 0; j < addedStrs.size(); ++j) {
-                if (inQString(compStrView, addedStrs[j])) {
-                    toAddStrs.append(addedStrs[j]);
-                    addedStrs.removeAt(j);
-                    break;
-                }
-            }
-        }
-    }
-    return Path(0, m_length + toAdd.length(), std::make_shared<PathEls::PathData>(
-                    toAddStrs, components, ((m_endOffset == 0) ? m_data : noEndOffset().m_data)));
+
+    const Path toAddNoEndOffset = toAdd.noEndOffset();
+    auto [componentListList, addedStrs] =
+            collectBackwards(toAddNoEndOffset.m_data.get(), toAdd.length());
+
+    QVector<Component> componentList = reverseAndConcat(componentListList, toAdd.length());
+
+    Path result(
+            0, resLength,
+            std::make_shared<PathEls::PathData>(addedStrs, componentList, noEndOffset().m_data));
+    return result;
 }
 
 Path Path::expandFront() const

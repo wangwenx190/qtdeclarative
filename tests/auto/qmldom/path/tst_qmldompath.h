@@ -194,6 +194,71 @@ private slots:
         QVERIFY(!paths.at(11).split().pathToSource);
         QVERIFY(!paths.at(12).split().pathToSource);
     }
+
+    void withPath_data()
+    {
+        QTest::addColumn<Path>("lhs");
+        QTest::addColumn<Path>("rhs");
+        QTest::addColumn<Path>("expected");
+
+        const Path mainPath = Path::fromField("a").withField("b").withField("c").withField("d");
+        const Path slicedMainPath = mainPath.mid(1, 2);
+        const Path suffixPath = Path::fromField("append")
+                                        .withField(QLatin1String("me"))
+                                        .withField(QString(u"to"))
+                                        .withField("path");
+        const Path slicedSuffixPath = suffixPath.mid(1, 2);
+
+        QTest::addRow("normal") << mainPath << suffixPath
+                                << Path::fromField(u"a")
+                                           .withField(u"b")
+                                           .withField(u"c")
+                                           .withField(u"d")
+                                           .withField(u"append")
+                                           .withField(u"me")
+                                           .withField(u"to")
+                                           .withField(u"path");
+
+        QTest::addRow("appendToSliced") << slicedMainPath << suffixPath
+                                        << Path::fromField(u"b")
+                                                   .withField(u"c")
+                                                   .withField(u"append")
+                                                   .withField(u"me")
+                                                   .withField(u"to")
+                                                   .withField(u"path");
+
+        QTest::addRow("appendSlicedToSliced")
+                << slicedMainPath << slicedSuffixPath
+                << Path::fromField(u"b").withField(u"c").withField(u"me").withField(u"to");
+
+        QTest::addRow("appendTwice")
+                << slicedMainPath << slicedSuffixPath.withPath(slicedSuffixPath)
+                << Path::fromField(u"b")
+                           .withField(u"c")
+                           .withField(u"me")
+                           .withField(u"to")
+                           .withField(u"me")
+                           .withField(u"to");
+    }
+
+    void withPath()
+    {
+        QFETCH(Path, lhs);
+        QFETCH(Path, rhs);
+        QFETCH(Path, expected);
+
+        Path p = lhs.withPath(rhs);
+        QCOMPARE(p, expected);
+
+        // sanity check: make sure that the newly appended components do have QStringViews pointing
+        // to the components own strData
+        for (int i = 0, end = rhs.length(); i < end; ++i) {
+            QCOMPARE(std::get<Field>(p.m_data->components[i].m_data).fieldName,
+                     p.m_data->strData[end - 1 - i]);
+            QCOMPARE(std::get<Field>(p.m_data->components[i].m_data).fieldName.constData(),
+                     p.m_data->strData[end - 1 - i].constData());
+        }
+    }
 };
 
 } // namespace PathEls
