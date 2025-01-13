@@ -485,6 +485,8 @@ private slots:
     void recursiveVariantAssociation();
     void variantAssociationDetachesOnBeingAssignedToAVarProperty();
 
+    void jsSelfImport();
+
 private:
     QQmlEngine engine;
     QStringList defaultImportPathList;
@@ -9315,6 +9317,17 @@ void tst_qqmllanguage::variantAssociationDetachesOnBeingAssignedToAVarProperty()
     QCOMPARE(
         variantAssociationProvider->property("varPropertyHash").toHash()["email"].toString(),
         "something");
+}
+
+void tst_qqmllanguage::jsSelfImport()
+{
+    QQmlEngine engine;
+    engine.addImportPath(dataDirectory());
+    QQmlComponent c(&engine, "JsSelfImport", "Main");
+    QVERIFY2(c.isReady(), qPrintable(c.errorString()));
+    QScopedPointer<QObject> o(c.create());
+    QVERIFY(o);
+    QCOMPARE(o->objectName(), "customPrint");
 }
 
 QTEST_MAIN(tst_qqmllanguage)
