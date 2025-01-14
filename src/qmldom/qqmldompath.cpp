@@ -320,7 +320,6 @@ Path Path::fromString(QStringView s, const ErrorHandler &errorHandler)
     int i = 0;
     int i0 = 0;
     PathEls::ParserState state = PathEls::ParserState::Start;
-    QStringList strVals;
     while (i < s.size()) {
         // skip space
         while (i < s.size() && s.at(i).isSpace())
@@ -514,7 +513,7 @@ Path Path::fromString(QStringView s, const ErrorHandler &errorHandler)
         return Path();
     case PathEls::ParserState::End:
         return Path(0, components.size(), std::make_shared<PathEls::PathData>(
-                        strVals, components));
+                                                  QStringList(), components));
     }
     Q_ASSERT(false && "Unexpected state in Path::fromString");
     return Path();
