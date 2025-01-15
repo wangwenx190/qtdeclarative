@@ -1423,6 +1423,7 @@ void TestQmllint::cleanQmlCode_data()
     QTest::addRow("ValidTranslations2") << u"translations/qsTrTranslation.qml"_s;
     QTest::addRow("ValidTranslations3") << u"translations/qsTrIdTranslation.qml"_s;
     QTest::addRow("ValidTranslations4") << u"translations/Good.qml"_s;
+    QTest::addRow("deceptiveLayout") << u"deceptiveLayout.qml"_s;
 }
 
 void TestQmllint::cleanQmlCode()
