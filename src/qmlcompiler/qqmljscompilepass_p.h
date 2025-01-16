@@ -386,21 +386,53 @@ protected:
         return newState;
     }
 
-    QQmlJS::SourceLocation sourceLocation(int instructionOffset) const
+    QList<SourceLocationTable::Entry>::const_iterator sourceLocationEntry(
+            int instructionOffset) const
     {
         Q_ASSERT(m_function);
         Q_ASSERT(m_function->sourceLocations);
         const auto &entries = m_function->sourceLocations->entries;
-        auto item = std::lower_bound(entries.begin(), entries.end(), instructionOffset,
-                                     [](auto entry, uint offset) { return entry.offset < offset; });
+        const auto entry = std::lower_bound(
+                entries.begin(), entries.end(), instructionOffset,
+                [](auto entry, uint offset) { return entry.offset < offset; });
+        Q_ASSERT(entry != entries.end());
+        return entry;
+    }
 
-        Q_ASSERT(item != entries.end());
-        return item->location;
+    QQmlJS::SourceLocation sourceLocation(int instructionOffset) const
+    {
+        return sourceLocationEntry(instructionOffset)->location;
+    }
+
+    QQmlJS::SourceLocation nonEmptySourceLocation(int instructionOffset) const
+    {
+        auto entry = sourceLocationEntry(instructionOffset);
+
+        // filter out empty locations
+        const auto begin = m_function->sourceLocations->entries.begin();
+        while (entry->location.length == 0 && entry != begin)
+            --entry;
+
+        return entry->location;
     }
 
     QQmlJS::SourceLocation currentSourceLocation() const
     {
         return sourceLocation(currentInstructionOffset());
+    }
+
+    QQmlJS::SourceLocation currentNonEmptySourceLocation() const
+    {
+        return nonEmptySourceLocation(currentInstructionOffset());
+    }
+
+    QQmlJS::SourceLocation currentFunctionSourceLocation() const
+    {
+        Q_ASSERT(m_function->sourceLocations);
+        const auto &entries = m_function->sourceLocations->entries;
+
+        Q_ASSERT(!entries.isEmpty());
+        return combine(entries.constFirst().location, entries.constLast().location);
     }
 
     void addError(const QString &message, int instructionOffset)

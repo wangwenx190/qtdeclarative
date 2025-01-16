@@ -203,9 +203,6 @@ private:
     };
 
     PropertyResolution propertyResolution(QQmlJSScope::ConstPtr scope, const QString &type) const;
-    QQmlJS::SourceLocation getCurrentSourceLocation() const;
-    QQmlJS::SourceLocation getCurrentBindingSourceLocation() const;
-    QQmlJS::SourceLocation getCurrentNonEmptySourceLocation() const;
 
     void checkConversion(QQmlJSRegisterContent from, QQmlJSRegisterContent to);
     void generateUnaryArithmeticOperation(QQmlJSTypeResolver::UnaryOperator op);
