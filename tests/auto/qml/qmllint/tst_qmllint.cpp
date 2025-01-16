@@ -1212,6 +1212,17 @@ expression: \${expr} \${expr} \\\${expr} \\\${expr}`)",
                            Message{ warning, 5, 29 },
                    } };
     }
+
+    // We want to see the warning about the missing type only once.
+    QTest::newRow("unresolvedType2")
+            << QStringLiteral("unresolvedType2.qml")
+            << Result { { Message { QStringLiteral(
+                           "QQC2.Label was not found. Did you add all imports and dependencies?") } },
+                       { Message { QStringLiteral(
+                           "'QQC2.Label' is used but it is not resolved") },
+                         Message { QStringLiteral(
+                           "Type QQC2.Label is used but it is not resolved") } },
+                       };
 }
 
 void TestQmllint::dirtyQmlCode()
