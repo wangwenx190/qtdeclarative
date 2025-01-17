@@ -1209,7 +1209,6 @@ public:
     constexpr static DomType kindValue = DomType::ImportScope;
 
     ImportScope() = default;
-    ~ImportScope() = default;
 
     const QList<Path> &importSourcePaths() const & { return m_importSourcePaths; }
 
