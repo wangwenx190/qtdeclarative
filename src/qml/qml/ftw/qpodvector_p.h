@@ -16,7 +16,6 @@
 //
 
 #include <QtCore/private/qglobal_p.h>
-#include <QDebug>
 
 QT_BEGIN_NAMESPACE
 
