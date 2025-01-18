@@ -63,6 +63,7 @@ class QQuickPointerHandler;
 
 class QQuickContents : public QSafeQuickItemChangeListener<QQuickContents>
 {
+    Q_DISABLE_COPY(QQuickContents)
 public:
     QQuickContents(QQuickItem *item);
     ~QQuickContents() override;
