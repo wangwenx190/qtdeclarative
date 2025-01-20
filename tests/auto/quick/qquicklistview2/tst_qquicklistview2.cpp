@@ -1038,6 +1038,7 @@ void tst_QQuickListView2::isCurrentItem_NoRegressionWithDelegateModelGroups()
     // Press left arrow key -> Item 1 should become current, Item 3 should not
     // be current anymore. After a previous fix of QTBUG-86744 it was working
     // incorrectly - see QTBUG-98315
+    QVERIFY(QTest::qWaitForWindowActive(window.get()));
     QTest::keyPress(window.get(), Qt::Key_Left);
 
     QTRY_COMPARE(item0->property("isCurrent").toBool(), true);
