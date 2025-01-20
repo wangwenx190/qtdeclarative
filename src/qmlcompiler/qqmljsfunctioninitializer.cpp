@@ -59,9 +59,9 @@ void QQmlJSFunctionInitializer::populateSignature(
 {
     const auto signatureError = [&](const QString &message) {
         QQmlJS::DiagnosticMessage error;
-        error.type = QtWarningMsg;
+        error.type = m_logger->compileErrorLevel();
         error.loc = ast->firstSourceLocation();
-        error.message = message;
+        error.message = m_logger->compileErrorPrefix() + message;
         *errors << error;
         function->isFullyTyped = false;
     };
@@ -139,10 +139,14 @@ void QQmlJSFunctionInitializer::populateSignature(
 }
 
 static void diagnose(
-        const QString &message, QtMsgType type, const QQmlJS::SourceLocation &location,
+        const QString &message, const QQmlJS::SourceLocation &location, QQmlJSLogger *logger,
         QList<QQmlJS::DiagnosticMessage> *errors)
 {
-    *errors << QQmlJS::DiagnosticMessage{ message, type, location };
+    *errors << QQmlJS::DiagnosticMessage {
+        logger->compileErrorPrefix() + message,
+        logger->compileErrorLevel(),
+        location
+    };
 }
 
 QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
@@ -161,10 +165,20 @@ QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
             m_scopeType, QQmlJSRegisterContent::InvalidLookupIndex,
             QQmlJSRegisterContent::ScopeObject);
 
+    // If we find a problem before we can determine whether it's a signal handler,
+    // that's bad and warrants a warning, even if it then turns out to be a signal handler.
+    const auto setIsSignalHandler = [&]() {
+        function.isSignalHandler = true;
+
+        // If the function is a signal handler and just returns a closure, it's harmless.
+        // Otherwise it's a warning.
+        m_logger->setCompileErrorLevel(context->returnsClosure ? QtDebugMsg : QtWarningMsg);
+    };
+
     if (irBinding.type() != QmlIR::Binding::Type_Script) {
         diagnose(u"Binding is not a script binding, but %1."_s.arg(
                      bindingTypeDescription(QmlIR::Binding::Type(quint32(irBinding.type())))),
-                 QtDebugMsg, bindingLocation, errors);
+                 bindingLocation, m_logger, errors);
     }
 
     function.isProperty = m_objectType->hasProperty(propertyName);
@@ -177,16 +191,16 @@ QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
         } else {
             diagnose(u"Cannot resolve property type %1 for binding on %2."_s
                              .arg(property.typeName(), propertyName),
-                     QtWarningMsg, bindingLocation, errors);
+                     bindingLocation, m_logger, errors);
         }
 
         if (!property.bindable().isEmpty() && !property.isPrivate())
             function.isQPropertyBinding = true;
     } else if (QQmlSignalNames::isHandlerName(propertyName)) {
         if (auto actualPropertyName =
-            QQmlSignalNames::changedHandlerNameToPropertyName(propertyName);
-            actualPropertyName && m_objectType->hasProperty(*actualPropertyName)) {
-            function.isSignalHandler = true;
+                QQmlSignalNames::changedHandlerNameToPropertyName(propertyName);
+                actualPropertyName && m_objectType->hasProperty(*actualPropertyName)) {
+            setIsSignalHandler();
         } else {
             auto signalName = QQmlSignalNames::handlerNameToSignalName(propertyName);
             const auto methods = m_objectType->methods(*signalName);
@@ -194,14 +208,14 @@ QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
                 if (method.isCloned())
                     continue;
                 if (method.methodType() == QQmlJSMetaMethodType::Signal) {
-                    function.isSignalHandler = true;
+                    setIsSignalHandler();
                     const auto arguments = method.parameters();
                     for (qsizetype i = 0, end = arguments.size(); i < end; ++i) {
                         const auto &type = arguments[i].type();
                         if (type.isNull()) {
                             diagnose(u"Cannot resolve the argument type %1."_s.arg(
                                              arguments[i].typeName()),
-                                     QtDebugMsg, bindingLocation, errors);
+                                     bindingLocation, m_logger, errors);
                             function.argumentTypes.append(
                                     m_typeResolver->namedType(m_typeResolver->varType()));
                         } else {
@@ -213,7 +227,7 @@ QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
             }
             if (!function.isSignalHandler) {
                 diagnose(u"Could not find signal \"%1\"."_s.arg(*signalName),
-                         QtWarningMsg, bindingLocation, errors);
+                         bindingLocation, m_logger, errors);
             }
         }
     } else {
@@ -225,7 +239,7 @@ QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
             message += u" You may want use ID-based grouped properties here.";
         }
 
-        diagnose(message, QtWarningMsg, bindingLocation, errors);
+        diagnose(message, bindingLocation, m_logger, errors);
     }
 
     QQmlJS::MemoryPool pool;

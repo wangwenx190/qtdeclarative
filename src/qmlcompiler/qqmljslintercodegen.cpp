@@ -34,29 +34,26 @@ std::variant<QQmlJSAotFunction, QList<QQmlJS::DiagnosticMessage>>
 QQmlJSLinterCodegen::compileBinding(const QV4::Compiler::Context *context,
                                     const QmlIR::Binding &irBinding, QQmlJS::AST::Node *astNode)
 {
+    const QString name = m_document->stringAt(irBinding.propertyNameIndex);
+    m_logger->setCompileErrorPrefix(
+            u"Could not determine signature of binding for %1: "_s.arg(name));
+
     QQmlJSFunctionInitializer initializer(
-                &m_typeResolver, m_currentObject->location, m_currentScope->location);
+                &m_typeResolver, m_currentObject->location, m_currentScope->location, m_logger);
 
     QList<QQmlJS::DiagnosticMessage> initializationErrors;
-    const QString name = m_document->stringAt(irBinding.propertyNameIndex);
     QQmlJSCompilePass::Function function =
             initializer.run(context, name, astNode, irBinding, &initializationErrors);
-    for (const auto &error : initializationErrors) {
-        diagnose(u"Could not determine signature of binding for %1: %2"_s.arg(name, error.message),
-                 error.type, error.loc);
-    }
+
+    for (const auto &error : initializationErrors)
+        diagnose(error.message, error.type, error.loc);
+
+    m_logger->setCompileErrorPrefix(u"Could not compile binding for %1: "_s.arg(name));
 
     QList<QQmlJS::DiagnosticMessage> analyzeErrors;
-    if (!analyzeFunction(context, &function, &analyzeErrors)) {
-        // If it's a signal and the function just returns a closure, it's harmless.
-        // Otherwise promote the message to warning level.
-        for (auto &error : analyzeErrors) {
-            error = diagnose(u"Could not compile binding for %1: %2"_s.arg(name, error.message),
-                             (function.isSignalHandler && error.type == QtDebugMsg)
-                                     ? QtDebugMsg
-                                     : QtWarningMsg,
-                             error.loc);
-        }
+    if (!analyzeFunction(&function, &analyzeErrors)) {
+        for (auto &error : analyzeErrors)
+            diagnose(error.message, error.type, error.loc);
         return analyzeErrors;
     }
 
@@ -67,22 +64,22 @@ std::variant<QQmlJSAotFunction, QList<QQmlJS::DiagnosticMessage>>
 QQmlJSLinterCodegen::compileFunction(const QV4::Compiler::Context *context,
                                      const QString &name, QQmlJS::AST::Node *astNode)
 {
+    m_logger->setCompileErrorPrefix(u"Could not determine signature of function %1: "_s.arg(name));
+
     QList<QQmlJS::DiagnosticMessage> initializationErrors;
     QQmlJSFunctionInitializer initializer(
-                &m_typeResolver, m_currentObject->location, m_currentScope->location);
+                &m_typeResolver, m_currentObject->location, m_currentScope->location, m_logger);
     QQmlJSCompilePass::Function function =
             initializer.run(context, name, astNode, &initializationErrors);
-    for (const auto &error : initializationErrors) {
-        diagnose(u"Could not determine signature of function %1: %2"_s.arg(name, error.message),
-                 error.type, error.loc);
-    }
 
+    for (const auto &error : initializationErrors)
+        diagnose(error.message, error.type, error.loc);
+
+    m_logger->setCompileErrorPrefix(u"Could not compile function %1: "_s.arg(name));
     QList<QQmlJS::DiagnosticMessage> analyzeErrors;
-    if (!analyzeFunction(context, &function, &analyzeErrors)) {
-        for (auto &error : analyzeErrors) {
-            error = diagnose(u"Could not compile function %1: %2"_s.arg(name, error.message),
-                             QtWarningMsg, error.loc);
-        }
+    if (!analyzeFunction(&function, &analyzeErrors)) {
+        for (auto &error : analyzeErrors)
+            error = diagnose(error.message, error.type, error.loc);
         return analyzeErrors;
     }
 
@@ -96,9 +93,8 @@ void QQmlJSLinterCodegen::setPassManager(QQmlSA::PassManager *passManager)
     managerPriv->m_typeResolver = typeResolver();
 }
 
-bool QQmlJSLinterCodegen::analyzeFunction(const QV4::Compiler::Context *context,
-                                          QQmlJSCompilePass::Function *function,
-                                          QList<QQmlJS::DiagnosticMessage> *errors)
+bool QQmlJSLinterCodegen::analyzeFunction(
+        QQmlJSCompilePass::Function *function, QList<QQmlJS::DiagnosticMessage> *errors)
 {
     QQmlJSTypePropagator propagator(m_unitGenerator, &m_typeResolver, m_logger, errors, {}, {},
                                     m_passManager);
@@ -121,14 +117,7 @@ bool QQmlJSLinterCodegen::analyzeFunction(const QV4::Compiler::Context *context,
         generalizer.run(function);
     }
 
-    if (!errors->isEmpty()) {
-        QtMsgType type = context->returnsClosure ? QtDebugMsg : QtWarningMsg;
-        for (auto &error : *errors)
-            error.type = type;
-        return false;
-    }
-
-    return true;
+    return errors->isEmpty();
 }
 
 QT_END_NAMESPACE

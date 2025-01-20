@@ -438,8 +438,9 @@ protected:
     void addError(const QString &message, int instructionOffset)
     {
         QQmlJS::DiagnosticMessage diagnostic;
-        diagnostic.message = message;
+        diagnostic.message = m_logger->compileErrorPrefix() + message;
         diagnostic.loc = sourceLocation(instructionOffset);
+        diagnostic.type = m_logger->compileErrorLevel();
         m_errors->append(diagnostic);
     }
 

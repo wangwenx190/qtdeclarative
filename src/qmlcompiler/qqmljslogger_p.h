@@ -166,6 +166,12 @@ public:
         return m_categoryChanged[id.name().toString()];
     }
 
+    QtMsgType compileErrorLevel() const { return m_compileErrorLevel; }
+    void setCompileErrorLevel(QtMsgType level) { m_compileErrorLevel = level; }
+
+    QString compileErrorPrefix() const { return m_compileErrorPrefix; }
+    void setCompileErrorPrefix(const QString &prefix) { m_compileErrorPrefix = prefix; }
+
     /*! \internal
 
         Logs \a message with severity deduced from \a category. Prefer using
@@ -235,9 +241,13 @@ private:
     QList<Message> m_committedMessages;
     QHash<uint32_t, QSet<QString>> m_ignoredWarnings;
 
+    QString m_compileErrorPrefix;
+
     qsizetype m_numWarnings = 0;
     qsizetype m_numErrors = 0;
     bool m_inTransaction = false;
+
+    QtMsgType m_compileErrorLevel = QtWarningMsg;
 
     // the compiler needs private log() function at the moment
     friend class QQmlJSAotCompiler;

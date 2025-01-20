@@ -25,8 +25,10 @@ public:
     QQmlJSFunctionInitializer(
             const QQmlJSTypeResolver *typeResolver,
             const QV4::CompiledData::Location &objectLocation,
-            const QV4::CompiledData::Location &scopeLocation)
+            const QV4::CompiledData::Location &scopeLocation,
+            QQmlJSLogger *logger)
         : m_typeResolver(typeResolver)
+        , m_logger(logger)
         , m_scopeType(typeResolver->scopeForLocation(scopeLocation))
         , m_objectType(typeResolver->scopeForLocation(objectLocation))
     {}
@@ -46,6 +48,7 @@ private:
             QQmlJSCompilePass::Function *function, QList<QQmlJS::DiagnosticMessage> *errors);
 
     const QQmlJSTypeResolver *m_typeResolver = nullptr;
+    QQmlJSLogger *m_logger = nullptr;
     const QQmlJSScope::ConstPtr m_scopeType;
     const QQmlJSScope::ConstPtr m_objectType;
 };

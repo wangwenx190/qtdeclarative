@@ -3042,9 +3042,7 @@ void QQmlJSTypePropagator::endInstruction(QV4::Moth::Instr::Type instr)
                  || (!populates && changedIndex != Accumulator));
     }
 
-    const auto noError = std::none_of(m_errors->cbegin(), m_errors->cend(),
-                                      [](const auto &e) { return e.isError(); });
-    if (noError && !isNoop(instr)) {
+    if (m_errors->isEmpty() && !isNoop(instr)) {
         // An instruction needs to have side effects or write to another register or be a known
         // noop. Anything else is a problem.
         Q_ASSERT(m_state.hasSideEffects() || changedIndex != InvalidRegister);
