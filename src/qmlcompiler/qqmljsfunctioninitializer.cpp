@@ -55,14 +55,10 @@ static QString bindingTypeDescription(QmlIR::Binding::Type type)
 
 void QQmlJSFunctionInitializer::populateSignature(
         const QV4::Compiler::Context *context, QQmlJS::AST::FunctionExpression *ast,
-        QQmlJSCompilePass::Function *function, QList<QQmlJS::DiagnosticMessage> *errors)
+        QQmlJSCompilePass::Function *function)
 {
     const auto signatureError = [&](const QString &message) {
-        QQmlJS::DiagnosticMessage error;
-        error.type = m_logger->compileErrorLevel();
-        error.loc = ast->firstSourceLocation();
-        error.message = m_logger->compileErrorPrefix() + message;
-        *errors << error;
+        m_logger->logCompileError(message, ast->firstSourceLocation());
         function->isFullyTyped = false;
     };
 
@@ -139,22 +135,14 @@ void QQmlJSFunctionInitializer::populateSignature(
 }
 
 static void diagnose(
-        const QString &message, const QQmlJS::SourceLocation &location, QQmlJSLogger *logger,
-        QList<QQmlJS::DiagnosticMessage> *errors)
+        const QString &message, const QQmlJS::SourceLocation &location, QQmlJSLogger *logger)
 {
-    *errors << QQmlJS::DiagnosticMessage {
-        logger->compileErrorPrefix() + message,
-        logger->compileErrorLevel(),
-        location
-    };
+    logger->logCompileError(message, location);
 }
 
 QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
-        const QV4::Compiler::Context *context,
-        const QString &propertyName,
-        QQmlJS::AST::Node *astNode,
-        const QmlIR::Binding &irBinding,
-        QList<QQmlJS::DiagnosticMessage> *errors)
+        const QV4::Compiler::Context *context, const QString &propertyName,
+        QQmlJS::AST::Node *astNode, const QmlIR::Binding &irBinding)
 {
     QQmlJS::SourceLocation bindingLocation;
     bindingLocation.startLine = irBinding.location.line();
@@ -178,7 +166,7 @@ QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
     if (irBinding.type() != QmlIR::Binding::Type_Script) {
         diagnose(u"Binding is not a script binding, but %1."_s.arg(
                      bindingTypeDescription(QmlIR::Binding::Type(quint32(irBinding.type())))),
-                 bindingLocation, m_logger, errors);
+                 bindingLocation, m_logger);
     }
 
     function.isProperty = m_objectType->hasProperty(propertyName);
@@ -191,7 +179,7 @@ QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
         } else {
             diagnose(u"Cannot resolve property type %1 for binding on %2."_s
                              .arg(property.typeName(), propertyName),
-                     bindingLocation, m_logger, errors);
+                     bindingLocation, m_logger);
         }
 
         if (!property.bindable().isEmpty() && !property.isPrivate())
@@ -215,7 +203,7 @@ QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
                         if (type.isNull()) {
                             diagnose(u"Cannot resolve the argument type %1."_s.arg(
                                              arguments[i].typeName()),
-                                     bindingLocation, m_logger, errors);
+                                     bindingLocation, m_logger);
                             function.argumentTypes.append(
                                     m_typeResolver->namedType(m_typeResolver->varType()));
                         } else {
@@ -227,7 +215,7 @@ QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
             }
             if (!function.isSignalHandler) {
                 diagnose(u"Could not find signal \"%1\"."_s.arg(*signalName),
-                         bindingLocation, m_logger, errors);
+                         bindingLocation, m_logger);
             }
         }
     } else {
@@ -239,7 +227,7 @@ QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
             message += u" You may want use ID-based grouped properties here.";
         }
 
-        diagnose(message, bindingLocation, m_logger, errors);
+        diagnose(message, bindingLocation, m_logger);
     }
 
     QQmlJS::MemoryPool pool;
@@ -262,14 +250,13 @@ QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
         ast->rbraceToken = astNode->lastSourceLocation();
     }
 
-    populateSignature(context, ast, &function, errors);
+    populateSignature(context, ast, &function);
     return function;
 }
 
 QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
-        const QV4::Compiler::Context *context,
-        const QString &functionName, QQmlJS::AST::Node *astNode,
-        QList<QQmlJS::DiagnosticMessage> *errors)
+        const QV4::Compiler::Context *context, const QString &functionName,
+        QQmlJS::AST::Node *astNode)
 {
     Q_UNUSED(functionName);
 
@@ -281,7 +268,7 @@ QQmlJSCompilePass::Function QQmlJSFunctionInitializer::run(
     auto ast = astNode->asFunctionDefinition();
     Q_ASSERT(ast);
 
-    populateSignature(context, ast, &function, errors);
+    populateSignature(context, ast, &function);
     return function;
 }
 

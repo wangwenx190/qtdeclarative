@@ -40,22 +40,17 @@ QQmlJSLinterCodegen::compileBinding(const QV4::Compiler::Context *context,
 
     QQmlJSFunctionInitializer initializer(
                 &m_typeResolver, m_currentObject->location, m_currentScope->location, m_logger);
+    QQmlJSCompilePass::Function function = initializer.run(context, name, astNode, irBinding);
 
-    QList<QQmlJS::DiagnosticMessage> initializationErrors;
-    QQmlJSCompilePass::Function function =
-            initializer.run(context, name, astNode, irBinding, &initializationErrors);
-
-    for (const auto &error : initializationErrors)
+    m_logger->iterateCurrentFunctionMessages([this](const Message &error) {
         diagnose(error.message, error.type, error.loc);
+    });
 
     m_logger->setCompileErrorPrefix(u"Could not compile binding for %1: "_s.arg(name));
 
-    QList<QQmlJS::DiagnosticMessage> analyzeErrors;
-    if (!analyzeFunction(&function, &analyzeErrors)) {
-        for (auto &error : analyzeErrors)
-            diagnose(error.message, error.type, error.loc);
-        return analyzeErrors;
-    }
+    analyzeFunction(&function);
+    if (const auto errors = finalizeBindingOrFunction())
+        return *errors;
 
     return QQmlJSAotFunction {};
 }
@@ -66,22 +61,19 @@ QQmlJSLinterCodegen::compileFunction(const QV4::Compiler::Context *context,
 {
     m_logger->setCompileErrorPrefix(u"Could not determine signature of function %1: "_s.arg(name));
 
-    QList<QQmlJS::DiagnosticMessage> initializationErrors;
     QQmlJSFunctionInitializer initializer(
                 &m_typeResolver, m_currentObject->location, m_currentScope->location, m_logger);
-    QQmlJSCompilePass::Function function =
-            initializer.run(context, name, astNode, &initializationErrors);
+    QQmlJSCompilePass::Function function = initializer.run(context, name, astNode);
 
-    for (const auto &error : initializationErrors)
+    m_logger->iterateCurrentFunctionMessages([this](const Message &error) {
         diagnose(error.message, error.type, error.loc);
+    });
 
     m_logger->setCompileErrorPrefix(u"Could not compile function %1: "_s.arg(name));
-    QList<QQmlJS::DiagnosticMessage> analyzeErrors;
-    if (!analyzeFunction(&function, &analyzeErrors)) {
-        for (auto &error : analyzeErrors)
-            error = diagnose(error.message, error.type, error.loc);
-        return analyzeErrors;
-    }
+    analyzeFunction(&function);
+
+    if (const auto errors = finalizeBindingOrFunction())
+        return *errors;
 
     return QQmlJSAotFunction {};
 }
@@ -93,31 +85,28 @@ void QQmlJSLinterCodegen::setPassManager(QQmlSA::PassManager *passManager)
     managerPriv->m_typeResolver = typeResolver();
 }
 
-bool QQmlJSLinterCodegen::analyzeFunction(
-        QQmlJSCompilePass::Function *function, QList<QQmlJS::DiagnosticMessage> *errors)
+void QQmlJSLinterCodegen::analyzeFunction(QQmlJSCompilePass::Function *function)
 {
-    QQmlJSTypePropagator propagator(m_unitGenerator, &m_typeResolver, m_logger, errors, {}, {},
-                                    m_passManager);
+    QQmlJSTypePropagator propagator(
+            m_unitGenerator, &m_typeResolver, m_logger, {}, {}, m_passManager);
     auto [basicBlocks, annotations] = propagator.run(function);
-    if (errors->isEmpty()) {
-        QQmlJSShadowCheck shadowCheck(m_unitGenerator, &m_typeResolver, m_logger, errors,
-                                      basicBlocks, annotations);
+    if (!m_logger->currentFunctionHasCompileError()) {
+        QQmlJSShadowCheck shadowCheck(
+                m_unitGenerator, &m_typeResolver, m_logger, basicBlocks, annotations);
         shadowCheck.run(function);
     }
 
-    if (errors->isEmpty()) {
-        QQmlJSStorageInitializer initializer(m_unitGenerator, &m_typeResolver, m_logger, errors,
-                                             basicBlocks, annotations);
+    if (!m_logger->currentFunctionHasCompileError()) {
+        QQmlJSStorageInitializer initializer(
+                m_unitGenerator, &m_typeResolver, m_logger, basicBlocks, annotations);
         initializer.run(function);
     }
 
-    if (errors->isEmpty()) {
-        QQmlJSStorageGeneralizer generalizer(m_unitGenerator, &m_typeResolver, m_logger, errors,
-                                             basicBlocks, annotations);
+    if (!m_logger->currentFunctionHasCompileError()) {
+        QQmlJSStorageGeneralizer generalizer(
+                m_unitGenerator, &m_typeResolver, m_logger, basicBlocks, annotations);
         generalizer.run(function);
     }
-
-    return errors->isEmpty();
 }
 
 QT_END_NAMESPACE

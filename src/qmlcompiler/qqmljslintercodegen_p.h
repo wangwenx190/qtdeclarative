@@ -63,8 +63,7 @@ public:
 private:
     QQmlSA::PassManager *m_passManager = nullptr;
 
-    bool analyzeFunction(
-            QQmlJSCompilePass::Function *function, QList<QQmlJS::DiagnosticMessage> *errors);
+    void analyzeFunction(QQmlJSCompilePass::Function *function);
 };
 
 QT_END_NAMESPACE

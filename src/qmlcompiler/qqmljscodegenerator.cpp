@@ -50,14 +50,12 @@ QString QQmlJSCodeGenerator::castTargetName(const QQmlJSScope::ConstPtr &type) c
     return type->augmentedInternalName();
 }
 
-QQmlJSCodeGenerator::QQmlJSCodeGenerator(const QV4::Compiler::Context *compilerContext,
-                                         const QV4::Compiler::JSUnitGenerator *unitGenerator,
-                                         const QQmlJSTypeResolver *typeResolver,
-                                         QQmlJSLogger *logger,
-                                         QList<QQmlJS::DiagnosticMessage> *errors,
-                                         const BasicBlocks &basicBlocks,
-                                         const InstructionAnnotations &annotations)
-    : QQmlJSCompilePass(unitGenerator, typeResolver, logger, errors, basicBlocks, annotations)
+QQmlJSCodeGenerator::QQmlJSCodeGenerator(
+        const QV4::Compiler::Context *compilerContext,
+        const QV4::Compiler::JSUnitGenerator *unitGenerator, const QQmlJSTypeResolver *typeResolver,
+        QQmlJSLogger *logger, const BasicBlocks &basicBlocks,
+        const InstructionAnnotations &annotations)
+    : QQmlJSCompilePass(unitGenerator, typeResolver, logger, basicBlocks, annotations)
     , m_context(compilerContext)
 {}
 
@@ -2453,7 +2451,7 @@ void QQmlJSCodeGenerator::generate_Construct(int func, int argc, int argv)
                               registerType(argv).storedType(), m_typeResolver->sizeType(),
                               consumedRegisterVariable(argv))
                     + u");\n"_s;
-        } else if (m_errors->isEmpty()) {
+        } else if (!m_logger->currentFunctionHasCompileError()) {
             generateArrayInitializer(argc, argv);
         }
         return;
@@ -2732,7 +2730,7 @@ void QQmlJSCodeGenerator::generate_DefineArray(int argc, int args)
     INJECT_TRACE_INFO(generate_DefineArray);
 
     rejectIfBadArray();
-    if (m_errors->isEmpty())
+    if (!m_logger->currentFunctionHasCompileError())
         generateArrayInitializer(argc, args);
 }
 
@@ -3323,8 +3321,8 @@ void QQmlJSCodeGenerator::generate_Exp(int lhs)
                 m_state.accumulatorIn(), m_state.readAccumulator(),
                 consumedAccumulatorVariableIn());
 
-    Q_ASSERT(!m_errors->isEmpty() || !lhsString.isEmpty());
-    Q_ASSERT(!m_errors->isEmpty() || !rhsString.isEmpty());
+    Q_ASSERT(m_logger->currentFunctionHasCompileError() || !lhsString.isEmpty());
+    Q_ASSERT(m_logger->currentFunctionHasCompileError() || !rhsString.isEmpty());
 
     const QQmlJSRegisterContent originalOut = originalType(m_state.accumulatorOut());
     m_body += m_state.accumulatorVariableOut + u" = "_s;
@@ -3356,8 +3354,8 @@ void QQmlJSCodeGenerator::generate_Mod(int lhs)
     const auto rhsVar = convertStored(
                 m_state.accumulatorIn().storedType(), m_typeResolver->jsPrimitiveType(),
                 consumedAccumulatorVariableIn());
-    Q_ASSERT(!m_errors->isEmpty() || !lhsVar.isEmpty());
-    Q_ASSERT(!m_errors->isEmpty() || !rhsVar.isEmpty());
+    Q_ASSERT(m_logger->currentFunctionHasCompileError() || !lhsVar.isEmpty());
+    Q_ASSERT(m_logger->currentFunctionHasCompileError() || !rhsVar.isEmpty());
 
     m_body += m_state.accumulatorVariableOut;
     m_body += u" = "_s;
@@ -3718,8 +3716,8 @@ void QQmlJSCodeGenerator::generateShiftOperation(int lhs, const QString &cppOper
 void QQmlJSCodeGenerator::generateArithmeticOperation(
         const QString &lhs, const QString &rhs, const QString &cppOperator)
 {
-    Q_ASSERT(!m_errors->isEmpty() || !lhs.isEmpty());
-    Q_ASSERT(!m_errors->isEmpty() || !rhs.isEmpty());
+    Q_ASSERT(m_logger->currentFunctionHasCompileError() || !lhs.isEmpty());
+    Q_ASSERT(m_logger->currentFunctionHasCompileError() || !rhs.isEmpty());
 
     const QQmlJSRegisterContent originalOut = originalType(m_state.accumulatorOut());
     m_body += m_state.accumulatorVariableOut;

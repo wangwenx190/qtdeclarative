@@ -237,60 +237,54 @@ static bool isMsgTypeLess(QtMsgType a, QtMsgType b)
     return level[a] < level[b];
 }
 
-void QQmlJSLogger::log(const QString &message, QQmlJS::LoggerWarningId id,
-                       const QQmlJS::SourceLocation &srcLocation, QtMsgType type, bool showContext,
-                       bool showFileName, const std::optional<QQmlJSFixSuggestion> &suggestion,
-                       const QString overrideFileName)
+void QQmlJSLogger::log(
+        Message diagMsg, bool showContext, bool showFileName, const QString overrideFileName)
 {
-    Q_ASSERT(m_categoryLevels.contains(id.name().toString()));
+    Q_ASSERT(m_categoryLevels.contains(diagMsg.id.toString()));
 
-    if (isCategoryIgnored(id))
+    if (isCategoryIgnored(diagMsg.id))
         return;
 
     // Note: assume \a type is the type we should prefer for logging
 
-    if (srcLocation.isValid()
-        && m_ignoredWarnings[srcLocation.startLine].contains(id.name().toString()))
+    if (diagMsg.loc.isValid()
+            && m_ignoredWarnings[diagMsg.loc.startLine].contains(diagMsg.id.toString())) {
         return;
+    }
 
     QString prefix;
 
-    if ((!overrideFileName.isEmpty() || !m_filePath.isEmpty()) && showFileName)
-        prefix =
-                (!overrideFileName.isEmpty() ? overrideFileName : m_filePath) + QStringLiteral(":");
+    if ((!overrideFileName.isEmpty() || !m_filePath.isEmpty()) && showFileName) {
+        prefix = (!overrideFileName.isEmpty() ? overrideFileName : m_filePath)
+                + QStringLiteral(":");
+    }
 
-    if (srcLocation.isValid())
-        prefix += QStringLiteral("%1:%2: ").arg(srcLocation.startLine).arg(srcLocation.startColumn);
+    if (diagMsg.loc.isValid())
+        prefix += QStringLiteral("%1:%2: ").arg(diagMsg.loc.startLine).arg(diagMsg.loc.startColumn);
     else if (!prefix.isEmpty())
         prefix += QStringLiteral(": "); // produce double colon for Qt Creator's issues pane
 
     // Note: we do the clamping to [Info, Critical] range since our logger only
     // supports 3 categories
-    type = std::clamp(type, QtInfoMsg, QtCriticalMsg, isMsgTypeLess);
+    diagMsg.type = std::clamp(diagMsg.type, QtInfoMsg, QtCriticalMsg, isMsgTypeLess);
 
     // Note: since we clamped our \a type, the output message is not printed
     // exactly like it was requested, bear with us
-    m_output.writePrefixedMessage(u"%1%2 [%3]"_s.arg(prefix, message, id.name().toString()), type);
+    m_output.writePrefixedMessage(
+            u"%1%2 [%3]"_s.arg(prefix, diagMsg.message, diagMsg.id.toString()), diagMsg.type);
 
-    Message diagMsg;
-    diagMsg.message = message;
-    diagMsg.id = id.name();
-    diagMsg.loc = srcLocation;
-    diagMsg.type = type;
-    diagMsg.fixSuggestion = suggestion;
+    if (diagMsg.loc.length > 0 && !m_code.isEmpty() && showContext)
+        printContext(overrideFileName, diagMsg.loc);
+
+    if (diagMsg.fixSuggestion.has_value())
+        printFix(diagMsg.fixSuggestion.value());
 
     if (m_inTransaction) {
         m_pendingMessages.push_back(std::move(diagMsg));
     } else {
         countMessage(diagMsg);
-        m_committedMessages.push_back(std::move(diagMsg));
+        m_currentFunctionMessages.push_back(std::move(diagMsg));
     }
-
-    if (srcLocation.length > 0 && !m_code.isEmpty() && showContext)
-        printContext(overrideFileName, srcLocation);
-
-    if (suggestion.has_value())
-        printFix(suggestion.value());
 
     if (!m_inTransaction)
         m_output.flushBuffer();
@@ -327,6 +321,13 @@ void QQmlJSLogger::processMessages(const QList<QQmlJS::DiagnosticMessage> &messa
     m_output.write(QStringLiteral("---\n\n"));
 }
 
+void QQmlJSLogger::finalizeFuction()
+{
+    Q_ASSERT(!m_inTransaction);
+    m_archivedMessages.append(std::exchange(m_currentFunctionMessages, {}));
+    m_hasCompileError = false;
+}
+
 /*!
     \internal
     Starts a transaction for a compile pass. This buffers all messages until the
@@ -355,7 +356,8 @@ void QQmlJSLogger::commit()
     for (const Message &message : std::as_const(m_pendingMessages))
         countMessage(message);
 
-    m_committedMessages.append(std::exchange(m_pendingMessages, {}));
+    m_currentFunctionMessages.append(std::exchange(m_pendingMessages, {}));
+    m_hasCompileError = m_hasCompileError || std::exchange(m_hasPendingCompileError, false);
     m_output.flushBuffer();
     m_inTransaction = false;
 }
@@ -369,6 +371,7 @@ void QQmlJSLogger::rollback()
 {
     Q_ASSERT(m_inTransaction);
     m_pendingMessages.clear();
+    m_hasPendingCompileError = false;
     m_output.discardBuffer();
     m_inTransaction = false;
 }

@@ -26,14 +26,11 @@ using namespace Qt::StringLiterals;
  * refinement or code generation.
  */
 
-QQmlJSTypePropagator::QQmlJSTypePropagator(const QV4::Compiler::JSUnitGenerator *unitGenerator,
-                                           const QQmlJSTypeResolver *typeResolver,
-                                           QQmlJSLogger *logger,
-                                           QList<QQmlJS::DiagnosticMessage> *errors,
-                                           const BasicBlocks &basicBlocks,
-                                           const InstructionAnnotations &annotations,
-                                           QQmlSA::PassManager *passManager)
-    : QQmlJSCompilePass(unitGenerator, typeResolver, logger, errors, basicBlocks, annotations),
+QQmlJSTypePropagator::QQmlJSTypePropagator(
+        const QV4::Compiler::JSUnitGenerator *unitGenerator, const QQmlJSTypeResolver *typeResolver,
+        QQmlJSLogger *logger, const BasicBlocks &basicBlocks,
+        const InstructionAnnotations &annotations, QQmlSA::PassManager *passManager)
+    : QQmlJSCompilePass(unitGenerator, typeResolver, logger, basicBlocks, annotations),
       m_passManager(passManager)
 {
 }
@@ -43,19 +40,10 @@ QQmlJSCompilePass::BlocksAndAnnotations QQmlJSTypePropagator::run(const Function
     m_function = function;
     m_returnType = m_function->returnType;
 
-    QList<QQmlJS::DiagnosticMessage> oldErrors;
-    std::swap(oldErrors, *m_errors);
-    auto restoreErrors = qScopeGuard([&]() {
-        oldErrors << *std::move(m_errors);
-        *m_errors = std::move(oldErrors);
-    });
-
     do {
         // Reset the error if we need to do another pass
-        if (m_state.needsMorePasses) {
-            m_errors->clear();
+        if (m_state.needsMorePasses)
             m_logger->rollback();
-        }
 
         m_logger->startTransaction();
 
@@ -3042,14 +3030,14 @@ void QQmlJSTypePropagator::endInstruction(QV4::Moth::Instr::Type instr)
                  || (!populates && changedIndex != Accumulator));
     }
 
-    if (m_errors->isEmpty() && !isNoop(instr)) {
+    if (!m_logger->currentFunctionHasCompileError() && !isNoop(instr)) {
         // An instruction needs to have side effects or write to another register or be a known
         // noop. Anything else is a problem.
         Q_ASSERT(m_state.hasSideEffects() || changedIndex != InvalidRegister);
     }
 
     if (changedIndex != InvalidRegister) {
-        Q_ASSERT(!m_errors->isEmpty() || m_state.changedRegister().isValid());
+        Q_ASSERT(m_logger->currentFunctionHasCompileError() || m_state.changedRegister().isValid());
         VirtualRegister &r = m_state.registers[changedIndex];
         r.content = m_state.changedRegister();
         r.canMove = false;

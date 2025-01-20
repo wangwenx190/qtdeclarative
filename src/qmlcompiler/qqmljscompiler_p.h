@@ -81,6 +81,8 @@ public:
     Flags m_flags;
 
 protected:
+    std::optional<QList<QQmlJS::DiagnosticMessage>> finalizeBindingOrFunction();
+
     virtual QQmlJS::DiagnosticMessage diagnose(
             const QString &message, QtMsgType type, const QQmlJS::SourceLocation &location) const;
 
@@ -98,14 +100,11 @@ protected:
     QQmlJSLogger *m_logger = nullptr;
 
 private:
-    QQmlJSAotFunction doCompile(const QV4::Compiler::Context *context,
-                                QQmlJSCompilePass::Function *function,
-                                QList<QQmlJS::DiagnosticMessage> *error);
-    QQmlJSAotFunction doCompileAndRecordAotStats(const QV4::Compiler::Context *context,
-                                                 QQmlJSCompilePass::Function *function,
-                                                 QList<QQmlJS::DiagnosticMessage> *erros,
-                                                 const QString &name,
-                                                 QQmlJS::SourceLocation location);
+    QQmlJSAotFunction doCompile(
+            const QV4::Compiler::Context *context, QQmlJSCompilePass::Function *function);
+    QQmlJSAotFunction doCompileAndRecordAotStats(
+            const QV4::Compiler::Context *context, QQmlJSCompilePass::Function *function,
+            const QString &name, QQmlJS::SourceLocation location);
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(QQmlJSAotCompiler::Flags);

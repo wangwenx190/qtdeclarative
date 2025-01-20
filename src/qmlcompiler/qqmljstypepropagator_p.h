@@ -28,7 +28,6 @@ struct Q_QMLCOMPILER_EXPORT QQmlJSTypePropagator : public QQmlJSCompilePass
 {
     QQmlJSTypePropagator(const QV4::Compiler::JSUnitGenerator *unitGenerator,
                          const QQmlJSTypeResolver *typeResolver, QQmlJSLogger *logger,
-                         QList<QQmlJS::DiagnosticMessage> *errors,
                          const BasicBlocks &basicBlocks = {},
                          const InstructionAnnotations &annotations = {},
                          QQmlSA::PassManager *passManager = nullptr);

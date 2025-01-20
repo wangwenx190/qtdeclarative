@@ -369,10 +369,10 @@ void QmlLintSuggestions::diagnoseHelper(const QByteArray &url,
 
     if (const QQmlJSLogger *logger = linter.logger()) {
         qsizetype nDiagnostics = diagnostics.size();
-        for (const Message &message : logger->messages()) {
+        logger->iterateAllMessages([&](const Message &message) {
             if (!message.message.contains(u"Failed to import")) {
                 diagnostics.append(messageToDiagnostic(message));
-                continue;
+                return;
             }
 
             Message modified {message};
@@ -381,7 +381,7 @@ void QmlLintSuggestions::diagnoseHelper(const QByteArray &url,
                     u"\"QT_QML_GENERATE_QMLLS_INI\" CMake variable on your project to \"ON\"?");
 
             diagnostics.append(messageToDiagnostic(modified));
-        }
+        });
         if (diagnostics.size() != nDiagnostics && imports.size() == 1)
             diagnostics.append(createMissingBuildDirDiagnostic());
     }

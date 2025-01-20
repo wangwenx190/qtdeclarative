@@ -30,11 +30,11 @@ QT_BEGIN_NAMESPACE
 class Q_QMLCOMPILER_EXPORT QQmlJSCodeGenerator : public QQmlJSCompilePass
 {
 public:
-    QQmlJSCodeGenerator(const QV4::Compiler::Context *compilerContext,
-                        const QV4::Compiler::JSUnitGenerator *unitGenerator,
-                        const QQmlJSTypeResolver *typeResolver, QQmlJSLogger *logger,
-                        QList<QQmlJS::DiagnosticMessage> *errors, const BasicBlocks &basicBlocks,
-                        const InstructionAnnotations &annotations);
+    QQmlJSCodeGenerator(
+            const QV4::Compiler::Context *compilerContext,
+            const QV4::Compiler::JSUnitGenerator *unitGenerator,
+            const QQmlJSTypeResolver *typeResolver, QQmlJSLogger *logger,
+            const BasicBlocks &basicBlocks, const InstructionAnnotations &annotations);
     ~QQmlJSCodeGenerator() = default;
 
     QQmlJSAotFunction run(const Function *function, bool basicBlocksValidationFailed);

@@ -269,13 +269,12 @@ public:
 
     QQmlJSCompilePass(const QV4::Compiler::JSUnitGenerator *jsUnitGenerator,
                       const QQmlJSTypeResolver *typeResolver, QQmlJSLogger *logger,
-                      QList<QQmlJS::DiagnosticMessage> *errors, const BasicBlocks &basicBlocks = {},
+                      const BasicBlocks &basicBlocks = {},
                       const InstructionAnnotations &annotations = {})
         : m_jsUnitGenerator(jsUnitGenerator)
         , m_typeResolver(typeResolver)
         , m_pool(typeResolver->registerContentPool())
         , m_logger(logger)
-        , m_errors(errors)
         , m_basicBlocks(basicBlocks)
         , m_annotations(annotations)
     {}
@@ -287,7 +286,6 @@ protected:
     QQmlJSLogger *m_logger = nullptr;
 
     const Function *m_function = nullptr;
-    QList<QQmlJS::DiagnosticMessage> *m_errors;
     BasicBlocks m_basicBlocks;
     InstructionAnnotations m_annotations;
 
@@ -437,11 +435,7 @@ protected:
 
     void addError(const QString &message, int instructionOffset)
     {
-        QQmlJS::DiagnosticMessage diagnostic;
-        diagnostic.message = m_logger->compileErrorPrefix() + message;
-        diagnostic.loc = sourceLocation(instructionOffset);
-        diagnostic.type = m_logger->compileErrorLevel();
-        m_errors->append(diagnostic);
+        m_logger->logCompileError(message, sourceLocation(instructionOffset));
     }
 
     void addError(const QString &message)

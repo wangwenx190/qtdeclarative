@@ -424,8 +424,9 @@ static void addJsonWarning(QJsonArray &warnings, const QQmlJS::DiagnosticMessage
 
 void QQmlJSLinter::processMessages(QJsonArray &warnings)
 {
-    for (const Message &message : m_logger->messages())
+    m_logger->iterateAllMessages([&](const Message &message) {
         addJsonWarning(warnings, message, message.id, message.fixSuggestion);
+    });
 }
 
 QQmlJSLinter::LintResult QQmlJSLinter::lintFile(const QString &filename,
@@ -833,19 +834,19 @@ QQmlJSLinter::FixResult QQmlJSLinter::applyFixes(QString *fixedCode, bool silent
     if (isESModule || isJavaScript)
         return NothingToFix;
 
-    for (const Message &msg : m_logger->messages()) {
+    m_logger->iterateAllMessages([&](const Message &msg) {
         if (!msg.fixSuggestion.has_value() || !msg.fixSuggestion->isAutoApplicable())
-            continue;
+            return;
 
         // Ignore fix suggestions for other files
         const QString filename = msg.fixSuggestion->filename();
         if (!filename.isEmpty()
                 && QFileInfo(filename).absoluteFilePath() != currentFileAbsolutePath) {
-            continue;
+            return;
         }
 
         fixesToApply << msg.fixSuggestion.value();
-    }
+    });
 
     if (fixesToApply.isEmpty())
         return NothingToFix;

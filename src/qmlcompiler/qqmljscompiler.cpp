@@ -653,10 +653,6 @@ QQmlJS::DiagnosticMessage QQmlJSAotCompiler::diagnose(
                location.startLine, qPrintable(message));
     }
 
-    // TODO: this is a special place that explicitly sets the severity through
-    // logger's private function
-    m_logger->log(message, qmlCompiler, location, type);
-
     return QQmlJS::DiagnosticMessage {
         message,
         type,
@@ -670,19 +666,15 @@ std::variant<QQmlJSAotFunction, QList<QQmlJS::DiagnosticMessage>> QQmlJSAotCompi
 {
     QQmlJSFunctionInitializer initializer(
                 &m_typeResolver, m_currentObject->location, m_currentScope->location, m_logger);
-    QList<QQmlJS::DiagnosticMessage> errors;
+
     const QString name = m_document->stringAt(irBinding.propertyNameIndex);
-    QQmlJSCompilePass::Function function = initializer.run(
-                context, name, astNode, irBinding, &errors);
+    QQmlJSCompilePass::Function function = initializer.run( context, name, astNode, irBinding);
 
     const QQmlJSAotFunction aotFunction = doCompileAndRecordAotStats(
-            context, &function, &errors, name, astNode->firstSourceLocation());
+            context, &function, name, astNode->firstSourceLocation());
 
-    if (!errors.isEmpty()) {
-        for (const auto &error : errors)
-            diagnose(error.message, error.type, error.loc);
-        return errors;
-    }
+    if (const auto errors = finalizeBindingOrFunction())
+        return *errors;
 
     qCDebug(lcAotCompiler()) << "includes:" << aotFunction.includes;
     qCDebug(lcAotCompiler()) << "binding code:" << aotFunction.code;
@@ -694,16 +686,13 @@ std::variant<QQmlJSAotFunction, QList<QQmlJS::DiagnosticMessage>> QQmlJSAotCompi
 {
     QQmlJSFunctionInitializer initializer(
                 &m_typeResolver, m_currentObject->location, m_currentScope->location, m_logger);
-    QList<QQmlJS::DiagnosticMessage> errors;
-    QQmlJSCompilePass::Function function = initializer.run(context, name, astNode, &errors);
-    const QQmlJSAotFunction aotFunction = doCompileAndRecordAotStats(
-            context, &function, &errors, name, astNode->firstSourceLocation());
+    QQmlJSCompilePass::Function function = initializer.run(context, name, astNode);
 
-    if (!errors.isEmpty()) {
-        for (const auto &error : errors)
-            diagnose(error.message, error.type, error.loc);
-        return errors;
-    }
+    const QQmlJSAotFunction aotFunction = doCompileAndRecordAotStats(
+            context, &function, name, astNode->firstSourceLocation());
+
+    if (const auto errors = finalizeBindingOrFunction())
+        return *errors;
 
     qCDebug(lcAotCompiler()) << "includes:" << aotFunction.includes;
     qCDebug(lcAotCompiler()) << "binding code:" << aotFunction.code;
@@ -735,72 +724,89 @@ QQmlJSAotFunction QQmlJSAotCompiler::globalCode() const
     return global;
 }
 
-QQmlJSAotFunction QQmlJSAotCompiler::doCompile(
-        const QV4::Compiler::Context *context, QQmlJSCompilePass::Function *function,
-        QList<QQmlJS::DiagnosticMessage> *errors)
+std::optional<QList<QQmlJS::DiagnosticMessage>> QQmlJSAotCompiler::finalizeBindingOrFunction()
 {
-    if (!errors->isEmpty())
+    const auto archiveMessages = qScopeGuard([this]() { m_logger->finalizeFuction(); });
+
+    if (!m_logger->currentFunctionHasCompileError())
+        return {};
+
+    QList<QQmlJS::DiagnosticMessage> errors;
+    m_logger->iterateCurrentFunctionMessages([&](const Message &msg) {
+        if (msg.isCompileError)
+            errors.append(diagnose(msg.message, msg.type, msg.loc));
+    });
+    return errors;
+}
+
+QQmlJSAotFunction QQmlJSAotCompiler::doCompile(
+        const QV4::Compiler::Context *context, QQmlJSCompilePass::Function *function)
+{
+    if (m_logger->currentFunctionHasCompileError())
         return QQmlJSAotFunction();
 
     bool basicBlocksValidationFailed = false;
-    QQmlJSBasicBlocks basicBlocks(context, m_unitGenerator, &m_typeResolver, m_logger, errors);
+    QQmlJSBasicBlocks basicBlocks(context, m_unitGenerator, &m_typeResolver, m_logger);
     auto passResult = basicBlocks.run(function, m_flags, basicBlocksValidationFailed);
     auto &[blocks, annotations] = passResult;
 
     QQmlJSTypePropagator propagator(
-            m_unitGenerator, &m_typeResolver, m_logger, errors, blocks, annotations);
+            m_unitGenerator, &m_typeResolver, m_logger, blocks, annotations);
     passResult = propagator.run(function);
-    if (!errors->isEmpty())
+    if (m_logger->currentFunctionHasCompileError())
         return QQmlJSAotFunction();
 
     QQmlJSShadowCheck shadowCheck(
-            m_unitGenerator, &m_typeResolver, m_logger, errors, blocks, annotations);
+            m_unitGenerator, &m_typeResolver, m_logger, blocks, annotations);
     passResult = shadowCheck.run(function);
-    if (!errors->isEmpty())
+    if (m_logger->currentFunctionHasCompileError())
         return QQmlJSAotFunction();
 
     QQmlJSOptimizations optimizer(
-            m_unitGenerator, &m_typeResolver, m_logger, errors, blocks, annotations,
+            m_unitGenerator, &m_typeResolver, m_logger, blocks, annotations,
             basicBlocks.objectAndArrayDefinitions());
     passResult = optimizer.run(function);
-    if (!errors->isEmpty())
+    if (m_logger->currentFunctionHasCompileError())
         return QQmlJSAotFunction();
 
     QQmlJSStorageInitializer initializer(
-            m_unitGenerator, &m_typeResolver, m_logger, errors, blocks, annotations);
+            m_unitGenerator, &m_typeResolver, m_logger, blocks, annotations);
     passResult = initializer.run(function);
 
     // Generalize all arguments, registers, and the return type.
     QQmlJSStorageGeneralizer generalizer(
-            m_unitGenerator, &m_typeResolver, m_logger, errors, blocks, annotations);
+            m_unitGenerator, &m_typeResolver, m_logger, blocks, annotations);
     passResult = generalizer.run(function);
-    if (!errors->isEmpty())
+    if (m_logger->currentFunctionHasCompileError())
         return QQmlJSAotFunction();
 
     QQmlJSCodeGenerator codegen(
-            context, m_unitGenerator, &m_typeResolver, m_logger, errors, blocks, annotations);
+            context, m_unitGenerator, &m_typeResolver, m_logger, blocks, annotations);
     QQmlJSAotFunction result = codegen.run(function, basicBlocksValidationFailed);
-    return !errors->isEmpty() ? QQmlJSAotFunction() : std::move(result);
+    if (m_logger->currentFunctionHasCompileError())
+        return QQmlJSAotFunction();
+
+    return result;
 }
 
-QQmlJSAotFunction QQmlJSAotCompiler::doCompileAndRecordAotStats(const QV4::Compiler::Context *context, QQmlJSCompilePass::Function *function,
-                                                                QList<QQmlJS::DiagnosticMessage> *errors, const QString &name,
-                                                                QQmlJS::SourceLocation location)
+QQmlJSAotFunction QQmlJSAotCompiler::doCompileAndRecordAotStats(
+        const QV4::Compiler::Context *context, QQmlJSCompilePass::Function *function,
+        const QString &name, QQmlJS::SourceLocation location)
 {
     auto t1 = std::chrono::high_resolution_clock::now();
     QQmlJSAotFunction result;
-    if (errors->isEmpty())
-        result = doCompile(context, function, errors);
+    if (!m_logger->currentFunctionHasCompileError())
+        result = doCompile(context, function);
     auto t2 = std::chrono::high_resolution_clock::now();
 
     if (QQmlJS::QQmlJSAotCompilerStats::recordAotStats()) {
         QQmlJS::AotStatsEntry entry;
         entry.codegenDuration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
         entry.functionName = name;
-        entry.errorMessage = errors->isEmpty() ? u""_s : errors->first().message;
+        entry.errorMessage = m_logger->currentFunctionCompileErrorMessage();
         entry.line = location.startLine;
         entry.column = location.startColumn;
-        entry.codegenSuccessful = errors->isEmpty();
+        entry.codegenSuccessful = !m_logger->currentFunctionHasCompileError();
         QQmlJS::QQmlJSAotCompilerStats::addEntry(
                 function->qmlScope.containedType()->filePath(), entry);
     }
