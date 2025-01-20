@@ -797,6 +797,12 @@ void QQmlComponentPrivate::loadUrl(const QUrl &newUrl, QQmlComponent::Compilatio
         m_url = newUrl;
     }
 
+    if (m_url.scheme() == "qrc"_L1 && !m_url.path().startsWith("/"_L1)) {
+        qWarning().nospace().noquote()
+                << "QQmlComponent: attempted to load via a relative URL '" << m_url.toString()
+                << "' in resource file system. This is not fully supported and may not work";
+    }
+
     if (newUrl.isEmpty()) {
         QQmlError error;
         error.setDescription(QQmlComponent::tr("Invalid empty URL"));

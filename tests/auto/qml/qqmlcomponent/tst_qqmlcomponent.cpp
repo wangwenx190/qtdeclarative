@@ -151,6 +151,7 @@ private slots:
     void loadFromModuleRequired();
     void loadUrlRequired();
     void loadFromQrc();
+    void loadFromRelativeQrcPath();
     void removeBinding();
     void complexObjectArgument();
     void bindingEvaluationOrder();
@@ -1634,6 +1635,20 @@ void tst_qqmlcomponent::loadFromQrc()
     QVERIFY(p);
     QVERIFY(p->compilationUnit());
     QVERIFY(p->compilationUnit()->baseCompilationUnit()->aotCompiledFunctions);
+}
+
+void tst_qqmlcomponent::loadFromRelativeQrcPath()
+{
+    QQmlEngine e;
+    QQmlComponent c(&e);
+    const QUrl url = QUrl("qrc:main.qml");
+    QTest::ignoreMessage(
+            QtMsgType::QtWarningMsg,
+            "QQmlComponent: attempted to load via a relative URL '%1' in resource file system. "
+            "This is not fully supported and may not work"_L1.arg(url.toString())
+                    .toLocal8Bit()
+                    .data());
+    c.loadUrl(url);
 }
 
 void tst_qqmlcomponent::removeBinding()
