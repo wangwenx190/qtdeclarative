@@ -416,7 +416,7 @@ void QQmlJSImportVisitor::importBaseModules()
     const QQmlJS::SourceLocation invalidLoc;
     const auto types = m_rootScopeImports.types();
     for (auto it = types.keyBegin(), end = types.keyEnd(); it != end; it++)
-        addImportWithLocation(*it, invalidLoc);
+        addImportWithLocation(*it, invalidLoc, false);
 
     if (!m_qmldirFiles.isEmpty())
         m_rootScopeImports.addWarnings(m_importer->importQmldirs(m_qmldirFiles));
@@ -2292,17 +2292,20 @@ bool QQmlJSImportVisitor::visit(QQmlJS::AST::UiEnumDeclaration *uied)
     return true;
 }
 
-void QQmlJSImportVisitor::addImportWithLocation(const QString &name,
-                                                const QQmlJS::SourceLocation &loc)
+void QQmlJSImportVisitor::addImportWithLocation(
+        const QString &name, const QQmlJS::SourceLocation &loc, bool hadWarnings)
 {
     if (m_importTypeLocationMap.contains(name)
-        && m_importTypeLocationMap.values(name).contains(loc))
+            && m_importTypeLocationMap.values(name).contains(loc)) {
         return;
+    }
 
     m_importTypeLocationMap.insert(name, loc);
 
-    // If it's not valid it's a builtin. We don't need to complain about it being unused.
-    if (loc.isValid())
+    // If the import had warnings it may be "unused" because we haven't found all of its types.
+    // If the type's location is not valid it's a builtin.
+    // We don't need to complain about those being unused.
+    if (!hadWarnings && loc.isValid())
         m_importLocations.insert(loc);
 }
 
@@ -2320,7 +2323,7 @@ QList<QQmlJS::DiagnosticMessage> QQmlJSImportVisitor::importFromHost(
         const auto scope = m_importer->importFile(path);
         const QString actualPrefix = prefix.isEmpty() ? scope->internalName() : prefix;
         m_rootScopeImports.setType(actualPrefix, { scope, QTypeRevision() });
-        addImportWithLocation(actualPrefix, location);
+        addImportWithLocation(actualPrefix, location, false);
         return {};
     }
 
@@ -2330,7 +2333,7 @@ QList<QQmlJS::DiagnosticMessage> QQmlJSImportVisitor::importFromHost(
         const auto warnings = scopes.warnings();
         m_rootScopeImports.add(std::move(scopes));
         for (auto it = types.keyBegin(), end = types.keyEnd(); it != end; it++)
-            addImportWithLocation(*it, location);
+            addImportWithLocation(*it, location, !warnings.isEmpty());
         return warnings;
     }
 
@@ -2357,7 +2360,7 @@ QList<QQmlJS::DiagnosticMessage> QQmlJSImportVisitor::importFromQrc(
         const QString actualPrefix =
                 prefix.isEmpty() ? QFileInfo(entry.resourcePath).baseName() : prefix;
         m_rootScopeImports.setType(actualPrefix, { scope, QTypeRevision() });
-        addImportWithLocation(actualPrefix, location);
+        addImportWithLocation(actualPrefix, location, false);
         return {};
     }
 
@@ -2366,7 +2369,7 @@ QList<QQmlJS::DiagnosticMessage> QQmlJSImportVisitor::importFromQrc(
     const auto warnings = scopes.warnings();
     m_rootScopeImports.add(std::move(scopes));
     for (auto it = types.keyBegin(), end = types.keyEnd(); it != end; it++)
-        addImportWithLocation(*it, location);
+        addImportWithLocation(*it, location, !warnings.isEmpty());
     return warnings;
 }
 
@@ -2424,7 +2427,7 @@ bool QQmlJSImportVisitor::visit(QQmlJS::AST::UiImport *import)
     const auto warnings = imported.warnings();
     m_rootScopeImports.add(std::move(imported));
     for (auto it = types.keyBegin(), end = types.keyEnd(); it != end; it++)
-        addImportWithLocation(*it, import->firstSourceLocation());
+        addImportWithLocation(*it, import->firstSourceLocation(), !warnings.isEmpty());
 
     if (prefix.isEmpty()) {
         for (const QString &staticModule : staticModulesProvided) {
