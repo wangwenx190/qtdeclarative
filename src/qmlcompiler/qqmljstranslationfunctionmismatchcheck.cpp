@@ -4,19 +4,16 @@
 #include "qqmljstranslationfunctionmismatchcheck_p.h"
 #include "qqmljslogger_p.h"
 
-using QQmlSA::Element;
-using QQmlSA::SourceLocation;
-
 QT_BEGIN_NAMESPACE
 
-void QQmlJSTranslationFunctionMismatchCheck::onCall(const Element &element,
+void QQmlJSTranslationFunctionMismatchCheck::onCall(const QQmlSA::Element &element,
                                                     const QString &propertyName,
-                                                    const Element &readScope,
-                                                    SourceLocation location)
+                                                    const QQmlSA::Element &readScope,
+                                                    QQmlSA::SourceLocation location)
 {
     Q_UNUSED(readScope);
 
-    const Element globalJSObject = resolveBuiltinType(u"GlobalObject");
+    const QQmlSA::Element globalJSObject = resolveBuiltinType(u"GlobalObject");
     if (element != globalJSObject)
         return;
 
