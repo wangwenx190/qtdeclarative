@@ -366,6 +366,18 @@ ApplicationWindow {
                             visibleCellsConnection.updateViewArea()  // now update visible area
                         }
 
+                        function isDropPossible(dropCell) {
+                            for (let i = 0; i < mimeDataProvider.size(); ++i) {
+                                let cell = mimeDataProvider.cellAt(i)
+                                cell.x += dropCell.x - dragArea.dragCell.x
+                                cell.y += dropCell.y - dragArea.dragCell.y
+                                const index = tableView.index(cell.y, cell.x)
+                                if (!index.valid)
+                                    return false
+                            }
+                            return true
+                        }
+
                         onDropped: {
                             const position = Qt.point(dragArea.mouseX, dragArea.mouseY)
                             dropCell = tableView.cellAtPosition(position, true)
@@ -373,6 +385,11 @@ ApplicationWindow {
                                 return
                             if (dragArea.dragCell === dropCell)
                                 return
+
+                            if (!isDropPossible(dropCell)) {
+                                tableView.model.clearHighlight()
+                                return
+                            }
 
                             tableView.model.clearItemData(_spreadSelectionModel.selectedIndexes)
                             for (let i = 0; i < mimeDataProvider.size(); ++i) {
@@ -400,6 +417,12 @@ ApplicationWindow {
                             // to update highlight, as nothing is changed since last time.
                             if (cell === dropCell)
                                 return
+
+                            if (!isDropPossible(cell)) {
+                                tableView.model.clearHighlight()
+                                return
+                            }
+
                             // if something is changed, it means that if the current cell is changed,
                             // then clear highlighted cells and update the dropCell.
                             tableView.model.clearHighlight()
