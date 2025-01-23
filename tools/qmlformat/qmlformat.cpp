@@ -122,6 +122,7 @@ static bool parseFile(const QString &filename, const QQmlFormatOptions &options)
 
 QQmlFormatOptions buildCommandLineOptions(const QCoreApplication &app)
 {
+    QQmlFormatOptions options;
 #if QT_CONFIG(commandlineparser)
     QCommandLineParser parser;
     parser.setApplicationDescription("Formats QML files according to the QML Coding Conventions.");
@@ -189,7 +190,6 @@ QQmlFormatOptions buildCommandLineOptions(const QCoreApplication &app)
     parser.process(app);
 
     if (parser.isSet(writeDefaultsOption)) {
-        QQmlFormatOptions options;
         options.setWriteDefaultSettingsEnabled(true);
         return options;
     }
@@ -197,7 +197,6 @@ QQmlFormatOptions buildCommandLineOptions(const QCoreApplication &app)
     bool indentWidthOkay = false;
     const int indentWidth = parser.value("indent-width").toInt(&indentWidthOkay);
     if (!indentWidthOkay) {
-        QQmlFormatOptions options;
         options.addError("Error: Invalid value passed to -w");
         return options;
     }
@@ -218,7 +217,6 @@ QQmlFormatOptions buildCommandLineOptions(const QCoreApplication &app)
         }
     }
 
-    QQmlFormatOptions options;
     options.setIsVerbose(parser.isSet("verbose"));
     options.setIsInplace(parser.isSet("inplace"));
     options.setForceEnabled(parser.isSet("force"));
@@ -244,10 +242,8 @@ QQmlFormatOptions buildCommandLineOptions(const QCoreApplication &app)
         }
         options.setMaxColumnWidth(maxColumnWidth);
     }
-    return options;
-#else
-    return Options {};
 #endif
+    return options;
 }
 
 int main(int argc, char *argv[])
