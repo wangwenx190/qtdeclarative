@@ -6,6 +6,8 @@
 
 QT_BEGIN_NAMESPACE
 
+using namespace Qt::StringLiterals;
+
 void QQmlJSTranslationFunctionMismatchCheck::onCall(const QQmlSA::Element &element,
                                                     const QString &propertyName,
                                                     const QQmlSA::Element &readScope,
@@ -17,10 +19,17 @@ void QQmlJSTranslationFunctionMismatchCheck::onCall(const QQmlSA::Element &eleme
     if (element != globalJSObject)
         return;
 
-    static const std::array<QStringView, 4> translationFunctions = { u"qsTranslate",
-                                                                     u"QT_TRANSLATE_NOOP", u"qsTr",
-                                                                     u"QT_TR_NOOP" };
-    static const std::array<QStringView, 2> idTranslationFunctions = { u"qsTrId", u"QT_TRID_NOOP" };
+    constexpr std::array translationFunctions = {
+        "qsTranslate"_L1,
+        "QT_TRANSLATE_NOOP"_L1,
+        "qsTr"_L1,
+        "QT_TR_NOOP"_L1,
+    };
+
+    constexpr std::array idTranslationFunctions = {
+        "qsTrId"_L1,
+        "QT_TRID_NOOP"_L1,
+    };
 
     const bool isTranslation =
             std::find(translationFunctions.cbegin(), translationFunctions.cend(), propertyName)
