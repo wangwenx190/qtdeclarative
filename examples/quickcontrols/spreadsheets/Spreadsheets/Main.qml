@@ -342,111 +342,119 @@ ApplicationWindow {
                             dragCell = Qt.point(-1, -1)
                         }
                     }
+                }
+            }
 
-                    DropArea {
-                        id: dropArea
+            DropArea {
+                id: dropArea
 
-                        property point dropCell: Qt.point(-1, -1)
+                property point dropCell: Qt.point(-1, -1)
+                // This property keeps the interactive value to restore it after
+                // dragging is finished. The reason is that when the interactive
+                // mode is true, it steals the events and prevents the drop area
+                // from working.
+                property bool restoreInteractiveValue: tableView.interactive
 
-                        anchors.fill: parent
-                        Drag.active: dragArea.drag.active
-                        enabled: dragArea.drag.active
+                anchors.fill: parent
+                Drag.active: dragArea.drag.active
+                enabled: dragArea.drag.active
 
-                        function startDragging()
-                        {
-                            // block updating visible area
-                            visibleCellsConnection.blockConnection()
-                        }
+                function startDragging()
+                {
+                    restoreInteractiveValue = tableView.interactive
+                    tableView.interactive = false
+                    // block updating visible area
+                    visibleCellsConnection.blockConnection()
+                }
 
-                        function stopDragging()
-                        {
-                            Drag.drop()
-                            // unblock update visible area
-                            visibleCellsConnection.blockConnection(false)
-                            visibleCellsConnection.updateViewArea()  // now update visible area
-                        }
+                function stopDragging()
+                {
+                    Drag.drop()
+                    // unblock update visible area
+                    visibleCellsConnection.blockConnection(false)
+                    visibleCellsConnection.updateViewArea()  // now update visible area
+                    tableView.interactive = restoreInteractiveValue
+                }
 
-                        function isDropPossible(dropCell) {
-                            for (let i = 0; i < mimeDataProvider.size(); ++i) {
-                                let cell = mimeDataProvider.cellAt(i)
-                                cell.x += dropCell.x - dragArea.dragCell.x
-                                cell.y += dropCell.y - dragArea.dragCell.y
-                                const index = tableView.index(cell.y, cell.x)
-                                if (!index.valid)
-                                    return false
-                            }
-                            return true
-                        }
+                function isDropPossible(dropCell) {
+                    for (let i = 0; i < mimeDataProvider.size(); ++i) {
+                        let cell = mimeDataProvider.cellAt(i)
+                        cell.x += dropCell.x - dragArea.dragCell.x
+                        cell.y += dropCell.y - dragArea.dragCell.y
+                        const index = tableView.index(cell.y, cell.x)
+                        if (!index.valid)
+                            return false
+                    }
+                    return true
+                }
 
-                        onDropped: {
-                            const position = Qt.point(dragArea.mouseX, dragArea.mouseY)
-                            dropCell = tableView.cellAtPosition(position, true)
-                            if (dropCell.x < 0 || dropCell.y < 0)
-                                return
-                            if (dragArea.dragCell === dropCell)
-                                return
+                onDropped: {
+                    const position = Qt.point(dragArea.mouseX, dragArea.mouseY)
+                    dropCell = tableView.cellAtPosition(position, true)
+                    if (dropCell.x < 0 || dropCell.y < 0)
+                        return
+                    if (dragArea.dragCell === dropCell)
+                        return
 
-                            if (!isDropPossible(dropCell)) {
-                                tableView.model.clearHighlight()
-                                return
-                            }
+                    if (!isDropPossible(dropCell)) {
+                        tableView.model.clearHighlight()
+                        return
+                    }
 
-                            tableView.model.clearItemData(_spreadSelectionModel.selectedIndexes)
-                            for (let i = 0; i < mimeDataProvider.size(); ++i) {
-                                let cell = mimeDataProvider.cellAt(i)
-                                cell.x += dropCell.x - dragArea.dragCell.x
-                                cell.y += dropCell.y - dragArea.dragCell.y
-                                const index = tableView.index(cell.y, cell.x)
-                                mimeDataProvider.saveDataToModel(i, index, tableView.model)
-                            }
-                            mimeDataProvider.reset()
-                            _spreadSelectionModel.clearSelection()
+                    tableView.model.clearItemData(_spreadSelectionModel.selectedIndexes)
+                    for (let i = 0; i < mimeDataProvider.size(); ++i) {
+                        let cell = mimeDataProvider.cellAt(i)
+                        cell.x += dropCell.x - dragArea.dragCell.x
+                        cell.y += dropCell.y - dragArea.dragCell.y
+                        const index = tableView.index(cell.y, cell.x)
+                        mimeDataProvider.saveDataToModel(i, index, tableView.model)
+                    }
+                    mimeDataProvider.reset()
+                    _spreadSelectionModel.clearSelection()
 
-                            const drop_index = tableView.index(dropCell.y, dropCell.x)
-                            _spreadSelectionModel.setCurrentIndex(drop_index, ItemSelectionModel.Current)
+                    const drop_index = tableView.index(dropCell.y, dropCell.x)
+                    _spreadSelectionModel.setCurrentIndex(drop_index, ItemSelectionModel.Current)
 
-                            tableView.model.clearHighlight()
-                        }
+                    tableView.model.clearHighlight()
+                }
 
-                        onPositionChanged: {
-                            const position = Qt.point(dragArea.mouseX, dragArea.mouseY)
-                            // cell is the cell that currently mouse is over it
-                            const cell = tableView.cellAtPosition(position, true)
-                            // dropCell is the cell that it was under the mouse's last position
-                            // if the last and current cells are the same, then there is no need
-                            // to update highlight, as nothing is changed since last time.
-                            if (cell === dropCell)
-                                return
+                onPositionChanged: {
+                    const position = Qt.point(dragArea.mouseX, dragArea.mouseY)
+                    // cell is the cell that currently mouse is over it
+                    const cell = tableView.cellAtPosition(position, true)
+                    // dropCell is the cell that it was under the mouse's last position
+                    // if the last and current cells are the same, then there is no need
+                    // to update highlight, as nothing is changed since last time.
+                    if (cell === dropCell)
+                        return
 
-                            if (!isDropPossible(cell)) {
-                                tableView.model.clearHighlight()
-                                return
-                            }
+                    if (!isDropPossible(cell)) {
+                        tableView.model.clearHighlight()
+                        return
+                    }
 
-                            // if something is changed, it means that if the current cell is changed,
-                            // then clear highlighted cells and update the dropCell.
-                            tableView.model.clearHighlight()
-                            dropCell = cell
-                            // if the current cell was invalid (mouse is out side of the TableView)
-                            // then no need to update highlight
-                            if (cell.x < 0 || cell.y < 0)
-                                return
-                            // if dragged cell is the same as the (possibly) dropCell
-                            // then no need to highlight any cells
-                            if (dragArea.dragCell === dropCell)
-                                return
-                            // if the dropCell is not the same as the dragging cell and also
-                            // is not the same as the cell at the mouse's last position
-                            // then highlights the target cells
-                            for (let i in _spreadSelectionModel.selectedIndexes) {
-                                const old_index = _spreadSelectionModel.selectedIndexes[i]
-                                let cell = tableView.cellAtIndex(old_index)
-                                cell.x += dropCell.x - dragArea.dragCell.x
-                                cell.y += dropCell.y - dragArea.dragCell.y
-                                const new_index = tableView.index(cell.y, cell.x)
-                                tableView.model.setHighlight(new_index, true)
-                            }
-                        }
+                    // if something is changed, it means that if the current cell is changed,
+                    // then clear highlighted cells and update the dropCell.
+                    tableView.model.clearHighlight()
+                    dropCell = cell
+                    // if the current cell was invalid (mouse is out side of the TableView)
+                    // then no need to update highlight
+                    if (cell.x < 0 || cell.y < 0)
+                        return
+                    // if dragged cell is the same as the (possibly) dropCell
+                    // then no need to highlight any cells
+                    if (dragArea.dragCell === dropCell)
+                        return
+                    // if the dropCell is not the same as the dragging cell and also
+                    // is not the same as the cell at the mouse's last position
+                    // then highlights the target cells
+                    for (let i in _spreadSelectionModel.selectedIndexes) {
+                        const old_index = _spreadSelectionModel.selectedIndexes[i]
+                        let cell = tableView.cellAtIndex(old_index)
+                        cell.x += dropCell.x - dragArea.dragCell.x
+                        cell.y += dropCell.y - dragArea.dragCell.y
+                        const new_index = tableView.index(cell.y, cell.x)
+                        tableView.model.setHighlight(new_index, true)
                     }
                 }
             }
