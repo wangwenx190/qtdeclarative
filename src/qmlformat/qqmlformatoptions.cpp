@@ -4,10 +4,8 @@
 #include "qqmlformatoptions_p.h"
 #include "qqmlformatsettings_p.h"
 
-#if QT_CONFIG(commandlineparser)
-#  include <QCommandLineParser>
-#  include <QCommandLineOption>
-#endif
+#include <QCommandLineParser>
+#include <QCommandLineOption>
 
 using namespace Qt::StringLiterals;
 
@@ -115,7 +113,6 @@ void QQmlFormatOptions::applySettings(const QQmlFormatSettings &settings)
 QQmlFormatOptions QQmlFormatOptions::buildCommandLineOptions(const QStringList &args)
 {
     QQmlFormatOptions options;
-#if QT_CONFIG(commandlineparser)
     QCommandLineParser parser;
     parser.setApplicationDescription(
             "Formats QML files according to the QML Coding Conventions."_L1);
@@ -263,7 +260,6 @@ QQmlFormatOptions QQmlFormatOptions::buildCommandLineOptions(const QStringList &
         options.mark(Settings::MaxColumnWidth);
         options.setMaxColumnWidth(maxColumnWidth);
     }
-#endif
     return options;
 }
 
