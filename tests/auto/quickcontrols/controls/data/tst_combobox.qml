@@ -985,6 +985,8 @@ TestCase {
 
         let content = control.popup.contentItem
         waitForRendering(content)
+        // wait for the popup enter animation to finish
+        tryCompare(control.popup, "opened", true)
 
         // press - move - release outside - not activated - not closed
         mousePress(content)
@@ -995,13 +997,38 @@ TestCase {
         compare(activatedSpy.count, 0)
         compare(control.popup.visible, true)
 
-        // press - move - release inside - activated - closed
+        // press - move - release inside - activated - closed - currentIndex changed to 1
         mousePress(content)
         compare(activatedSpy.count, 0)
         mouseMove(content, content.width / 2 + 1, content.height / 2 + 1)
         compare(activatedSpy.count, 0)
         mouseRelease(content)
         compare(activatedSpy.count, 1)
+        compare(control.currentIndex, 1)
+        tryCompare(control.popup, "visible", false)
+    }
+
+    // this tests that the activated signal is emitted even when the clicked item is already the current one
+    function test_click_on_current_item() {
+        let control = createTemporaryObject(comboBox, testCase, {model: 3, hoverEnabled: false})
+        verify(control)
+
+        let activatedSpy = signalSpy.createObject(control, {target: control, signalName: "activated"})
+        verify(activatedSpy.valid)
+
+        mouseClick(control)
+        compare(control.popup.visible, true)
+
+        let content = control.popup.contentItem
+        waitForRendering(content)
+        // wait for the popup enter animation to finish
+        tryCompare(control.popup, "opened", true)
+
+        // click on the current item - activated - closed - currentIndex unchanged
+        compare(control.currentIndex, 0)
+        mouseClick(content.currentItem)
+        compare(activatedSpy.count, 1)
+        compare(control.currentIndex, 0)
         tryCompare(control.popup, "visible", false)
     }
 
