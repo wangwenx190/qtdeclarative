@@ -14,6 +14,11 @@
             "name": "ReferenceToParentItemNotSupportedByVisualDesigner",
             "settingsName": "ReferenceToParentItemNotSupportedByVisualDesigner",
             "description": "Warn about references to the parent of a root Component in ui.qml files"
+        },
+        {
+            "name": "ImperativeCodeNotEditableInVisualDesigner",
+            "settingsName": "ImperativeCodeNotEditableInVisualDesigner",
+            "description": "Warn about unwanted assignments ui.qml files"
         }
     ]
 }

@@ -2571,7 +2571,15 @@ void TestQmllint::qdsPlugin_data()
     QTest::addRow("UnsupportedBindings")
             << u"qdsPlugin/UnsupportedBindings.ui.qml"_s
             << Result{ {
-                       Message{ u"Referencing the parent of the root item is not supported in a UI file (.ui.qml)"_s, 4, 25 },
+                       Message{
+                               u"Referencing the parent of the root item is not supported in a UI file (.ui.qml)"_s,
+                               4, 25 },
+                       Message{
+                               "Imperative JavaScript assignments can break the visual tooling in Qt Design Studio."_L1,
+                               7, 24 },
+                       Message{
+                               "Imperative JavaScript assignments can break the visual tooling in Qt Design Studio."_L1,
+                               8, 24 },
                } };
 
     QTest::addRow("SupportedBindings")

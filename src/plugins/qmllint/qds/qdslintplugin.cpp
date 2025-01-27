@@ -20,6 +20,9 @@ static constexpr LoggerWarningId ErrFunctionsNotSupportedInQmlUi{
 static constexpr LoggerWarningId WarnReferenceToParentItemNotSupportedByVisualDesigner{
     "QtDesignStudio.ReferenceToParentItemNotSupportedByVisualDesigner"
 };
+static constexpr LoggerWarningId WarnImperativeCodeNotEditableInVisualDesigner{
+    "QtDesignStudio.ImperativeCodeNotEditableInVisualDesigner"
+};
 
 class FunctionCallValidator : public PropertyPass
 {
@@ -41,6 +44,10 @@ public:
     void onRead(const QQmlSA::Element &element, const QString &propertyName,
                 const QQmlSA::Element &readScope, QQmlSA::SourceLocation location) override;
 
+    void onWrite(const QQmlSA::Element &element, const QString &propertyName,
+                 const QQmlSA::Element &value, const QQmlSA::Element &writeScope,
+                 QQmlSA::SourceLocation location) override;
+
 private:
     Element m_statesType;
 };
@@ -53,6 +60,44 @@ void QdsBindingValidator::onRead(const QQmlSA::Element &element, const QString &
     if (element.isFileRootComponent() && propertyName == u"parent") {
         emitWarning("Referencing the parent of the root item is not supported in a UI file (.ui.qml)",
                     WarnReferenceToParentItemNotSupportedByVisualDesigner, location);
+    }
+}
+
+void QdsBindingValidator::onWrite(const QQmlSA::Element &, const QString &propertyName,
+                                  const QQmlSA::Element &, const QQmlSA::Element &,
+                                  QQmlSA::SourceLocation location)
+{
+    static constexpr std::array forbiddenAssignments = { "baseline"_L1,
+                                                         "baselineOffset"_L1,
+                                                         "bottomMargin"_L1,
+                                                         "centerIn"_L1,
+                                                         "color"_L1,
+                                                         "fill"_L1,
+                                                         "height"_L1,
+                                                         "horizontalCenter"_L1,
+                                                         "horizontalCenterOffset"_L1,
+                                                         "left"_L1,
+                                                         "leftMargin"_L1,
+                                                         "margins"_L1,
+                                                         "mirrored"_L1,
+                                                         "opacity"_L1,
+                                                         "right"_L1,
+                                                         "rightMargin"_L1,
+                                                         "rotation"_L1,
+                                                         "scale"_L1,
+                                                         "topMargin"_L1,
+                                                         "verticalCenter"_L1,
+                                                         "verticalCenterOffset"_L1,
+                                                         "width"_L1,
+                                                         "x"_L1,
+                                                         "y"_L1,
+                                                         "z"_L1 };
+    Q_ASSERT(std::is_sorted(forbiddenAssignments.cbegin(), forbiddenAssignments.cend()));
+    if (std::find(forbiddenAssignments.cbegin(), forbiddenAssignments.cend(), propertyName)
+        != forbiddenAssignments.cend()) {
+        emitWarning("Imperative JavaScript assignments can break the visual tooling in Qt Design "
+                    "Studio.",
+                    WarnImperativeCodeNotEditableInVisualDesigner, location);
     }
 }
 
