@@ -820,6 +820,14 @@ void TestQmlformat::settingsFromFileOrCommandLine_data()
         QTest::newRow("cliOverridesTabs") << testFile("iniFiles/toggledBools.ini")
                                           << QStringList{ m_qmlformatPath, "--tabs" } << options;
     }
+    {
+        // settings should apply when -F is passed
+        QQmlFormatOptions options;
+        options.setIndentWidth(4000);
+        QTest::newRow("settingOnFilesOption")
+                << testFile("iniFiles/dummySettingsFile.ini")
+                << QStringList{ m_qmlformatPath, "-F", "dummyFilesPath" } << options;
+    }
 }
 
 void TestQmlformat::settingsFromFileOrCommandLine()
@@ -837,6 +845,8 @@ void TestQmlformat::settingsFromFileOrCommandLine()
         QQmlFormatSettings settings("qmlformat");
         QQmlFormatOptions options =
                 QQmlFormatOptions::buildCommandLineOptions(qmlformatInitOptions);
+        if ((qstrcmp(QTest::currentDataTag(), "settingOnFilesOption") == 0))
+            options.setFiles(QStringList() << dummyQmlFile);
         auto overridenOptions = options.optionsForFile(dummyQmlFile, &settings);
 
         QCOMPARE(overridenOptions.tabsEnabled(), expectedOptions.tabsEnabled());
