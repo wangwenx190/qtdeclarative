@@ -1398,8 +1398,8 @@ public:
     enum  ui8 : quint8 {};
     enum si16 : qint16 {};
     enum ui16 : quint16 {};
-    enum ui64 : qint64 {};
-    enum si64 : quint64 {};
+    enum si64 : qint64 {};
+    enum ui64 : quint64 {};
     Q_ENUM(si8)
     Q_ENUM(ui8)
     Q_ENUM(si16)

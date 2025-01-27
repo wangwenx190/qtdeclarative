@@ -8194,12 +8194,12 @@ void tst_qqmllanguage::enumPropsManyUnderylingTypes()
     QScopedPointer<QObject> o(c.create());
     QVERIFY(!o.isNull());
     auto *enumObject = qobject_cast<EnumPropsManyUnderlyingTypes *>(o.get());
-    QCOMPARE(enumObject->si8prop, EnumPropsManyUnderlyingTypes::ResolvedValue);
-    QCOMPARE(enumObject->ui8prop, EnumPropsManyUnderlyingTypes::ResolvedValue);
-    QCOMPARE(enumObject->si16prop, EnumPropsManyUnderlyingTypes::ResolvedValue);
-    QCOMPARE(enumObject->ui16prop, EnumPropsManyUnderlyingTypes::ResolvedValue);
-    QCOMPARE(enumObject->si64prop, EnumPropsManyUnderlyingTypes::ResolvedValue);
-    QCOMPARE(enumObject->ui64prop, EnumPropsManyUnderlyingTypes::ResolvedValue);
+    QCOMPARE(enumObject->si8prop, qint8(EnumPropsManyUnderlyingTypes::ResolvedValue));
+    QCOMPARE(enumObject->ui8prop, quint8(EnumPropsManyUnderlyingTypes::ResolvedValue));
+    QCOMPARE(enumObject->si16prop, qint16(EnumPropsManyUnderlyingTypes::ResolvedValue));
+    QCOMPARE(enumObject->ui16prop, quint16(EnumPropsManyUnderlyingTypes::ResolvedValue));
+    QCOMPARE(enumObject->si64prop, qint64(EnumPropsManyUnderlyingTypes::ResolvedValue));
+    QCOMPARE(enumObject->ui64prop, quint64(EnumPropsManyUnderlyingTypes::ResolvedValue));
 }
 
 void tst_qqmllanguage::asValueType()
