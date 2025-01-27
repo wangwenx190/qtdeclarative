@@ -2585,6 +2585,20 @@ void TestQmllint::qdsPlugin_data()
     QTest::addRow("SupportedBindings")
             << u"qdsPlugin/SupportedBindings.ui.qml"_s
             << Result::clean();
+
+    QTest::addRow("UnsupportedElements")
+            << u"qdsPlugin/UnsupportedElements.ui.qml"_s
+            << Result{
+                   {
+                       Message{ "This type (ApplicationWindow) is not supported in a UI file (.ui.qml)"_L1, 4, 1 },
+                       Message{ "This type (ShaderEffect) is not supported in a UI file (.ui.qml)"_L1, 7, 27 },
+                       Message{ "This type (Drawer) is not supported in a UI file (.ui.qml)"_L1, 6, 9 },
+                   },
+                   {
+                       Message{ "This type (Item) is not supported in a UI file (.ui.qml)"_L1 },
+
+                   }
+               };
 }
 
 void TestQmllint::qdsPlugin()

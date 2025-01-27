@@ -19,6 +19,11 @@
             "name": "ImperativeCodeNotEditableInVisualDesigner",
             "settingsName": "ImperativeCodeNotEditableInVisualDesigner",
             "description": "Warn about unwanted assignments ui.qml files"
+        },
+        {
+            "name": "UnsupportedTypeInQmlUi",
+            "settingsName": "UnsupportedTypeInQmlUi",
+            "description": "Warn about unsupported types in ui.qml files"
         }
     ]
 }

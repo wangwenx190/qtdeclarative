@@ -23,6 +23,9 @@ static constexpr LoggerWarningId WarnReferenceToParentItemNotSupportedByVisualDe
 static constexpr LoggerWarningId WarnImperativeCodeNotEditableInVisualDesigner{
     "QtDesignStudio.ImperativeCodeNotEditableInVisualDesigner"
 };
+static constexpr LoggerWarningId ErrUnsupportedTypeInQmlUi{
+    "QtDesignStudio.UnsupportedTypeInQmlUi"
+};
 
 class FunctionCallValidator : public PropertyPass
 {
@@ -50,6 +53,22 @@ public:
 
 private:
     Element m_statesType;
+};
+
+class QdsElementValidator : public ElementPass
+{
+public:
+    QdsElementValidator(PassManager *passManager);
+    void run(const Element &element) override;
+
+private:
+    static constexpr std::array s_unsupportedElementNames = {
+        std::make_pair("QtQuick.Controls"_L1, "ApplicationWindow"_L1),
+        std::make_pair("QtQuick.Controls"_L1, "Drawer"_L1),
+        std::make_pair("QtQml.Models"_L1, "Package"_L1),
+        std::make_pair("QtQuick"_L1, "ShaderEffect"_L1),
+    };
+    std::array<Element, s_unsupportedElementNames.size()> m_unsupportedElements;
 };
 
 void QdsBindingValidator::onRead(const QQmlSA::Element &element, const QString &propertyName,
@@ -110,6 +129,7 @@ void QmlLintQdsPlugin::registerPasses(PassManager *manager, const Element &rootE
                                   QAnyStringView(), QAnyStringView());
     manager->registerPropertyPass(std::make_shared<QdsBindingValidator>(manager, rootElement),
                                   QAnyStringView(), QAnyStringView());
+    manager->registerElementPass(std::make_unique<QdsElementValidator>(manager));
 }
 
 void FunctionCallValidator::onCall(const Element &element, const QString &propertyName,
@@ -189,6 +209,29 @@ void FunctionCallValidator::onCall(const Element &element, const QString &proper
     emitWarning(u"Arbitrary functions and function calls outside of a Connections object are not "
                 u"supported in a UI file (.ui.qml)",
                 ErrFunctionsNotSupportedInQmlUi, location);
+}
+
+QdsElementValidator::QdsElementValidator(PassManager *manager) : ElementPass(manager)
+{
+    for (qsizetype i = 0; i < qsizetype(s_unsupportedElementNames.size()); ++i) {
+        if (!manager->hasImportedModule(s_unsupportedElementNames[i].first))
+            continue;
+        m_unsupportedElements[i] = resolveType(s_unsupportedElementNames[i].first,
+                                               s_unsupportedElementNames[i].second);
+    }
+}
+
+void QdsElementValidator::run(const Element &element)
+{
+    for (const auto &unsupportedElement : m_unsupportedElements) {
+        if (!unsupportedElement || !element.inherits(unsupportedElement))
+            continue;
+
+        emitWarning(u"This type (%1) is not supported in a UI file (.ui.qml)."_s.arg(
+                            element.baseTypeName()),
+                    ErrUnsupportedTypeInQmlUi, element.sourceLocation());
+        break;
+    }
 }
 
 QT_END_NAMESPACE
