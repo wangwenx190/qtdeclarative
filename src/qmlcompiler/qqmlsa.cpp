@@ -1340,15 +1340,10 @@ QQmlJSTypeResolver *QQmlSA::PassManagerPrivate::resolver(const QQmlSA::PassManag
 QSet<PropertyPass *> PassManagerPrivate::findPropertyUsePasses(const QQmlSA::Element &element,
                                                                const QString &propertyName)
 {
-    QStringList typeNames { lookupName(element) };
+    QStringList typeNames;
 
-    QQmlJSUtils::searchBaseAndExtensionTypes(
-            QQmlJSScope::scope(element),
-            [&](const QQmlJSScope::ConstPtr &scope, QQmlJSScope::ExtensionKind mode) {
-                Q_UNUSED(mode);
-                typeNames.append(lookupName(QQmlJSScope::createQQmlSAElement(scope)));
-                return false;
-            });
+    for (auto it = QQmlJSScope::scope(element); it; it = it->baseType())
+        typeNames.append(lookupName(QQmlJSScope::createQQmlSAElement(it)));
 
     QSet<PropertyPass *> passes;
 
