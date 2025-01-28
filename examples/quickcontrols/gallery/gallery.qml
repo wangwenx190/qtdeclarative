@@ -178,6 +178,9 @@ ApplicationWindow {
                 required property string source
 
                 onClicked: {
+                    if (stackView.depth > 1)
+                        return
+
                     listView.currentIndex = index
                     stackView.push(source)
                     if (window.portraitMode)
