@@ -1259,7 +1259,7 @@ DomItem::WriteOutCheckResult DomItem::performWriteOutChecks(const DomItem &refor
         if (ow2.writtenStr != expected) {
             qCWarning(writeOutLog).noquote().nospace()
                     << objName << " non stable writeOut of " << this->canonicalFilePath() << ":"
-                    << lineDiff(ow2.writtenStr, expected, 2);
+                    << lineDiff(expected, ow2.writtenStr, 2);
             return false;
         }
         return true;
