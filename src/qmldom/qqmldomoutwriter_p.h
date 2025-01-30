@@ -112,11 +112,6 @@ public:
         lineWriter.newline();
         return *this;
     }
-    OutWriter &space()
-    {
-        lineWriter.space();
-        return *this;
-    }
     OutWriter &write(QStringView v, LineWriter::TextAddType t = LineWriter::TextAddType::Normal)
     {
         lineWriter.write(v, t);
