@@ -105,15 +105,9 @@ private slots:
         QFETCH(QString, outFile);
 
         QFile fIn(QLatin1String(QT_QMLTEST_DATADIR) + QLatin1String("/reformatter/") + inFile);
-        if (!fIn.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qWarning() << "could not open file" << inFile;
-            return;
-        }
+        QVERIFY(fIn.open(QIODevice::ReadOnly | QIODevice::Text));
         QFile fOut(QLatin1String(QT_QMLTEST_DATADIR) + QLatin1String("/reformatter/") + outFile);
-        if (!fOut.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qWarning() << "could not open file" << outFile;
-            return;
-        }
+        QVERIFY(fOut.open(QIODevice::ReadOnly | QIODevice::Text));
         QTextStream in(&fIn);
         QTextStream out(&fOut);
         QString resultStr;
@@ -239,6 +233,7 @@ private slots:
                 QQmlJS::Dom::DomEnvironment::Option::SingleThreaded
                         | QQmlJS::Dom::DomEnvironment::Option::NoDependencies);
         QString testFilePath = baseDir + QLatin1Char('/') + inFile;
+        QVERIFY(QFile(testFilePath).exists());
         DomItem tFile;
         envPtr->loadBuiltins();
         envPtr->loadFile(FileToLoad::fromFileSystem(envPtr, testFilePath),
@@ -259,10 +254,7 @@ private slots:
         QString fullRes = resultStr;
         res.seek(0);
         QFile fOut(baseDir + QLatin1Char('/') + outFile);
-        if (!fOut.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qWarning() << "could not open file" << outFile;
-            return;
-        }
+        QVERIFY(fOut.open(QIODevice::ReadOnly | QIODevice::Text));
         QTextStream out(&fOut);
         QString line = out.readLine();
         QString resLine = res.readLine();
@@ -344,6 +336,7 @@ private slots:
                 QQmlJS::Dom::DomEnvironment::Option::SingleThreaded
                         | QQmlJS::Dom::DomEnvironment::Option::NoDependencies);
         QString testFilePath = baseDir + QLatin1Char('/') + inFile;
+        QVERIFY(QFile(testFilePath).exists());
         DomItem tFile;
         envPtr->loadBuiltins();
         envPtr->loadFile(FileToLoad::fromFileSystem(envPtr, testFilePath),
@@ -362,10 +355,7 @@ private slots:
         QString fullRes = resultStr;
         res.seek(0);
         QFile fOut(baseDir + QLatin1Char('/') + outFile);
-        if (!fOut.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qWarning() << "could not open file" << outFile;
-            return;
-        }
+        QVERIFY(fOut.open(QIODevice::ReadOnly | QIODevice::Text));
         QTextStream out(&fOut);
         QString line = out.readLine();
         QString resLine = res.readLine();
