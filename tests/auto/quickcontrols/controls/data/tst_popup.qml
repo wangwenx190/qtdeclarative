@@ -1544,10 +1544,6 @@ TestCase {
     }
 
     function test_popupOverlayCenterIn() {
-        if (Qt.platform.os === "linux") {
-            // So far observed timeout in Imagine and FluentWinUI3 style
-            skip("This function times out with some styles on RHEL 8.10")
-        }
         let control = createTemporaryObject(popupOverlay, testCase)
         verify(control)
 
