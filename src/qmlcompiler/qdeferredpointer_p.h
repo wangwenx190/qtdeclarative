@@ -74,8 +74,8 @@ public:
 
     operator QDeferredSharedPointer<const T>() const { return { m_data, m_factory }; }
 
-    [[nodiscard]] T &operator*() const { return QSharedPointer<T>(*this).operator*(); }
-    [[nodiscard]] T *operator->() const { return QSharedPointer<T>(*this).operator->(); }
+    [[nodiscard]] T &operator*() const { lazyLoad(); return m_data.operator*(); }
+    [[nodiscard]] T *operator->() const { lazyLoad(); return m_data.operator->(); }
 
     bool isNull() const
     {
