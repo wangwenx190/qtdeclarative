@@ -1830,6 +1830,11 @@ bool QQmlObjectCreator::populateInstance(int index, QObject *instance, QObject *
                   : BindingMode::ApplyImmediate);
 
     for (int aliasIndex = 0; aliasIndex != _compiledObject->aliasCount(); ++aliasIndex) {
+        // Ensure aliasChanged() signals are connected during object creation.
+        // This is necessary because alias signals may not have been connected
+        // if the signal handlers are defined and connected in C++ code rather
+        // than being declared in QML.
+        _vmeMetaObject->connectAlias(_compiledObject, aliasIndex);
         const QV4::CompiledData::Alias* alias = _compiledObject->aliasesBegin() + aliasIndex;
         const auto originalAlias = alias;
         while (alias->isAliasToLocalAlias())
